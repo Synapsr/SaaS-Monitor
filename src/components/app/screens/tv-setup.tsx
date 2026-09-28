@@ -1,8 +1,20 @@
 import { CopyCode } from "@/components/app/copy-button";
 
-/** Starts Chromium full screen, allowed to play sounds without a click, and without popups. */
+/**
+ * Chromium full screen, without popups or update prompts, allowed to play sounds without a click.
+ * docs/wall-display.md gives the same command for a Raspberry Pi: keep both identical.
+ */
+const KIOSK_FLAGS = [
+  "--kiosk",
+  "--noerrdialogs",
+  "--disable-infobars",
+  "--incognito",
+  "--autoplay-policy=no-user-gesture-required",
+  "--check-for-update-interval=31536000",
+];
+
 function kioskCommand(url: string): string {
-  return `chromium --kiosk --autoplay-policy=no-user-gesture-required --noerrdialogs --disable-infobars --incognito ${url}`;
+  return `chromium ${KIOSK_FLAGS.join(" ")} "${url}"`;
 }
 
 /** How to get a screen onto a TV, shared by the onboarding and the screen editor. */

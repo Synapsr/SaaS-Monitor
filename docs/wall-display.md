@@ -4,8 +4,8 @@ A screen is a web page (`/d/<token>`) designed to run unattended, full screen, f
 device with a modern browser works: a Raspberry Pi behind a TV, a spare laptop, a monitor next to
 your desk, a tablet on a shelf.
 
-Copy the screen link from **Screens → your screen → Share** in the dashboard. Anyone with the link
-can view the screen, so treat it like a password; **Regenerate link** revokes the old one.
+Copy the screen link from **Screens → your screen → Screen link** in the dashboard. Anyone with the
+link can view the screen, so treat it like a password; **Regenerate link** revokes the old one.
 
 ## What the screen does on its own
 
@@ -35,7 +35,9 @@ Any Raspberry Pi 4 or 5 connected to a TV over HDMI does the job. With Raspberry
 3. Pick the HDMI audio output from the volume icon in the taskbar if you want sound on the TV,
    and install the emoji font used for country flags: `sudo apt install fonts-noto-color-emoji`.
 4. Start the screen automatically at login. Raspberry Pi OS uses the labwc compositor: add this
-   line to `~/.config/labwc/autostart` (create the file if needed), replacing the URL:
+   line to `~/.config/labwc/autostart` (create the file if needed), with your screen's link. The
+   dashboard gives the same command with the link filled in, under **Set up a TV or Raspberry
+   Pi**: add the final `&` so that the session keeps starting.
 
    ```bash
    chromium --kiosk --noerrdialogs --disable-infobars --incognito \
