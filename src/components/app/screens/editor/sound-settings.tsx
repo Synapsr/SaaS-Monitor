@@ -6,16 +6,16 @@ import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { SOUND_PACKS, type ScreenSettings, type SoundPack } from "@/lib/screens/settings";
-import { playSound, unlockAudio, type SoundEvent } from "@/lib/sounds";
+import { playSound, SOUND_PACK_NAMES, unlockAudio, type SoundEvent } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 import { SettingRow } from "./settings-section";
 
 type Sound = ScreenSettings["sound"];
 
-const PACKS: Record<SoundPack, { label: string; hint: string }> = {
-  register: { label: "Cash register", hint: "Ka-ching!" },
-  chime: { label: "Chime", hint: "Soft and calm" },
-  arcade: { label: "Arcade", hint: "8-bit coins" },
+const PACK_HINTS: Record<SoundPack, string> = {
+  register: "Ka-ching!",
+  chime: "Soft and calm",
+  arcade: "8-bit coins",
 };
 
 const EVENTS = [
@@ -125,12 +125,12 @@ export function SoundSettings({
                     "data-[state=checked]:bg-muted/40 data-[state=checked]:ring-2 data-[state=checked]:ring-foreground",
                   )}
                 >
-                  <span className="text-sm font-medium">{PACKS[pack].label}</span>
-                  <span className="text-xs text-muted-foreground">{PACKS[pack].hint}</span>
+                  <span className="text-sm font-medium">{SOUND_PACK_NAMES[pack]}</span>
+                  <span className="text-xs text-muted-foreground">{PACK_HINTS[pack]}</span>
                 </RadioGroupPrimitive.Item>
                 <div className="absolute top-2 right-2">
                   <PreviewButton
-                    label={PACKS[pack].label}
+                    label={SOUND_PACK_NAMES[pack]}
                     disabled={!sound.enabled}
                     onClick={() => preview("payment", pack, sound.volume)}
                   />

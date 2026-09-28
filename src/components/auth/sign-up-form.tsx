@@ -8,11 +8,10 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
+import { MIN_PASSWORD_LENGTH } from "@/lib/passwords";
 import type { SocialProvider } from "@/lib/social-providers";
 import { authErrorMessage } from "./auth-errors";
 import { OrDivider, SocialSignIn } from "./social-sign-in";
-
-export const MIN_PASSWORD_LENGTH = 8;
 
 export function SignUpForm({
   next,

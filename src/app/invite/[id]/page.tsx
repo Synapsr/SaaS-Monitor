@@ -5,7 +5,7 @@ import { AuthCard, AuthHeader, AuthShell } from "@/components/auth/auth-shell";
 import { AcceptInvitationButton, SwitchAccountButton } from "@/components/auth/invitation-actions";
 import { WorkspaceAvatar } from "@/components/app/workspace-avatar";
 import { Button } from "@/components/ui/button";
-import { invitationPath } from "@/lib/invitations";
+import { INVITATION_TTL_DAYS, invitationPath } from "@/lib/invitations";
 import { ROLE_DETAILS } from "@/lib/roles";
 import { withRedirect } from "@/lib/safe-redirect";
 import { getInvitationPreview, type InvitationPreview } from "@/server/members";
@@ -35,7 +35,7 @@ export default async function InvitationPage({ params }: PageProps<"/invite/[id]
           <Unavailable
             icon={<HourglassIcon />}
             title="This invitation has expired"
-            description={`Invitations are valid for 7 days. Ask ${invitation.inviterName} for a new link.`}
+            description={`Invitations are valid for ${INVITATION_TTL_DAYS} days. Ask ${invitation.inviterName} for a new link.`}
             signedIn={Boolean(session)}
           />
         ) : invitation.status === "revoked" ? (

@@ -3,6 +3,9 @@
  * in from it comes back to it with `?next=/invite/<id>`.
  */
 
+/** How long an invitation link works. */
+export const INVITATION_TTL_DAYS = 7;
+
 export function invitationPath(invitationId: string): string {
   return `/invite/${encodeURIComponent(invitationId)}`;
 }

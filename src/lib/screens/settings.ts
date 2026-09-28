@@ -4,6 +4,9 @@ export const SOUND_PACKS = ["register", "chime", "arcade"] as const;
 export const ACCENTS = ["emerald", "violet", "sky", "amber", "rose"] as const;
 export const CHART_RANGES = ["30d", "90d", "12m"] as const;
 
+/** Highest MRR goal a screen accepts, in major units. */
+export const MAX_GOAL = 1_000_000_000;
+
 export type SoundPack = (typeof SOUND_PACKS)[number];
 export type Accent = (typeof ACCENTS)[number];
 export type ChartRange = (typeof CHART_RANGES)[number];
@@ -31,7 +34,7 @@ export const screenSettingsSchema = z.object({
   /** IANA time zone that defines "today" and "this month". */
   timeZone: z.string().refine(isTimeZone, "Unknown time zone").default("UTC"),
   /** MRR target in major units (e.g. 10000 for $10k). `null` follows the milestone ladder. */
-  goal: z.number().int().positive().max(1_000_000_000).nullable().default(null),
+  goal: z.number().int().positive().max(MAX_GOAL).nullable().default(null),
   sound: z
     .object({
       enabled: z.boolean().default(true),

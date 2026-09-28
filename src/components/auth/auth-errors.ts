@@ -1,3 +1,5 @@
+import { MIN_PASSWORD_LENGTH } from "@/lib/passwords";
+
 /** What Better Auth's client returns when a request fails. */
 export interface AuthClientError {
   code?: string;
@@ -13,7 +15,7 @@ const MESSAGES: Record<string, string> = {
   INVALID_EMAIL: "Enter a valid email address.",
   USER_ALREADY_EXISTS: "An account already uses this email. Sign in instead.",
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "An account already uses this email. Sign in instead.",
-  PASSWORD_TOO_SHORT: "Use at least 8 characters for your password.",
+  PASSWORD_TOO_SHORT: `Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`,
   PASSWORD_TOO_LONG: "This password is too long.",
 };
 

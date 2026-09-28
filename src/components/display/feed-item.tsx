@@ -20,7 +20,8 @@ export const KIND_LABELS: Record<FeedItemKind, string> = {
   churn: "Cancellation",
 };
 
-const KIND_ICONS: Record<FeedItemKind, LucideIcon> = {
+/** One icon per kind of activity, in the feed and in the moments that announce it. */
+export const KIND_ICONS: Record<FeedItemKind, LucideIcon> = {
   payment: CircleDollarSign,
   new: UserPlus,
   expansion: TrendingUp,

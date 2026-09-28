@@ -1,5 +1,4 @@
-/** Same bound as `screenSettingsSchema.goal`. */
-const MAX_GOAL = 1_000_000_000;
+import { MAX_GOAL } from "@/lib/screens/settings";
 
 const SUFFIXES: Record<string, number> = { k: 1_000, m: 1_000_000 };
 

@@ -9,6 +9,13 @@ import { SOUND_RECIPES } from "@/lib/sounds/packs";
 
 export type SoundEvent = "payment" | "mrrUp" | "mrrDown" | "milestone";
 
+/** How each pack is named, in the screen settings and on the landing page. */
+export const SOUND_PACK_NAMES: Record<SoundPack, string> = {
+  register: "Cash register",
+  chime: "Chime",
+  arcade: "Arcade",
+};
+
 export interface PlaySoundOptions {
   pack: SoundPack;
   /** 0 to 1. */

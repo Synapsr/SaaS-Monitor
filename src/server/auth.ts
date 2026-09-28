@@ -7,10 +7,11 @@ import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { env } from "@/env";
+import { DAY_SECONDS } from "@/lib/durations";
+import { INVITATION_TTL_DAYS } from "@/lib/invitations";
+import { MIN_PASSWORD_LENGTH } from "@/lib/passwords";
 import { siteConfig } from "@/lib/site";
 import { ensureWorkspace } from "@/server/workspaces";
-
-const INVITATION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 function socialProviders() {
   const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env();
@@ -51,7 +52,7 @@ function createAuth() {
     trustedOrigins: [config.APP_URL],
     database: drizzleAdapter(db(), { provider: "pg", schema, usePlural: true }),
     telemetry: { enabled: false },
-    emailAndPassword: { enabled: true, minPasswordLength: 8, autoSignIn: true },
+    emailAndPassword: { enabled: true, minPasswordLength: MIN_PASSWORD_LENGTH, autoSignIn: true },
     socialProviders: socialProviders(),
     session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
     databaseHooks: {
@@ -74,7 +75,10 @@ function createAuth() {
     },
     plugins: [
       // Invitations are shared as links from the members page, so no email provider is needed.
-      organization({ creatorRole: "owner", invitationExpiresIn: INVITATION_TTL_SECONDS }),
+      organization({
+        creatorRole: "owner",
+        invitationExpiresIn: INVITATION_TTL_DAYS * DAY_SECONDS,
+      }),
       // Must stay last: lets server actions set auth cookies.
       nextCookies(),
     ],

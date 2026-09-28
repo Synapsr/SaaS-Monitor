@@ -1,15 +1,6 @@
-import {
-  CircleDollarSign,
-  PartyPopper,
-  RotateCcw,
-  TrendingDown,
-  TrendingUp,
-  UserMinus,
-  UserPlus,
-  type LucideIcon,
-} from "lucide-react";
+import { CircleDollarSign, PartyPopper } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { itemContext } from "@/components/display/feed-item";
+import { itemContext, KIND_ICONS } from "@/components/display/feed-item";
 import { MilestoneCelebration } from "@/components/display/milestone-celebration";
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
 import { formatAmount, formatPayment } from "@/lib/display/format";
@@ -43,13 +34,13 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
 }
 
 /** How each kind of activity is announced. */
-const TITLES: Record<FeedItemKind, [string, LucideIcon]> = {
-  payment: ["Payment received", CircleDollarSign],
-  new: ["New customer", UserPlus],
-  expansion: ["Upgrade", TrendingUp],
-  reactivation: ["Welcome back", RotateCcw],
-  contraction: ["Downgrade", TrendingDown],
-  churn: ["Subscription canceled", UserMinus],
+const TITLES: Record<FeedItemKind, string> = {
+  payment: "Payment received",
+  new: "New customer",
+  expansion: "Upgrade",
+  reactivation: "Welcome back",
+  contraction: "Downgrade",
+  churn: "Subscription canceled",
 };
 
 /** "1 new payment", "3 new payments", or nothing for none. */
@@ -66,10 +57,10 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
   switch (moment.kind) {
     case "payment": {
       // A payment that started or upgraded a subscription is announced by what it started.
-      const [eyebrow, icon] = TITLES[moment.movement?.kind ?? "payment"];
+      const kind = moment.movement?.kind ?? "payment";
       return {
-        icon,
-        eyebrow,
+        icon: KIND_ICONS[kind],
+        eyebrow: TITLES[kind],
         amount: formatPayment(moment.payment.amount, currency),
         details: itemContext(moment.payment, { showAccount }),
         footnote: moment.movement ? mrr(moment.movement.amount) : null,
@@ -77,10 +68,9 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       };
     }
     case "movement": {
-      const [eyebrow, icon] = TITLES[moment.movement.kind];
       return {
-        icon,
-        eyebrow,
+        icon: KIND_ICONS[moment.movement.kind],
+        eyebrow: TITLES[moment.movement.kind],
         amount: formatAmount(moment.movement.amount, currency, { signed: true }),
         recurring: true,
         details: itemContext(moment.movement, { showAccount }),

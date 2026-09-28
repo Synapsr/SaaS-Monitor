@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { invitationPath } from "@/lib/invitations";
+import { INVITATION_TTL_DAYS, invitationPath } from "@/lib/invitations";
 import { ROLE_DETAILS, type WorkspaceRole } from "@/lib/roles";
 import { SettingsCard } from "./settings-card";
 
@@ -72,7 +72,7 @@ export function InviteCard({
   return (
     <SettingsCard
       title="Invite people"
-      description="No email is sent: you get a link to share. It works for that email address only, for 7 days."
+      description={`No email is sent: you get a link to share. It works for that email address only, for ${INVITATION_TTL_DAYS} days.`}
     >
       <div className="flex flex-col gap-5">
         <form onSubmit={invite} className="flex flex-col gap-2">
