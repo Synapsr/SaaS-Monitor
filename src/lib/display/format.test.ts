@@ -24,9 +24,11 @@ describe("countries", () => {
     expect(countryFlag("1A")).toBeNull();
   });
 
-  it("names countries in English", () => {
+  it("names countries in English, the same on the server and in any browser", () => {
     expect(countryName("DE")).toBe("Germany");
     expect(countryName("gb")).toBe("United Kingdom");
+    expect(countryName("XK")).toBe("Kosovo");
+    expect(countryName("QQ")).toBe("QQ");
   });
 });
 

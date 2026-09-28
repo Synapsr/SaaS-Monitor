@@ -1,4 +1,5 @@
 import type { Format } from "@number-flow/react";
+import { COUNTRY_NAMES } from "@/lib/display/countries";
 import { formatMoney, minorUnitDigits, toMajorUnits } from "@/lib/money";
 
 /** How a screen writes amounts, percentages and countries. Dates and times: see `time.ts`. */
@@ -13,16 +14,10 @@ export function countryFlag(code: string | null): string | null {
   );
 }
 
-let regionNames: Intl.DisplayNames | undefined;
-
 /** English name of a country code ("DE" → "Germany"), falling back to the code itself. */
 export function countryName(code: string): string {
-  try {
-    regionNames ??= new Intl.DisplayNames(["en"], { type: "region" });
-    return regionNames.of(code.toUpperCase()) ?? code;
-  } catch {
-    return code;
-  }
+  const key = code.toUpperCase();
+  return Object.hasOwn(COUNTRY_NAMES, key) ? COUNTRY_NAMES[key] : code;
 }
 
 /** Relative change between two values, or `null` when there is nothing to compare with. */
