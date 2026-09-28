@@ -89,7 +89,8 @@ docker compose exec db pg_dump -U saas_monitor saas_monitor > saas-monitor.sql
 
 ## Running without Docker
 
-Build and start the app with Node.js 24 against any PostgreSQL 15+ database:
+Build and start the app with Node.js 24 (22.13 at least, as `engines` in `package.json` says)
+against any PostgreSQL 15+ database:
 
 ```bash
 pnpm install --frozen-lockfile
