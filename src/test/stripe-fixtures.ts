@@ -10,7 +10,7 @@ import type { Coupon } from "@/server/stripe/types";
 
 /*
  * Builders of Stripe-shaped objects with only the fields the app reads. Tests pass them through
- * the real normalisation (directly or via the fake gateway), like objects coming from Stripe.
+ * the real normalization (directly or via the fake gateway), like objects coming from Stripe.
  */
 
 let lastId = 0;

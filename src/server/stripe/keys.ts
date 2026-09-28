@@ -27,7 +27,7 @@ export function inspectSecretKey(input: string): ActionResult<SecretKey> {
     return {
       ok: false,
       error:
-        "This doesn't look like a Stripe API key. Restricted keys start with rk_live_ or rk_test_.",
+        "This doesn’t look like a Stripe API key. Restricted keys start with rk_live_ or rk_test_.",
     };
   }
   const [, prefix, mode] = match;
@@ -37,7 +37,7 @@ export function inspectSecretKey(input: string): ActionResult<SecretKey> {
 /** A pasted API key, read into a `SecretKey`: how actions validate the key of a connection. */
 export const secretKeySchema = z
   .string()
-  .max(500, "This doesn't look like a Stripe API key.")
+  .max(500, "This doesn’t look like a Stripe API key.")
   .transform((input, context): SecretKey => {
     const inspection = inspectSecretKey(input);
     if (!inspection.ok) {

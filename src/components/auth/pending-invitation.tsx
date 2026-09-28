@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { invitationPath } from "@/lib/invitations";
 import { ROLE_DETAILS } from "@/lib/roles";
 import { withRedirect } from "@/lib/safe-redirect";
+import { siteConfig } from "@/lib/site";
 import type { InvitationPreview } from "@/server/members";
 
 /**
@@ -31,7 +32,7 @@ export function PendingInvitation({
         description={
           <>
             <span className="font-medium text-foreground">{invitation.inviterName}</span> invited
-            you to their workspace on SaaS Monitor, where their MRR goes on the wall.
+            you to their workspace on {siteConfig.name}, where their MRR goes on the wall.
           </>
         }
       />

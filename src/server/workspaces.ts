@@ -12,7 +12,7 @@ async function createPersonalWorkspace(userId: string): Promise<string> {
   await db().transaction(async (tx) => {
     await tx.insert(organizations).values({
       id: workspaceId,
-      name: firstName ? `${firstName}'s workspace` : "My workspace",
+      name: firstName ? `${firstName}’s workspace` : "My workspace",
       slug: workspaceId,
       createdAt: now,
     });

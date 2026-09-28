@@ -57,7 +57,7 @@ export function StatusScreen({ state }: { state: DisplayState }) {
     return (
       <ScreenMessage
         icon={<CircleAlertIcon />}
-        title="Stripe can’t be reached right now"
+        title="Stripe data can’t be loaded right now"
         tone="neutral"
       >
         <p>

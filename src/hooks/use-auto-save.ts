@@ -38,7 +38,7 @@ export function useAutoSave<T>(
     setStatus("saving");
     const result = await saveRef.current(latest.current).catch((): ActionResult => ({
       ok: false,
-      error: "Your changes couldn't be saved. Check your connection.",
+      error: "Your changes couldn’t be saved. Check your connection.",
     }));
     saving.current = false;
 

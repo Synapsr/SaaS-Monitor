@@ -48,7 +48,7 @@ function useCopy(value: string) {
       await copyText(value);
       setCopied(true);
     } catch {
-      toast.error("Couldn't copy. Select the text and copy it manually.");
+      toast.error("Couldn’t copy. Select the text and copy it manually.");
     }
   }
 

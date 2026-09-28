@@ -50,7 +50,7 @@ export function convertAmount(amount: number, from: string, to: string, rate: nu
 export interface FormatMoneyOptions {
   /** `$12.5K` instead of `$12,480`. */
   compact?: boolean;
-  /** Show the minor unit (`$12,480.50`). Off by default: big screens favour round numbers. */
+  /** Show the minor unit (`$12,480.50`). Off by default: big screens favor round numbers. */
   cents?: boolean;
   /** Always show the sign, e.g. `+$120` for growth. */
   signed?: boolean;

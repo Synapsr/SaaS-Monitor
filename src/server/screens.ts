@@ -53,7 +53,7 @@ export const newScreenSchema = z.object({
   timeZone: z.string().max(100),
 });
 
-const SCREEN_NOT_FOUND = { ok: false, error: "This screen doesn't exist anymore." } as const;
+const SCREEN_NOT_FOUND = { ok: false, error: "This screen doesn’t exist anymore." } as const;
 const FOREIGN_ACCOUNTS = {
   ok: false,
   error: "Some of these Stripe accounts are not part of this workspace.",

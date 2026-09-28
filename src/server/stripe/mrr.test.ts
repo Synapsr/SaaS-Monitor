@@ -59,7 +59,7 @@ describe("MRR of a subscription", () => {
       expect(mrrOf(withPrice(monthlyPrice(100, recurring("day"))))).toBe(3042);
     });
 
-    it("normalises each item with its own interval", () => {
+    it("normalizes each item with its own interval", () => {
       const items = [
         stripeItem({ price: monthlyPrice(1000) }),
         stripeItem({ price: monthlyPrice(12_000, recurring("year")) }),

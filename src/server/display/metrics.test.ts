@@ -60,7 +60,7 @@ describe("movement totals", () => {
 });
 
 describe("display status", () => {
-  it("summarises the linked accounts", () => {
+  it("summarizes the linked accounts", () => {
     expect(displayStatus([])).toBe("empty");
     expect(displayStatus(["error", "error"])).toBe("error");
     expect(displayStatus(["error", "ready"])).toBe("ready");

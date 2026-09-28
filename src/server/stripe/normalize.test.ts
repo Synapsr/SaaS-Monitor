@@ -32,7 +32,7 @@ describe("decimal amounts", () => {
   });
 });
 
-describe("subscription normalisation", () => {
+describe("subscription normalization", () => {
   it("keeps what the app needs from an expanded subscription", () => {
     const subscription = subscriptionSchema.parse(
       stripeSubscription({
@@ -73,7 +73,7 @@ describe("subscription normalisation", () => {
   });
 });
 
-describe("price normalisation", () => {
+describe("price normalization", () => {
   it("reads expanded products, tiers and currency options", () => {
     const price = priceSchema.parse(
       stripePrice({
@@ -110,7 +110,7 @@ describe("price normalisation", () => {
   });
 });
 
-describe("coupon normalisation", () => {
+describe("coupon normalization", () => {
   it("treats an empty product restriction as none", () => {
     expect(
       couponSchema.parse(stripeCoupon({ applies_to: { products: [] } })).appliesToProducts,
@@ -136,7 +136,7 @@ describe("coupon normalisation", () => {
   });
 });
 
-describe("charge normalisation", () => {
+describe("charge normalization", () => {
   it("keeps the captured amount and refunds", () => {
     const charge = chargeSchema.parse(
       stripeCharge({ amount: 5000, amount_captured: 3000, amount_refunded: 1000, currency: "EUR" }),

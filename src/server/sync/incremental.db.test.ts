@@ -167,7 +167,7 @@ describe("live updates", () => {
     await expectLedgerToMatchMirror();
   });
 
-  it("recognises a comeback as a reactivation", async () => {
+  it("recognizes a comeback as a reactivation", async () => {
     change("sub_lapsed", (subscription) => ({ ...subscription, status: "active" }), MINUTE_SECONDS);
     await syncAt(2 * MINUTE_SECONDS);
 

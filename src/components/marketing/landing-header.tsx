@@ -28,7 +28,7 @@ export function LandingHeader() {
           <a
             href={siteConfig.repositoryUrl}
             className={linkClass}
-            aria-label="SaaS Monitor on GitHub"
+            aria-label={`${siteConfig.name} on GitHub`}
           >
             <GitHubIcon className="size-4.5" />
           </a>

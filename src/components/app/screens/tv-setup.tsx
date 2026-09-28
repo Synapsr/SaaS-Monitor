@@ -12,8 +12,8 @@ export function TvSetupSteps({ url }: { url: string }) {
       <li className="flex flex-col gap-1">
         <p className="font-medium">Smart TV, monitor or spare laptop</p>
         <p className="text-pretty text-muted-foreground">
-          Open the link in its browser and go full screen (F11 on most computers). Turn off sleep
-          mode: the screen updates by itself.
+          Open the link in its browser and press F to go full screen. Turn off sleep mode: the
+          screen updates by itself.
         </p>
       </li>
       <li className="flex flex-col gap-2">

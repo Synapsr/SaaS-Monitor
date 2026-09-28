@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { DemoDisplay } from "@/components/display/demo-display";
 import { parseDemoOptions } from "@/lib/display/demo/options";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Live demo",
-  description: "A SaaS Monitor wall display with simulated data from a fictional SaaS.",
+  description: `A ${siteConfig.name} wall display with simulated data from a fictional SaaS.`,
   robots: { index: false, follow: false },
 };
 

@@ -31,7 +31,7 @@ and migrated automatically). Set `TEST_DATABASE_URL` to use another database.
 
 - Read [`AGENTS.md`](AGENTS.md): it describes the architecture and the rules every change follows
   (tenant isolation, secrets, money in minor units, no work at import time…).
-- Keep pull requests focused. Add or update tests with every behaviour change.
+- Keep pull requests focused. Add or update tests with every behavior change.
 - Database changes: edit `src/db/schema`, then `pnpm db:generate --name <change>` and commit the
   generated migration.
 - UI changes: include screenshots of the dashboard and, when relevant, of the wall screen at TV

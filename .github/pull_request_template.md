@@ -10,4 +10,4 @@
 
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
 - [ ] Tenant data is only read or written through `requireWorkspace()`
-- [ ] Docs updated if behaviour or configuration changed
+- [ ] Docs updated if behavior or configuration changed

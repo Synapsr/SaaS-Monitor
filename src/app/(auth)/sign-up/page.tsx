@@ -54,7 +54,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
         {invitation ? (
           <AuthHeader
             title={`Join ${invitation.workspaceName}`}
-            description={`${invitation.inviterName} invited you. Create your account to see the workspace's screens.`}
+            description={`${invitation.inviterName} invited you. Create your account to see the workspace’s screens.`}
           />
         ) : (
           <AuthHeader

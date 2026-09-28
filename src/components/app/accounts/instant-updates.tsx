@@ -13,6 +13,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionResult } from "@/lib/action-result";
 import { formatApproximateDuration } from "@/lib/format";
+import { siteConfig } from "@/lib/site";
 import type { StripeAccountSummary } from "@/server/stripe/accounts";
 
 interface WebhookInstructions {
@@ -50,7 +51,7 @@ export function InstantUpdates({
           Instant updates are on
         </p>
         <p className="text-sm text-muted-foreground">
-          Stripe notifies SaaS Monitor of every change.{" "}
+          Stripe notifies {siteConfig.name} of every change.{" "}
           {lastEventLabel ? `Last event ${lastEventLabel}.` : "No event received yet."}
         </p>
       </div>

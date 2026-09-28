@@ -21,7 +21,7 @@ import type {
  * - metered usage and one-time prices are excluded, and taxes are not added (Stripe computes them
  *   on invoices; a tax-inclusive price is counted as is);
  * - `forever` and `repeating` discounts are subtracted, `once` discounts are not;
- * - every item is normalised to a month with its own billing interval.
+ * - every item is normalized to a month with its own billing interval.
  *
  * Amounts stay fractional until the very end (a yearly plan divided by 12, a unit price with sub-
  * cent precision): rounding each step would drift, so each subscription is rounded once.

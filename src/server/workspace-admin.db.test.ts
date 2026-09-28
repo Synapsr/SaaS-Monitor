@@ -33,7 +33,7 @@ describe("workspace administration", { timeout: 30_000 }, () => {
     if (!created.ok) throw new Error(created.error);
 
     expect(await listUserWorkspaces(ada.userId)).toEqual([
-      { id: ada.personalWorkspaceId, name: "Ada's workspace", role: "owner" },
+      { id: ada.personalWorkspaceId, name: "Ada’s workspace", role: "owner" },
       { id: created.workspaceId, name: "Side project", role: "owner" },
     ]);
     expect(await activeWorkspaceId(ada.requestHeaders)).toBe(created.workspaceId);
@@ -74,10 +74,10 @@ describe("workspace administration", { timeout: 30_000 }, () => {
     ).toEqual([]);
     // Ada lost her only workspace: she lands in a fresh one.
     const [fresh] = await listUserWorkspaces(ada.userId);
-    expect(fresh).toMatchObject({ name: "Ada's workspace", role: "owner" });
+    expect(fresh).toMatchObject({ name: "Ada’s workspace", role: "owner" });
     expect(await activeWorkspaceId(ada.requestHeaders)).toBe(fresh.id);
     expect(await listUserWorkspaces(grace.userId)).toEqual([
-      { id: grace.personalWorkspaceId, name: "Grace's workspace", role: "owner" },
+      { id: grace.personalWorkspaceId, name: "Grace’s workspace", role: "owner" },
     ]);
   });
 });

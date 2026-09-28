@@ -37,7 +37,7 @@ const PERMISSIONS: Record<FakeResource, string> = {
 /**
  * An in-memory Stripe account implementing the gateway. It stores Stripe-shaped objects (see
  * stripe-fixtures.ts) and serves them like Stripe does: newest first, paginated, with the same
- * normalisation as the real gateway, and without "includable" fields (price tiers and currency
+ * normalization as the real gateway, and without "includable" fields (price tiers and currency
  * options) unless they are asked for.
  */
 export class FakeStripe implements StripeGateway {

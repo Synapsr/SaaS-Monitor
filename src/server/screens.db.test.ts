@@ -88,7 +88,7 @@ describe("screens", () => {
       await sendTestEvent(intruder.workspaceId, screenId),
       await deleteScreen(intruder.workspaceId, screenId),
     ]) {
-      expect(result).toEqual({ ok: false, error: "This screen doesn't exist anymore." });
+      expect(result).toEqual({ ok: false, error: "This screen doesn’t exist anymore." });
     }
     expect(await getScreen(owner.workspaceId, screenId)).toMatchObject({ name: "Office TV" });
     const [row] = await db()

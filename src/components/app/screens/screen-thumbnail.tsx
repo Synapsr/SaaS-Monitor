@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const LINE = "M0 74 C18 72 26 64 40 63 S62 55 76 50 S98 46 110 36 S136 26 160 14";
 
 /**
- * A stylised miniature of a wall display in the screen's accent color. Cheap to render in lists,
+ * A stylized miniature of a wall display in the screen's accent color. Cheap to render in lists,
  * unlike the live preview which loads the real display.
  */
 export function ScreenThumbnail({ accent, className }: { accent: Accent; className?: string }) {

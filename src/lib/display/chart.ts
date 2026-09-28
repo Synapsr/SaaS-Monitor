@@ -114,7 +114,7 @@ export function layoutMrrChart({
 
 /**
  * Round dates to label: month starts on long ranges, days or weeks on short ones, as many as fit
- * without labels colliding. Labels are centred on their date, so those that would stick out of
+ * without labels colliding. Labels are centered on their date, so those that would stick out of
  * the plot are left out.
  */
 function dateTicks(x: ScaleTime<number, number>, monthly: boolean, fontSize: number): Date[] {

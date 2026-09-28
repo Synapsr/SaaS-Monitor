@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { stripeAccounts } from "@/db/schema";
 import { env } from "@/env";
 import type { ActionResult } from "@/lib/action-result";
+import { siteConfig } from "@/lib/site";
 import { permissionLabel } from "@/lib/stripe-permissions";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
 import { ACCOUNT_NOT_FOUND, StripeAccessError } from "./errors";
@@ -23,7 +24,7 @@ export function webhookEndpointUrl(accountId: string): string {
 }
 
 const NOT_A_SIGNING_SECRET =
-  "This doesn't look like a signing secret. It starts with whsec_ and is shown on the endpoint's page.";
+  "This doesn’t look like a signing secret. It starts with whsec_ and is shown on the endpoint’s page.";
 
 /** The signing secret (`whsec_…`) of an endpoint added by hand in the Stripe Dashboard. */
 export const webhookSigningSecretSchema = z
@@ -93,7 +94,7 @@ export async function registerWebhookEndpoint(
     endpoint = await gateway.createWebhookEndpoint({
       url,
       events: SYNC_EVENT_TYPES,
-      description: "SaaS Monitor: instant updates for your wall screens",
+      description: `${siteConfig.name}: instant updates for your wall screens`,
       metadata: { app: "saas-monitor", account_id: accountId },
     });
   } catch (error) {

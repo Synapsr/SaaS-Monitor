@@ -60,7 +60,7 @@ describe("members", { timeout: 30_000 }, () => {
     ]);
     expect(await getInvitationPreview(invitation.invitationId)).toMatchObject({
       email: "bob@example.com",
-      workspaceName: "Ada's workspace",
+      workspaceName: "Ada’s workspace",
       inviterName: "Ada Lovelace",
       status: "pending",
     });

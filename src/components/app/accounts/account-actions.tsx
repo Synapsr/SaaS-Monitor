@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionResult } from "@/lib/action-result";
 import { NAME_MAX_LENGTH } from "@/lib/names";
+import { siteConfig } from "@/lib/site";
 
 type OpenDialog = "rename" | "reimport" | "disconnect" | null;
 
@@ -83,7 +84,7 @@ export function AccountActions({ account }: { account: { id: string; name: strin
         description={
           <>
             <p>
-              Its subscriptions, payments and MRR history are deleted from SaaS Monitor, and it
+              Its subscriptions, payments and MRR history are deleted from {siteConfig.name}, and it
               disappears from your screens.
             </p>
             <p>

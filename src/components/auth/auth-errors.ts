@@ -37,5 +37,5 @@ export function authErrorMessage(
 export function socialErrorMessage(code: string): string {
   return code === "unable_to_create_user" || code === "signup_disabled"
     ? SIGNUPS_CLOSED_MESSAGE
-    : "We couldn't sign you in with this provider. Please try again.";
+    : "We couldn’t sign you in with this provider. Please try again.";
 }

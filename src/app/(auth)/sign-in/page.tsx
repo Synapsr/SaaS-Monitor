@@ -5,6 +5,7 @@ import { socialErrorMessage } from "@/components/auth/auth-errors";
 import { AuthCard, AuthHeader } from "@/components/auth/auth-shell";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { safeRedirectPath, withRedirect } from "@/lib/safe-redirect";
+import { siteConfig } from "@/lib/site";
 import { getSession } from "@/server/session";
 import { enabledSocialProviders } from "@/server/social-providers";
 
@@ -29,7 +30,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
         />
       </AuthCard>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        New to SaaS Monitor?{" "}
+        New to {siteConfig.name}?{" "}
         <Link
           href={withRedirect("/sign-up", next)}
           className="font-medium text-foreground underline-offset-4 hover:underline"

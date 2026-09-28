@@ -21,7 +21,7 @@ export async function createUserWithWorkspace(name = "Ada Lovelace") {
     .values({ id: userId, name, email: `${userId}@example.com`, createdAt: now, updatedAt: now });
   await db()
     .insert(organizations)
-    .values({ id: workspaceId, name: `${name}'s workspace`, slug: workspaceId, createdAt: now });
+    .values({ id: workspaceId, name: `${name}’s workspace`, slug: workspaceId, createdAt: now });
   await db().insert(members).values({
     id: crypto.randomUUID(),
     organizationId: workspaceId,
