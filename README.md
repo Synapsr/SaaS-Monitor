@@ -32,12 +32,14 @@ when a payment lands, and confetti flies when you cross $10K MRR.
 
 ## Features
 
-- **Live metrics**: MRR, ARR, 30-day growth, revenue today and this month, customers, net new MRR,
-  and a feed of every payment, upgrade and churn.
+- **Live metrics**: MRR, or ARR if that's how you count, with its 30-day growth; revenue today and
+  this month, customers, net new MRR, and a feed of every payment, upgrade and churn.
+- **A history chart** over the last 30 days, 90 days, 12 months or all time, with your next goal on
+  its horizon.
 - **Sounds for every event**: payments, MRR up, MRR down and milestones, in three packs (cash
   register, chime, arcade) synthesized in the browser.
-- **Celebrations and goals**: confetti, a full-screen moment for each milestone ($1K, $10K MRR…) or
-  your own goal, with the date you'll reach it at your current pace.
+- **Celebrations and goals**: confetti, a full-screen moment for each milestone ($1K, $10K MRR…,
+  $1M ARR) or your own goal, with the date you'll reach it at your current pace.
 - **Made for the wall**: scales from a 720p monitor to a 4K TV and portrait screens, never sleeps,
   recovers from network outages, reloads itself after an update, protects OLED panels.
 - **Dead simple settings** with a live preview, and a "send a test celebration" button to check
@@ -55,7 +57,7 @@ when a payment lands, and confetti flies when you cross $10K MRR.
 
 Start the app locally (see [Development](#development)) and open
 <http://localhost:3000/d/demo>: a screen fed by a simulated SaaS, where a sale lands every few
-seconds. Add `?accent=violet&sound=arcade&range=12m` to try other settings.
+seconds. Add `?accent=violet&sound=arcade&range=all&metric=arr` to try other settings.
 
 ## Self-hosting
 

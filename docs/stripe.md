@@ -41,9 +41,10 @@ Small accounts take a few seconds, large ones a few minutes; the dashboard shows
 screens display an "importing" state meanwhile.
 
 Stripe doesn't keep a history of past subscription changes, so the MRR chart before the import is
-reconstructed from each subscription's start, end and current amount. From then on, every change
-is recorded as it happens. Re-importing an account (from its menu) starts over: the changes
-recorded since it was connected are lost.
+reconstructed from each subscription's start, end and current amount; an "All time" chart starts
+with the first subscription that paid. From then on, every change is recorded as it happens.
+Re-importing an account (from its menu) starts over: the changes recorded since it was connected
+are lost.
 
 ## How MRR is computed
 
@@ -68,6 +69,10 @@ Every change of a subscription's MRR is recorded as a movement: **new** (it star
 **reactivation** (it pays again after stopping). Net new MRR adds up this month's movements. A
 _new customer_ paid nothing when the month began; a customer adding a second subscription is not
 one.
+
+ARR is twelve times MRR. A screen can show it as its main metric: its headline, chart, goal,
+milestones, net new ARR and subscription changes are then twelve times larger, while payments and
+revenue stay what customers paid.
 
 Some limits to keep in mind:
 
