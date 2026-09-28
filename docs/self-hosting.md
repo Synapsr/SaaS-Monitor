@@ -54,7 +54,7 @@ same office. Put it behind HTTPS with a domain to:
 - open screens from anywhere,
 - get **instant updates**: Stripe can only send webhooks to a public HTTPS URL. Without them,
   SaaS Monitor checks Stripe periodically, at a pace that respects Stripe's API read allowance
-  (every few minutes for small accounts).
+  (about every 17 minutes for small accounts, see [Connect Stripe](stripe.md#instant-updates)).
 
 Any reverse proxy works. With [Caddy](https://caddyserver.com), which obtains certificates
 automatically:
