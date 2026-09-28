@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an idea to make SaaS Monitor more useful or more motivating.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
