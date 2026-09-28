@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { DemoDisplay } from "@/components/display/demo-display";
-import { parseDemoOptions } from "@/lib/display/demo";
+import { parseDemoOptions } from "@/lib/display/demo/options";
 
 export const metadata: Metadata = {
   title: "Live demo",

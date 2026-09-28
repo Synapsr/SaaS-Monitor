@@ -2,7 +2,7 @@
 
 import { Display } from "@/components/display/display";
 import { useDemoSimulation } from "@/hooks/use-demo-simulation";
-import type { DemoOptions } from "@/lib/display/demo";
+import type { DemoOptions } from "@/lib/display/demo/options";
 
 interface DemoDisplayProps {
   options: DemoOptions;

@@ -1,12 +1,16 @@
-import { BUILD_ID } from "@/lib/build-id";
+import { addDays, calendarDay, displayCalendar, monthOf } from "@/lib/display/calendar";
 import {
-  addDays,
-  calendarDay,
-  chartDays,
-  daysInRange,
-  displayCalendar,
-  monthOf,
-} from "@/lib/display/calendar";
+  AVERAGE_PRICE,
+  BUSINESS_NAME,
+  COMPANIES,
+  COUNTRIES,
+  DEMO_CURRENCY,
+  DEMO_GOAL,
+  PLAN_WEIGHTS,
+  PLANS,
+  TEAM_PLAN,
+} from "@/lib/display/demo/business";
+import type { DemoOptions } from "@/lib/display/demo/options";
 import {
   createRandom,
   pick,
@@ -16,150 +20,18 @@ import {
   randomInt,
   type Random,
 } from "@/lib/display/random";
-import type {
-  DisplayMetrics,
-  DisplayState,
-  FeedItem,
-  MrrMovementKind,
-  SeriesPoint,
-} from "@/lib/display/types";
+import type { DisplayMetrics, FeedItem, MrrMovementKind } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 import { toMinorUnits } from "@/lib/money";
-import {
-  ACCENTS,
-  CHART_RANGES,
-  defaultScreenSettings,
-  isTimeZone,
-  SOUND_PACKS,
-  type Accent,
-  type ChartRange,
-  type SoundPack,
-} from "@/lib/screens/settings";
 
-/**
- * The demo screen of a fictional SaaS, "Acme Analytics": a year of history ending just below a
- * $15k goal, then new activity every few seconds. Everything derives from one seeded event log,
- * so every number agrees with the others and the server and the browser render the same thing.
+/*
+ * The demo's world: a year of history ending just below the goal, then new activity every few
+ * seconds. Everything derives from one seeded event log, so every number agrees with the others
+ * and the server and the browser build the same world.
  */
 
 /** Picked so that the history ends about $300 below the goal, crossed a minute after loading. */
 const DEMO_SEED = 70;
-const SCREEN_NAME = "Acme Analytics";
-const DEMO_CURRENCY = "usd";
-/** The goal the demo crosses within its first minutes, in major units like `settings.goal`. */
-export const DEMO_GOAL = 15_000;
-
-export interface DemoOptions {
-  accent: Accent;
-  /** `null` mutes the demo (`?sound=off`). */
-  soundPack: SoundPack | null;
-  showCustomerNames: boolean;
-  chartRange: ChartRange;
-  timeZone: string;
-}
-
-type SearchParams = Record<string, string | string[] | undefined>;
-
-/** Reads `/d/demo?accent=violet&sound=arcade&names=1&range=12m&tz=Europe/Paris&preview=1`. */
-export function parseDemoOptions(params: SearchParams): { options: DemoOptions; preview: boolean } {
-  const read = (key: string) => {
-    const value = params[key];
-    return Array.isArray(value) ? value[0] : value;
-  };
-  const oneOf = <T extends string>(values: readonly T[], value: string | undefined) =>
-    values.find((candidate) => candidate === value);
-
-  const sound = read("sound");
-  const timeZone = read("tz");
-  return {
-    options: {
-      accent: oneOf(ACCENTS, read("accent")) ?? "emerald",
-      soundPack: sound === "off" ? null : (oneOf(SOUND_PACKS, sound) ?? "register"),
-      showCustomerNames: read("names") === "1",
-      chartRange: oneOf(CHART_RANGES, read("range")) ?? "90d",
-      timeZone: timeZone && isTimeZone(timeZone) ? timeZone : "America/New_York",
-    },
-    preview: read("preview") === "1",
-  };
-}
-
-const PLANS = [
-  { name: "Starter", price: 2_900 },
-  { name: "Pro", price: 7_900 },
-  { name: "Team", price: 19_900 },
-  { name: "Scale", price: 49_000 },
-] as const;
-const PLAN_WEIGHTS = [0.42, 0.4, 0.14, 0.04];
-const TEAM_PLAN = 2;
-const AVERAGE_PRICE = PLANS.reduce((sum, plan, index) => sum + plan.price * PLAN_WEIGHTS[index], 0);
-
-const COUNTRIES = [
-  ["US", 30],
-  ["GB", 10],
-  ["DE", 9],
-  ["FR", 8],
-  ["CA", 6],
-  ["NL", 5],
-  ["AU", 4],
-  ["SE", 3],
-  ["ES", 3],
-  ["IT", 3],
-  ["BR", 3],
-  ["IN", 3],
-  ["JP", 2],
-  ["CH", 2],
-  ["IE", 2],
-  ["PL", 2],
-  ["DK", 1],
-  ["SG", 1],
-  ["NZ", 1],
-  ["MX", 1],
-] as const;
-
-const COMPANIES = [
-  "Brightwave",
-  "Kestrel Data",
-  "Fernhill Studio",
-  "Oakline Legal",
-  "Nimbus Travel",
-  "Juniper Health",
-  "Atlas Robotics",
-  "Lumen & Co",
-  "Pinecrest Media",
-  "Quill & Ink",
-  "Tidewater Labs",
-  "Copperleaf",
-  "Bluebird Dental",
-  "Northstar Fitness",
-  "Meridian Freight",
-  "Saltbox Coffee",
-  "Wildflower Events",
-  "Ironwood Capital",
-  "Mosaic Learning",
-  "Clearwater Clinics",
-  "Redwood Realty",
-  "Maple & Main",
-  "Foxglove Design",
-  "Granite Peak",
-  "Sundial Solar",
-  "Brook & Stone",
-  "Aurora Bikes",
-  "Cobalt Games",
-  "Driftwood Hotels",
-  "Emberly Bakery",
-  "Fable Books",
-  "Glasshouse Studio",
-  "Hearth Homes",
-  "Kindred Care",
-  "Lighthouse Schools",
-  "Marigold Florist",
-  "Nomad Coworking",
-  "Odyssey Tours",
-  "Riverbend Farms",
-  "Summit Physio",
-  "Trellis Garden",
-  "Velvet Audio",
-] as const;
 
 /** MRR the history steers towards (days before now → cents): a good year, a great quarter. */
 const TRAJECTORY: readonly (readonly [number, number])[] = [
@@ -235,7 +107,8 @@ function toDraft(world: DemoWorld): Draft {
   };
 }
 
-const emptyMonth: MonthMovements = {
+/** A month without MRR movements. */
+export const EMPTY_MONTH: MonthMovements = {
   new: 0,
   expansion: 0,
   reactivation: 0,
@@ -268,7 +141,7 @@ function record(
     customerName: customer.name,
     country: customer.country,
     planName: PLANS[customer.plan].name,
-    accountName: SCREEN_NAME,
+    accountName: BUSINESS_NAME,
   });
   if (draft.feed.length > FEED_SIZE) draft.feed.length = FEED_SIZE;
 }
@@ -290,7 +163,7 @@ function recordMovement(
 ) {
   const day = dayOf(draft, at);
   const month = monthOf(day);
-  const movements = draft.movementsByMonth[month] ?? emptyMonth;
+  const movements = draft.movementsByMonth[month] ?? EMPTY_MONTH;
   draft.movementsByMonth[month] = {
     ...movements,
     [kind]: movements[kind] + amount,
@@ -534,7 +407,7 @@ function forgetOldDays(draft: Draft, today: string) {
 }
 
 /** MRR at the end of `day`: the last recorded change on or before it. */
-function mrrAt(mrrByDay: Readonly<Record<string, number>>, day: string): number {
+export function mrrAt(mrrByDay: Readonly<Record<string, number>>, day: string): number {
   let latest: string | undefined;
   for (const candidate of Object.keys(mrrByDay)) {
     if (candidate <= day && (latest === undefined || candidate > latest)) latest = candidate;
@@ -542,72 +415,4 @@ function mrrAt(mrrByDay: Readonly<Record<string, number>>, day: string): number 
   if (latest !== undefined) return mrrByDay[latest];
   const first = Object.keys(mrrByDay).sort()[0];
   return first === undefined ? 0 : mrrByDay[first];
-}
-
-function mrrSeries(mrrByDay: Readonly<Record<string, number>>, days: readonly string[]) {
-  let value = mrrAt(mrrByDay, days[0]);
-  return days.map((date): SeriesPoint => {
-    value = mrrByDay[date] ?? value;
-    return { date, value };
-  });
-}
-
-/** The `DisplayState` a real screen showing this world would receive at `now`. */
-export function demoState(world: DemoWorld, now: Date): DisplayState {
-  const { options } = world;
-  const today = calendarDay(now, options.timeZone);
-  const calendar = displayCalendar(today);
-  const revenueOn = (day: string) => world.revenueByDay[day] ?? 0;
-  const revenueBetween = (from: string, to: string) =>
-    daysInRange(from, to).reduce((sum, day) => sum + revenueOn(day), 0);
-  const customers = world.customers.length;
-
-  return {
-    version: BUILD_ID,
-    generatedAt: now.toISOString(),
-    screen: {
-      name: SCREEN_NAME,
-      settings: {
-        ...defaultScreenSettings,
-        currency: DEMO_CURRENCY,
-        timeZone: options.timeZone,
-        goal: DEMO_GOAL,
-        sound: {
-          ...defaultScreenSettings.sound,
-          enabled: options.soundPack !== null,
-          pack: options.soundPack ?? defaultScreenSettings.sound.pack,
-        },
-        showCustomerNames: options.showCustomerNames,
-        chartRange: options.chartRange,
-        accent: options.accent,
-      },
-    },
-    currency: DEMO_CURRENCY,
-    status: "ready",
-    accounts: [{ id: "demo", name: SCREEN_NAME, status: "ready", livemode: true }],
-    metrics: {
-      mrr: world.mrr,
-      mrr30DaysAgo: mrrAt(world.mrrByDay, calendar.thirtyDaysAgo),
-      arr: world.mrr * 12,
-      activeCustomers: customers,
-      trialingSubscriptions: world.trials,
-      arpu: customers > 0 ? Math.round(world.mrr / customers) : 0,
-      revenue: {
-        today: revenueOn(today),
-        yesterday: revenueOn(calendar.yesterday),
-        monthToDate: revenueBetween(calendar.monthStart, today),
-        previousMonthToDate: revenueBetween(
-          calendar.previousMonthStart,
-          calendar.previousMonthCutoff,
-        ),
-      },
-      thisMonth: world.movementsByMonth[monthOf(today)] ?? emptyMonth,
-    },
-    series: { mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange)) },
-    feed: world.feed.map((item) =>
-      options.showCustomerNames ? item : { ...item, customerName: null },
-    ),
-    testEvent: null,
-    warnings: [],
-  };
 }

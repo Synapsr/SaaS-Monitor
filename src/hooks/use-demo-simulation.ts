@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  advanceDemo,
-  createDemoWorld,
-  demoState,
-  nextDemoDelay,
-  type DemoOptions,
-} from "@/lib/display/demo";
+import type { DemoOptions } from "@/lib/display/demo/options";
+import { advanceDemo, createDemoWorld, nextDemoDelay } from "@/lib/display/demo/simulation";
+import { demoState } from "@/lib/display/demo/state";
 import type { DisplayState } from "@/lib/display/types";
 
 /**

@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { addDays, calendarDay } from "@/lib/display/calendar";
+import { DEMO_CURRENCY, DEMO_GOAL } from "@/lib/display/demo/business";
+import { parseDemoOptions } from "@/lib/display/demo/options";
 import {
   advanceDemo,
   createDemoWorld,
-  DEMO_GOAL,
-  demoState,
   nextDemoDelay,
-  parseDemoOptions,
   type DemoWorld,
-} from "@/lib/display/demo";
+} from "@/lib/display/demo/simulation";
+import { demoState } from "@/lib/display/demo/state";
 import type { DisplayState } from "@/lib/display/types";
 import { toMinorUnits } from "@/lib/money";
 
 const { options } = parseDemoOptions({});
 /** The demo's goal in cents, like every amount of its state. */
-const GOAL = toMinorUnits(DEMO_GOAL, "usd");
+const GOAL = toMinorUnits(DEMO_GOAL, DEMO_CURRENCY);
 const now = new Date("2026-09-28T14:32:00Z");
 
 /** Runs the live simulation for `events` events, returning every state a screen would see. */
@@ -58,41 +58,6 @@ function expectConsistent(state: DisplayState) {
   expect(times).toEqual([...times].sort((a, b) => b - a));
   expect(new Set(state.feed.map((item) => item.id)).size).toBe(state.feed.length);
 }
-
-describe("demo options", () => {
-  it("reads the query parameters, ignoring unknown values", () => {
-    expect(
-      parseDemoOptions({
-        accent: "violet",
-        sound: "arcade",
-        names: "1",
-        range: "12m",
-        tz: "Europe/Paris",
-        preview: "1",
-      }),
-    ).toEqual({
-      options: {
-        accent: "violet",
-        soundPack: "arcade",
-        showCustomerNames: true,
-        chartRange: "12m",
-        timeZone: "Europe/Paris",
-      },
-      preview: true,
-    });
-    expect(parseDemoOptions({ accent: "pink", range: "5y", tz: "Mars/Olympus" })).toEqual({
-      options: {
-        accent: "emerald",
-        soundPack: "register",
-        showCustomerNames: false,
-        chartRange: "90d",
-        timeZone: "America/New_York",
-      },
-      preview: false,
-    });
-    expect(parseDemoOptions({ sound: "off" }).options.soundPack).toBeNull();
-  });
-});
 
 describe("demo history", () => {
   const world = createDemoWorld(options, now);
