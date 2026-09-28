@@ -71,23 +71,11 @@ export async function getDisplayStateByToken(
     [...totals, ...movements, ...revenue, ...activity].map((row) => row.currency),
     { now, source: rateSource },
   );
-  /** Daily amounts in the screen currency, without those that cannot be converted. */
-  const inScreenCurrency = <T extends { amount: number; currency: string; day: string }>(
-    rows: readonly T[],
-  ) =>
-    rows.flatMap((row) => {
-      const amount = converter.convert(row.amount, row.currency);
-      // A movement dated in the future (clock drift) counts today.
-      const day = row.day > calendar.today ? calendar.today : row.day;
-      return amount === null ? [] : [{ ...row, day, amount }];
-    });
-
   const mrr = totals.reduce(
     (total, row) => total + (converter.convert(row.mrr, row.currency) ?? 0),
     0,
   );
-
-  const mrrChanges = inScreenCurrency(movements);
+  const mrrChanges = convertDaily(movements, converter, calendar.today);
   const history = new Map(
     mrrHistory(mrr, mrrChanges, daysInRange(historyStart, calendar.today)).map((point) => [
       point.date,
@@ -110,7 +98,7 @@ export async function getDisplayStateByToken(
       activeCustomers: payingCustomers,
       trialingSubscriptions: totals.reduce((total, row) => total + row.trialing, 0),
       arpu: payingCustomers ? Math.round(mrr / payingCustomers) : 0,
-      revenue: revenueMetrics(inScreenCurrency(revenue), calendar),
+      revenue: revenueMetrics(convertDaily(revenue, converter, calendar.today), calendar),
       thisMonth: { ...movementTotals(mrrChanges, calendar.monthStart), newCustomers },
     },
     series: {
@@ -120,23 +108,48 @@ export async function getDisplayStateByToken(
       const item = toFeedItem(row, converter, settings, accountNames.get(row.accountId) ?? "");
       return item ? [item] : [];
     }),
-    testEvent:
-      screen.testEventAt && now.getTime() - screen.testEventAt.getTime() <= TEST_EVENT_TTL_MS
-        ? { id: screen.testEventAt.toISOString() }
-        : null,
-    warnings: [
-      ...[...converter.unavailable].map(
-        (code) =>
-          `Amounts in ${code.toUpperCase()} are left out: no exchange rate is available right now.`,
-      ),
-      ...accounts
-        .filter((account) => account.status === "error")
-        .map(
-          (account) =>
-            `${account.name}: ${account.lastError ?? "this Stripe account needs attention."}`,
-        ),
-    ],
+    testEvent: recentTestEvent(screen.testEventAt, now),
+    warnings: displayWarnings(converter.unavailable, accounts),
   };
+}
+
+/** Daily amounts in the screen currency, without those that cannot be converted. */
+function convertDaily<T extends { amount: number; currency: string; day: string }>(
+  rows: readonly T[],
+  converter: CurrencyConverter,
+  today: string,
+): T[] {
+  return rows.flatMap((row) => {
+    const amount = converter.convert(row.amount, row.currency);
+    // A movement dated in the future (clock drift) counts today.
+    const day = row.day > today ? today : row.day;
+    return amount === null ? [] : [{ ...row, day, amount }];
+  });
+}
+
+/** The test celebration displays should play, while it is recent. */
+function recentTestEvent(testEventAt: Date | null, now: Date): DisplayState["testEvent"] {
+  if (!testEventAt || now.getTime() - testEventAt.getTime() > TEST_EVENT_TTL_MS) return null;
+  return { id: testEventAt.toISOString() };
+}
+
+/** Issues worth a discreet line on the screen: missing exchange rates, failing accounts. */
+function displayWarnings(
+  unconvertedCurrencies: ReadonlySet<string>,
+  accounts: readonly { name: string; status: string; lastError: string | null }[],
+): string[] {
+  return [
+    ...[...unconvertedCurrencies].map(
+      (code) =>
+        `Amounts in ${code.toUpperCase()} are left out: no exchange rate is available right now.`,
+    ),
+    ...accounts
+      .filter((account) => account.status === "error")
+      .map(
+        (account) =>
+          `${account.name}: ${account.lastError ?? "this Stripe account needs attention."}`,
+      ),
+  ];
 }
 
 function toFeedItem(
