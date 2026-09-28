@@ -25,7 +25,10 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 
 `pnpm test` runs two Vitest projects: `unit` (pure logic, `*.test.ts`) and `db` (integration
 tests against PostgreSQL, `*.db.test.ts`, using the `saas_monitor_test` database, which is created
-and migrated automatically). Set `TEST_DATABASE_URL` to use another database.
+and migrated automatically). The tests empty that database between cases: give each checkout of
+the repository (another clone, a worktree) its own with `TEST_DATABASE_URL`, e.g.
+`postgres://saas_monitor:saas_monitor@127.0.0.1:5433/saas_monitor_test_2`, so that test runs
+never collide. When stripe-mock listens on another port, set `STRIPE_MOCK_PORT` too.
 
 ## Guidelines
 

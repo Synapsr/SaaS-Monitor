@@ -8,7 +8,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { cn } from "@/lib/utils";
 
 /** Masked field (password, API key) with a button to check what was typed or pasted. */
 export function SecretInput({
@@ -22,7 +21,7 @@ export function SecretInput({
   const [visible, setVisible] = useState(false);
   return (
     <InputGroup className="h-9">
-      <InputGroupInput type={visible ? "text" : "password"} className={cn(className)} {...props} />
+      <InputGroupInput type={visible ? "text" : "password"} className={className} {...props} />
       <InputGroupAddon align="inline-end">
         <InputGroupButton
           size="icon-xs"
