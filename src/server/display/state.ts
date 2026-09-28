@@ -2,12 +2,18 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { BUILD_ID } from "@/lib/build-id";
-import { calendarDay, chartDays, daysInRange, displayCalendar } from "@/lib/display/calendar";
+import {
+  calendarDay,
+  chartDays,
+  chartStart,
+  daysInRange,
+  displayCalendar,
+} from "@/lib/display/calendar";
 import type { DisplayState, FeedItem } from "@/lib/display/types";
 import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
-import { displayStatus, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
+import { displayStatus, firstDay, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
 import {
   findScreen,
   latestActivity,
@@ -53,19 +59,22 @@ export async function getDisplayStateByToken(
   if (!screen) return null;
 
   const settings = parseScreenSettings(screen.settings);
-  const { currency, timeZone } = settings;
+  const { currency, timeZone, chartRange } = settings;
   const accounts = await linkedAccounts(screen.id);
   const accountIds = accounts.map((account) => account.id);
   const calendar = displayCalendar(calendarDay(now, timeZone));
-  const chart = chartDays(calendar.today, settings.chartRange);
-  // MRR history covers the chart and "30 days ago"; revenue this month and the previous one.
-  const historyStart = earliest(chart[0], calendar.thirtyDaysAgo);
+  // MRR history covers the chart and "30 days ago": all time reads the whole ledger, since the
+  // first movement starts the chart. Revenue covers this month and the previous one.
+  const allTime = chartRange === "all";
+  const movementsFrom = allTime
+    ? null
+    : earliest(chartStart(calendar.today, chartRange), calendar.thirtyDaysAgo);
 
   const [totals, payingCustomers, movements, revenue, newCustomers, activity] = accountIds.length
     ? await Promise.all([
         subscriptionTotals(accountIds),
         payingCustomerCount(accountIds),
-        movementsByDay(accountIds, timeZone, historyStart),
+        movementsByDay(accountIds, timeZone, movementsFrom),
         revenueByDay(accountIds, timeZone, calendar.previousMonthStart),
         newCustomerCount(accountIds, timeZone, calendar.monthStart),
         latestActivity(accountIds, FEED_LENGTH),
@@ -82,6 +91,8 @@ export async function getDisplayStateByToken(
     0,
   );
   const mrrChanges = convertDaily(movements, converter, calendar.today);
+  const chart = chartDays(calendar.today, chartRange, allTime ? firstDay(mrrChanges) : null);
+  const historyStart = earliest(chart[0], calendar.thirtyDaysAgo);
   const history = new Map(
     mrrHistory(mrr, mrrChanges, daysInRange(historyStart, calendar.today)).map((point) => [
       point.date,

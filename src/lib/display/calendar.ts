@@ -92,17 +92,51 @@ export function displayCalendar(today: string): DisplayCalendar {
   };
 }
 
-const CHART_RANGE_DAYS: Record<ChartRange, number> = { "30d": 30, "90d": 90, "12m": 365 };
+/** Days of the chart ranges of a fixed length: all time has none. */
+const CHART_RANGE_DAYS: Record<Exclude<ChartRange, "all">, number> = {
+  "30d": 30,
+  "90d": 90,
+  "12m": 365,
+};
 
 /**
- * First day of the MRR chart: 30, 90 or 365 days before `last`. The chart starts on the day its
- * change is measured from, like the growth badge's "in 30 days".
+ * Most points of a chart: about a year of days. Longer histories are sampled, so that a state and
+ * its chart stay light however old the business is.
  */
-export function chartStart(last: string, range: ChartRange): string {
-  return addDays(last, -CHART_RANGE_DAYS[range]);
+const MAX_CHART_POINTS = 400;
+
+/**
+ * First day of the MRR chart ending on `last`: 30, 90 or 365 days before it, the day its change is
+ * measured from, like the growth badge's "in 30 days". All time starts on `historyStart`, the day
+ * of the first MRR movement, or like the 30-day chart without any.
+ */
+export function chartStart(
+  last: string,
+  range: ChartRange,
+  historyStart: string | null = null,
+): string {
+  if (range !== "all") return addDays(last, -CHART_RANGE_DAYS[range]);
+  return historyStart !== null && historyStart <= last ? historyStart : chartStart(last, "30d");
 }
 
-/** Days of the MRR chart ending on `today`, oldest first. */
-export function chartDays(today: string, range: ChartRange): string[] {
-  return daysInRange(chartStart(today, range), today);
+/**
+ * Days of the MRR chart ending on `today`, oldest first: every day up to about a year. A longer
+ * history keeps the last day of each week (Sunday), or of each month past seven years or so, and
+ * always its first day and today.
+ */
+export function chartDays(
+  today: string,
+  range: ChartRange,
+  historyStart: string | null = null,
+): string[] {
+  const days = daysInRange(chartStart(today, range, historyStart), today);
+  if (days.length <= MAX_CHART_POINTS) return days;
+  const weekEnds = sampleDays(days, (day) => dayToUtcDate(day).getUTCDay() === 0);
+  if (weekEnds.length <= MAX_CHART_POINTS) return weekEnds;
+  return sampleDays(days, (day) => addDays(day, 1).endsWith("-01"));
+}
+
+/** The first and last of `days`, and those in between that end a week or a month. */
+function sampleDays(days: readonly string[], endsPeriod: (day: string) => boolean): string[] {
+  return days.filter((day, index) => index === 0 || index === days.length - 1 || endsPeriod(day));
 }

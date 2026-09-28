@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { displayCalendar } from "@/lib/display/calendar";
-import { displayStatus, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
+import { displayStatus, firstDay, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
 
 describe("MRR history", () => {
+  it("starts on the day of the first change", () => {
+    expect(
+      firstDay([
+        { day: "2026-03-14", amount: 2000 },
+        { day: "2024-11-02", amount: 500 },
+        { day: "2025-01-20", amount: -500 },
+      ]),
+    ).toBe("2024-11-02");
+    expect(firstDay([])).toBeNull();
+  });
+
   it("walks back from the current MRR, one day of changes at a time", () => {
     const history = mrrHistory(
       8000,

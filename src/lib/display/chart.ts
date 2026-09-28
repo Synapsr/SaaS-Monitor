@@ -1,19 +1,38 @@
 import { scaleLinear, scaleUtc, type ScaleLinear, type ScaleTime } from "d3-scale";
 import { area, curveMonotoneX, line } from "d3-shape";
-import { utcDay, utcMonday, utcMonth, type TimeInterval } from "d3-time";
-import { dayToUtcDate } from "@/lib/display/calendar";
-import { formatChartDay } from "@/lib/display/time";
+import { utcDay, utcMonday, utcMonth, utcYear, type TimeInterval } from "d3-time";
+import { dayToUtcDate, daysBetween } from "@/lib/display/calendar";
+import { formatAxisDate, formatMonth, type AxisUnit } from "@/lib/display/time";
 import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
+import type { ChartRange } from "@/lib/screens/settings";
 
 /** The goal line is drawn when the target is this close above the highest value. */
 const HORIZON_REACH = 1.3;
 /** Width of a date label such as "Sep 27", in font sizes, with some air around it. */
 const DATE_LABEL_WIDTH = 5.5;
 const MAX_DATE_TICKS = 8;
-/** Candidate label spacings, densest first. Weeks start on Mondays so that gaps stay even. */
-const MONTH_INTERVALS = [1, 2, 3, 6].map((step) => utcMonth.every(step));
-const DAY_INTERVALS = [utcDay, utcMonday, utcMonday.every(2)];
+/**
+ * Candidate label spacings of each unit, densest first. Weeks start on Mondays so that gaps stay
+ * even, and years go by 1, 2, 5 or 10 so that labels stay round.
+ */
+const TICK_INTERVALS: Record<AxisUnit, (TimeInterval | null)[]> = {
+  day: [utcDay, utcMonday, utcMonday.every(2)],
+  month: [1, 2, 3, 6].map((step) => utcMonth.every(step)),
+  year: [1, 2, 5, 10].map((step) => utcYear.every(step)),
+};
+
+const RANGE_LABELS: Record<Exclude<ChartRange, "all">, string> = {
+  "30d": "last 30 days",
+  "90d": "last 90 days",
+  "12m": "last 12 months",
+};
+
+/** What a chart covers: "last 90 days", or all time from its first day: "since March 2025". */
+export function chartRangeLabel(range: ChartRange, firstDay: string | undefined): string {
+  if (range !== "all") return RANGE_LABELS[range];
+  return firstDay ? `since ${formatMonth(firstDay, { year: true })}` : "all time";
+}
 
 export interface ChartPoint {
   date: Date;
@@ -35,13 +54,11 @@ export interface MrrChartLayout {
 }
 
 interface LayoutOptions {
-  /** At least two points. */
+  /** At least two points, oldest first; a long history is sampled by week or month. */
   series: readonly SeriesPoint[];
   currency: string;
   /** Next goal or milestone, in minor units. */
   target: number;
-  /** Months label a long range, days a short one. */
-  monthly: boolean;
   width: number;
   height: number;
   /** Font size of the labels in pixels: ticks are spaced so that labels never collide. */
@@ -53,7 +70,6 @@ export function layoutMrrChart({
   series,
   currency,
   target,
-  monthly,
   width,
   height,
   fontSize,
@@ -86,9 +102,10 @@ export function layoutMrrChart({
     .y1((point) => y(point.value))
     .curve(curveMonotoneX);
 
-  const xTicks = dateTicks(x, monthly, fontSize).map((date) => ({
+  const unit = axisUnit(daysBetween(series[0].date, series[series.length - 1].date));
+  const xTicks = dateTicks(x, TICK_INTERVALS[unit], fontSize).map((date) => ({
     x: x(date),
-    label: formatChartDay(date.toISOString().slice(0, 10), monthly),
+    label: formatAxisDate(date.toISOString().slice(0, 10), unit),
   }));
   // Value labels need about three lines of room between them.
   const tickValues = y.ticks(Math.min(5, Math.max(2, Math.floor(height / (fontSize * 3.2)))));
@@ -114,6 +131,24 @@ export function layoutMrrChart({
 }
 
 /**
+ * Index of the point nearest to a horizontal position, e.g. the pointer's. Points are sorted by
+ * date but not evenly spaced when a long history is sampled.
+ */
+export function nearestPoint(
+  { points, x }: Pick<MrrChartLayout, "points" | "x">,
+  position: number,
+): number {
+  let before = 0;
+  let after = points.length - 1;
+  while (after - before > 1) {
+    const middle = Math.floor((before + after) / 2);
+    if (x(points[middle].date) <= position) before = middle;
+    else after = middle;
+  }
+  return position - x(points[before].date) <= x(points[after].date) - position ? before : after;
+}
+
+/**
  * Compact amounts with the fewest decimals that tell them apart: ticks $20K apart around $1M read
  * "$1.02M" and "$1.04M", not "$1M" twice.
  */
@@ -129,17 +164,28 @@ function valueLabels(values: readonly number[], currency: string): string[] {
 }
 
 /**
- * Round dates to label: month starts on long ranges, days or weeks on short ones, as many as fit
- * without labels colliding. Labels are centered on their date, so those that would stick out of
- * the plot are left out.
+ * What the time axis labels, from the number of days it spans: days or weeks over a month or two,
+ * months up to three years, then years, which read better than half-years by then.
  */
-function dateTicks(x: ScaleTime<number, number>, monthly: boolean, fontSize: number): Date[] {
+function axisUnit(days: number): AxisUnit {
+  if (days <= 62) return "day";
+  return days < 3 * 365 ? "month" : "year";
+}
+
+/**
+ * Round dates to label, from the densest `intervals` whose labels fit without colliding. Labels
+ * are centered on their date, so those that would stick out of the plot are left out.
+ */
+function dateTicks(
+  x: ScaleTime<number, number>,
+  intervals: readonly (TimeInterval | null)[],
+  fontSize: number,
+): Date[] {
   const [left, right] = x.range();
   const labelWidth = fontSize * DATE_LABEL_WIDTH;
   // A calm axis: a handful of dates is enough to read a trend from across the room.
   const fitting = Math.min(MAX_DATE_TICKS, Math.max(2, Math.floor((right - left) / labelWidth)));
   const [first, last] = x.domain();
-  const intervals: (TimeInterval | null)[] = monthly ? MONTH_INTERVALS : DAY_INTERVALS;
   const candidates = intervals.flatMap((interval) =>
     interval ? [interval.range(first, new Date(last.getTime() + 1))] : [],
   );

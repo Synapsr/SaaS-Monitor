@@ -23,11 +23,15 @@ export function isDisplayState(value: unknown): value is DisplayState {
   );
 }
 
-/** The points of `series` a chart of `range` shows, like the server would have sent them. */
+/**
+ * The points of `series` a chart of `range` shows, like the server would have sent them. All time
+ * shows them all: the display knows no older history. Points of a series sampled by week or month
+ * stay so until the server sends the range's own.
+ */
 export function seriesInRange(series: readonly SeriesPoint[], range: ChartRange): SeriesPoint[] {
   const last = series.at(-1);
   if (!last) return [];
-  const first = chartStart(last.date, range);
+  const first = chartStart(last.date, range, series[0].date);
   return series.filter((point) => point.date >= first);
 }
 

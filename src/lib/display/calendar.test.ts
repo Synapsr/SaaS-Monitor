@@ -4,6 +4,7 @@ import {
   calendarDay,
   chartDays,
   chartStart,
+  dayToUtcDate,
   daysBetween,
   daysInRange,
   displayCalendar,
@@ -56,12 +57,50 @@ describe("display calendar", () => {
 });
 
 describe("chart days", () => {
-  it("start on the day the chart's change is measured from", () => {
-    expect(chartStart("2026-03-15", "30d")).toBe(displayCalendar("2026-03-15").thirtyDaysAgo);
-    expect(chartStart("2026-03-15", "12m")).toBe("2025-03-15");
+  const today = "2026-03-15";
 
-    const days = chartDays("2026-03-15", "90d");
+  it("start on the day the chart's change is measured from", () => {
+    expect(chartStart(today, "30d")).toBe(displayCalendar(today).thirtyDaysAgo);
+    expect(chartStart(today, "12m")).toBe("2025-03-15");
+
+    const days = chartDays(today, "90d");
     expect(days).toHaveLength(91);
-    expect(days.at(-1)).toBe("2026-03-15");
+    expect(days.at(-1)).toBe(today);
+  });
+
+  it("start all time with the history, or like the 30-day chart without any", () => {
+    expect(chartStart(today, "all", "2023-11-02")).toBe("2023-11-02");
+    expect(chartStart(today, "all", today)).toBe(today);
+    expect(chartStart(today, "all", null)).toBe(chartStart(today, "30d"));
+    expect(chartDays(today, "all", null)).toEqual(chartDays(today, "30d"));
+  });
+
+  it("keep every day up to 400 of them, about a year", () => {
+    expect(chartDays(today, "12m")).toHaveLength(366);
+    const days = chartDays(today, "all", addDays(today, -399));
+    expect(days).toEqual(daysInRange(addDays(today, -399), today));
+  });
+
+  it("keep the end of each week of a longer history, from its first day to today", () => {
+    // A Wednesday, almost three years ago.
+    const days = chartDays(today, "all", "2023-05-10");
+
+    expect(days.slice(0, 3)).toEqual(["2023-05-10", "2023-05-14", "2023-05-21"]);
+    expect(days.slice(-2)).toEqual(["2026-03-08", today]);
+    const sundays = days.slice(1, -1);
+    expect(sundays.every((day) => dayToUtcDate(day).getUTCDay() === 0)).toBe(true);
+    expect(sundays.slice(1).every((day, index) => daysBetween(sundays[index], day) === 7)).toBe(
+      true,
+    );
+    expect(days).toHaveLength(2 + 148);
+  });
+
+  it("keep the end of each month of a history of many years", () => {
+    const days = chartDays(today, "all", "2016-07-20");
+
+    expect(days.slice(0, 3)).toEqual(["2016-07-20", "2016-07-31", "2016-08-31"]);
+    expect(days.slice(-3)).toEqual(["2026-01-31", "2026-02-28", today]);
+    // The month ends from July 2016 to February 2026.
+    expect(days).toHaveLength(2 + 116);
   });
 });

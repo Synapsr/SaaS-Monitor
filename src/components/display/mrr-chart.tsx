@@ -2,7 +2,7 @@ import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useMemo, useState, type PointerEvent } from "react";
 import { useElementSize } from "@/hooks/use-element-size";
-import { layoutMrrChart } from "@/lib/display/chart";
+import { chartRangeLabel, layoutMrrChart, nearestPoint } from "@/lib/display/chart";
 import { formatAmount, formatPercent, percentChange } from "@/lib/display/format";
 import type { RecurringMetric } from "@/lib/display/metric";
 import { formatChartDay } from "@/lib/display/time";
@@ -10,12 +10,6 @@ import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 import type { ChartRange } from "@/lib/screens/settings";
 import { cn } from "@/lib/utils";
-
-const RANGE_LABELS: Record<ChartRange, string> = {
-  "30d": "last 30 days",
-  "90d": "last 90 days",
-  "12m": "last 12 months",
-};
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
@@ -49,15 +43,17 @@ export function MrrChart({
   );
   const first = series[0];
   const last = series.at(-1);
+  const rangeLabel = chartRangeLabel(range, first?.date);
   const change = first && last ? last.value - first.value : 0;
-  const ratio = first && last ? percentChange(last.value, first.value) : null;
+  // Since the very first day, a percentage mostly tells how small that day was.
+  const ratio = first && last && range !== "all" ? percentChange(last.value, first.value) : null;
   const Trend = change >= 0 ? TrendingUpIcon : TrendingDownIcon;
 
   return (
     <figure className={cn("flex min-h-0 flex-col gap-3", className)}>
       <figcaption className="flex items-baseline justify-between gap-6 text-lg">
         <span className="text-(--ink-2)">
-          {recurring.label} <span className="text-(--ink-3)">· {RANGE_LABELS[range]}</span>
+          {recurring.label} <span className="text-(--ink-3)">· {rangeLabel}</span>
         </span>
         {series.length > 1 && (
           <span className="flex items-center gap-2 text-(--ink-2) tabular-nums">
@@ -82,9 +78,8 @@ export function MrrChart({
           size.height > 0 && (
             <Plot
               series={series}
-              label={recurring.label}
+              title={`${recurring.label}, ${rangeLabel}`}
               currency={currency}
-              range={range}
               target={target}
               {...size}
             />
@@ -95,46 +90,40 @@ export function MrrChart({
   );
 }
 
-interface PlotProps extends Omit<MrrChartProps, "recurring" | "className"> {
-  /** Values in the screen's metric, named by `label`. */
-  label: RecurringMetric["label"];
+interface PlotProps {
+  /** Values in the screen's metric. */
+  series: SeriesPoint[];
+  /** What the curve shows, for screen readers: "ARR, since March 2025". */
+  title: string;
+  currency: string;
+  target: number;
   width: number;
   height: number;
   fontSize: number;
 }
 
-function Plot({ series, label, currency, range, target, width, height, fontSize }: PlotProps) {
+function Plot({ series, title, currency, target, width, height, fontSize }: PlotProps) {
   const gradientId = useId();
   const reducedMotion = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
   const chart = useMemo(
-    () =>
-      layoutMrrChart({
-        series,
-        currency,
-        target,
-        monthly: range !== "30d",
-        width,
-        height,
-        fontSize,
-      }),
-    [series, currency, range, target, width, height, fontSize],
+    () => layoutMrrChart({ series, currency, target, width, height, fontSize }),
+    [series, currency, target, width, height, fontSize],
   );
 
   const start = chart.points[0];
   const end = chart.points[chart.points.length - 1];
   const draw = reducedMotion ? { duration: 0 } : { duration: 1.6, ease: EASE_OUT };
   const morph = reducedMotion ? { duration: 0 } : { duration: 1.1, ease: EASE_OUT };
-  const summary = `${label} over the ${RANGE_LABELS[range]}: from ${formatMoney(start.value, currency)} to ${formatMoney(end.value, currency)}.`;
+  const summary = `${title}: from ${formatMoney(start.value, currency)} to ${formatMoney(end.value, currency)}.`;
 
-  // The crosshair snaps to the nearest day: readers aim at a date, not at a thin line.
+  // The crosshair snaps to the nearest point: readers aim at a date, not at a thin line.
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
-    const offset = event.clientX - bounds.left - chart.gutter;
-    const ratio = Math.min(1, Math.max(0, offset / (bounds.width - chart.gutter)));
-    setHovered(Math.round(ratio * (chart.points.length - 1)));
+    setHovered(nearestPoint(chart, event.clientX - bounds.left));
   };
-  const hoveredPoint = hovered === null ? null : chart.points[hovered];
+  const hoveredPoint =
+    hovered === null ? null : { ...chart.points[hovered], day: series[hovered].date };
 
   return (
     <div
@@ -277,7 +266,7 @@ function Plot({ series, label, currency, range, target, width, height, fontSize 
             {formatMoney(hoveredPoint.value, currency)}
           </p>
           <p className="text-base text-(--ink-3)">
-            {formatChartDay(hoveredPoint.date.toISOString().slice(0, 10), false)}
+            {formatChartDay(hoveredPoint.day, series[series.length - 1].date)}
           </p>
         </div>
       )}

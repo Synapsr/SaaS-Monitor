@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
-import { calendarDay } from "@/lib/display/calendar";
+import { calendarDay, chartDays, daysBetween } from "@/lib/display/calendar";
 import type { MrrMovementKind } from "@/lib/display/types";
 import { isTimeZone, type ScreenSettingsInput } from "@/lib/screens/settings";
 import type { RateSource } from "@/server/fx";
@@ -231,6 +231,107 @@ describe("display state", () => {
       net: 1000,
       newCustomers: 1,
     });
+  });
+
+  it("charts all time from the day of the first movement, in the screen's time zone", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, { id: "sub_a", mrr: 5000 });
+    await addSubscription(accountId, { id: "sub_b", mrr: 3000 });
+    // 23:30 UTC on January 9 is January 10 in Paris.
+    await addMovement(accountId, {
+      subscription: "sub_a",
+      kind: "new",
+      amount: 5000,
+      at: "2026-01-09T23:30:00Z",
+    });
+    await addMovement(accountId, {
+      subscription: "sub_b",
+      kind: "new",
+      amount: 3000,
+      at: "2026-02-20T10:00:00Z",
+    });
+
+    const { metrics, series } = await displayOf([accountId], {
+      chartRange: "all",
+      timeZone: "Europe/Paris",
+    });
+
+    expect(series.mrr[0]).toEqual({ date: "2026-01-10", value: 5000 });
+    expect(series.mrr).toHaveLength(daysBetween("2026-01-10", "2026-03-15") + 1);
+    const value = (date: string) => series.mrr.find((point) => point.date === date)?.value;
+    expect(value("2026-02-19")).toBe(5000);
+    expect(value("2026-02-20")).toBe(8000);
+    expect(series.mrr.at(-1)).toEqual({ date: "2026-03-15", value: metrics.mrr });
+    expect(metrics.mrr30DaysAgo).toBe(5000);
+  });
+
+  it("samples a long history by week, then by month, and ends on today's MRR", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, { id: "sub_old", mrr: 1000 });
+    await addSubscription(accountId, { id: "sub_new", mrr: 4000 });
+    await addMovement(accountId, {
+      subscription: "sub_old",
+      kind: "new",
+      amount: 1000,
+      at: "2023-06-07T12:00:00Z",
+    });
+    await addMovement(accountId, {
+      subscription: "sub_new",
+      kind: "new",
+      amount: 4000,
+      at: "2026-03-11T12:00:00Z",
+    });
+
+    // Almost three years: the end of each week, from a Wednesday to today.
+    const weekly = (await displayOf([accountId], { chartRange: "all" })).series.mrr;
+    expect(weekly.map((point) => point.date)).toEqual(chartDays("2026-03-15", "all", "2023-06-07"));
+    expect(weekly.slice(0, 2)).toEqual([
+      { date: "2023-06-07", value: 1000 },
+      { date: "2023-06-11", value: 1000 },
+    ]);
+    expect(weekly.slice(-2)).toEqual([
+      { date: "2026-03-08", value: 1000 },
+      { date: "2026-03-15", value: 5000 },
+    ]);
+
+    // A customer from ten years ago, gone since: the end of each month.
+    await addSubscription(accountId, { id: "sub_first", mrr: 0 });
+    await addMovement(accountId, {
+      subscription: "sub_first",
+      kind: "new",
+      amount: 500,
+      at: "2016-01-20T12:00:00Z",
+    });
+    await addMovement(accountId, {
+      subscription: "sub_first",
+      kind: "churn",
+      amount: -500,
+      at: "2019-05-10T12:00:00Z",
+    });
+    const { metrics, series } = await displayOf([accountId], { chartRange: "all" });
+
+    expect(series.mrr.length).toBeLessThan(150);
+    expect(series.mrr.slice(0, 3)).toEqual([
+      { date: "2016-01-20", value: 500 },
+      { date: "2016-01-31", value: 500 },
+      { date: "2016-02-29", value: 500 },
+    ]);
+    const value = (date: string) => series.mrr.find((point) => point.date === date)?.value;
+    expect(value("2019-04-30")).toBe(500);
+    expect(value("2019-05-31")).toBe(0);
+    expect(value("2023-06-30")).toBe(1000);
+    expect(series.mrr.at(-1)).toEqual({ date: "2026-03-15", value: metrics.mrr });
+  });
+
+  it("charts all time like the last 30 days without any movement", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, { id: "sub_trial", mrr: 0, status: "trialing" });
+
+    for (const accountIds of [[accountId], []]) {
+      const { series } = await displayOf(accountIds, { chartRange: "all" });
+      expect(series.mrr).toHaveLength(31);
+      expect(series.mrr[0]).toEqual({ date: "2026-02-13", value: 0 });
+    }
   });
 
   it("only counts customers who paid nothing before as new", async () => {

@@ -93,6 +93,15 @@ describe("demo history", () => {
     expect(series[0].date).toBe(addDays(calendarDay(now, options.timeZone), -365));
   });
 
+  it("charts its whole history for all time, from about $3k", () => {
+    const allTime = demoState(createDemoWorld({ ...options, chartRange: "all" }, now), now);
+    const today = calendarDay(now, options.timeZone);
+    expect(allTime.series.mrr[0].date).toBe(addDays(today, -373));
+    expect(allTime.series.mrr).toHaveLength(374);
+    expect(allTime.series.mrr[0].value).toBeLessThan(400_000);
+    expectConsistent(allTime);
+  });
+
   it("imports its feed from history, with plausible payments", () => {
     expect(state.feed.length).toBeGreaterThan(10);
     expect(state.feed.every((item) => !item.live && item.customerName === null)).toBe(true);

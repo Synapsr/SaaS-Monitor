@@ -17,11 +17,20 @@ import { defaultScreenSettings } from "@/lib/screens/settings";
  * with the same display as every screen.
  */
 
-/** MRR at the end of each of `days`. */
+/** The first day of the history the demo remembers: its all-time chart starts there. */
+function firstDay(world: DemoWorld): string | null {
+  return Object.keys(world.mrrByDay).sort()[0] ?? null;
+}
+
+/** MRR at the end of each of `days`, oldest first, consecutive or sampled by week or month. */
 function mrrSeries(mrrByDay: Readonly<Record<string, number>>, days: readonly string[]) {
+  const changes = Object.keys(mrrByDay).sort();
+  let next = 0;
   let value = mrrAt(mrrByDay, days[0]);
   return days.map((date): SeriesPoint => {
-    value = mrrByDay[date] ?? value;
+    for (; next < changes.length && changes[next] <= date; next += 1) {
+      value = mrrByDay[changes[next]];
+    }
     return { date, value };
   });
 }
@@ -79,7 +88,9 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
       },
       thisMonth: world.movementsByMonth[monthOf(today)] ?? EMPTY_MONTH,
     },
-    series: { mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange)) },
+    series: {
+      mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange, firstDay(world))),
+    },
     feed: world.feed.map((item) =>
       options.showCustomerNames ? item : { ...item, customerName: null },
     ),

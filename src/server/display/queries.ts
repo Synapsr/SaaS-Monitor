@@ -98,8 +98,11 @@ function localDay(timestamp: AnyColumn, timeZone: string) {
   return sql<string>`(${timestamp} at time zone ${timeZone})::date`;
 }
 
-/** Net MRR change per currency, kind and local day, from `from` on. */
-export function movementsByDay(accountIds: string[], timeZone: string, from: string) {
+/**
+ * Net MRR change per currency, kind and local day, from `from` on, or since the first movement
+ * when `from` is `null`: all time, whose chart starts with it.
+ */
+export function movementsByDay(accountIds: string[], timeZone: string, from: string | null) {
   const local = db()
     .$with("local_movements")
     .as(
@@ -114,7 +117,7 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
         .where(
           and(
             inArray(mrrMovements.accountId, accountIds),
-            gte(mrrMovements.occurredAt, instantBefore(from)),
+            from === null ? undefined : gte(mrrMovements.occurredAt, instantBefore(from)),
           ),
         ),
     );
@@ -127,7 +130,7 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
       amount: sql<number>`sum(${local.amount})`.mapWith(Number),
     })
     .from(local)
-    .where(sql`${local.day} >= ${from}::date`)
+    .where(from === null ? undefined : sql`${local.day} >= ${from}::date`)
     .groupBy(local.currency, local.kind, local.day);
 }
 

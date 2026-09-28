@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const SOUND_PACKS = ["register", "chime", "arcade"] as const;
 export const ACCENTS = ["emerald", "violet", "sky", "amber", "rose"] as const;
-export const CHART_RANGES = ["30d", "90d", "12m"] as const;
+/** `all` starts with the first MRR movement of the screen's accounts. */
+export const CHART_RANGES = ["30d", "90d", "12m", "all"] as const;
 /** The recurring revenue a screen shows: monthly (MRR) or annual (ARR, twelve times MRR). */
 export const METRICS = ["mrr", "arr"] as const;
 

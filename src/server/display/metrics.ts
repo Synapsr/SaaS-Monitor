@@ -17,6 +17,15 @@ export interface MovementAmount extends DayAmount {
   kind: MrrMovementKind;
 }
 
+/** The first day with an amount, e.g. the day an all-time chart starts: its first movement. */
+export function firstDay(amounts: readonly DayAmount[]): string | null {
+  let first: string | null = null;
+  for (const { day } of amounts) {
+    if (first === null || day < first) first = day;
+  }
+  return first;
+}
+
 function totalsByDay(amounts: readonly DayAmount[]): Map<string, number> {
   const totals = new Map<string, number>();
   for (const { day, amount } of amounts) totals.set(day, (totals.get(day) ?? 0) + amount);

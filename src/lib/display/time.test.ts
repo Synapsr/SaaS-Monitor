@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatAxisDate,
   formatChartDay,
   formatClock,
   formatEta,
@@ -55,13 +56,20 @@ describe("screen dates", () => {
     expect(formatEta(inDays(140), now, PARIS)).toBe("Feb 2027");
   });
 
-  it("labels chart days", () => {
-    expect(formatChartDay("2026-09-12", false)).toBe("Sep 12");
-    expect(formatChartDay("2026-09-01", true)).toBe("Sep");
-    expect(formatChartDay("2027-01-01", true)).toBe("Jan 2027");
+  it("labels chart axes in days, months or years", () => {
+    expect(formatAxisDate("2026-09-12", "day")).toBe("Sep 12");
+    expect(formatAxisDate("2026-09-01", "month")).toBe("Sep");
+    expect(formatAxisDate("2027-01-01", "month")).toBe("Jan 2027");
+    expect(formatAxisDate("2027-01-01", "year")).toBe("2027");
+  });
+
+  it("names the day under the crosshair, with its year when it is another", () => {
+    expect(formatChartDay("2026-09-12", "2026-09-28")).toBe("Sep 12");
+    expect(formatChartDay("2024-03-31", "2026-09-28")).toBe("Mar 31, 2024");
   });
 
   it("names months", () => {
     expect(formatMonth("2026-08-01")).toBe("August");
+    expect(formatMonth("2025-03-14", { year: true })).toBe("March 2025");
   });
 });

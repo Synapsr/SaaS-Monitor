@@ -59,17 +59,37 @@ export function formatEta(eta: Date, now: Date, timeZone: string): string {
   return formatter({ timeZone, month: "short", year: "numeric" }).format(eta);
 }
 
-/** Axis label of a chart day (`YYYY-MM-DD`): "Sep 12", or "Sep" when `monthOnly`. */
-export function formatChartDay(day: string, monthOnly: boolean): string {
+/** What the labels of a chart's time axis name: days (or weeks), months or years. */
+export type AxisUnit = "day" | "month" | "year";
+
+/** Axis label of a chart day (`YYYY-MM-DD`): "Sep 12" on an axis of days, "Sep" or "2027". */
+export function formatAxisDate(day: string, unit: AxisUnit): string {
   const date = dayToUtcDate(day);
-  // January also names its year, so that a 12-month axis reads across the new year.
-  const options: Intl.DateTimeFormatOptions = monthOnly
-    ? { month: "short", year: date.getUTCMonth() === 0 ? "numeric" : undefined }
-    : { month: "short", day: "numeric" };
-  return formatter({ timeZone: "UTC", ...options }).format(date);
+  const options: Record<AxisUnit, Intl.DateTimeFormatOptions> = {
+    day: { month: "short", day: "numeric" },
+    // January also names its year, so that an axis of months reads across the new year.
+    month: { month: "short", year: date.getUTCMonth() === 0 ? "numeric" : undefined },
+    year: { year: "numeric" },
+  };
+  return formatter({ timeZone: "UTC", ...options[unit] }).format(date);
 }
 
-/** Name of the month of a calendar day: "September". */
-export function formatMonth(day: string): string {
-  return formatter({ timeZone: "UTC", month: "long" }).format(dayToUtcDate(day));
+/** A chart day under the crosshair: "Sep 12", with its year when it isn't `today`'s. */
+export function formatChartDay(day: string, today: string): string {
+  const sameYear = day.slice(0, 4) === today.slice(0, 4);
+  return formatter({
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  }).format(dayToUtcDate(day));
+}
+
+/** Name of the month of a calendar day: "September", or "September 2025" with its year. */
+export function formatMonth(day: string, options: { year?: boolean } = {}): string {
+  return formatter({
+    timeZone: "UTC",
+    month: "long",
+    year: options.year ? "numeric" : undefined,
+  }).format(dayToUtcDate(day));
 }

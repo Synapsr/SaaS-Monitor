@@ -21,6 +21,7 @@ const CHART_RANGE_LABELS: Record<ChartRange, string> = {
   "30d": "30 days",
   "90d": "90 days",
   "12m": "12 months",
+  all: "All time",
 };
 
 type LookSettingsValue = Pick<

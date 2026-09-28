@@ -24,7 +24,10 @@ export interface DisplayState {
   accounts: DisplayAccount[];
   metrics: DisplayMetrics;
   series: {
-    /** Daily MRR at the end of each day, over `settings.chartRange`, oldest first. */
+    /**
+     * MRR at the end of the days of `settings.chartRange`, oldest first, the last one being
+     * today's: every day, or the end of each week or month of a long history (`chartDays`).
+     */
     mrr: SeriesPoint[];
   };
   /** Most recent activity first. */

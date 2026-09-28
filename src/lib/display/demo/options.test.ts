@@ -39,4 +39,8 @@ describe("demo options", () => {
     });
     expect(parseDemoOptions({ sound: "off" }).options.soundPack).toBeNull();
   });
+
+  it("shows the whole simulated history with ?range=all", () => {
+    expect(parseDemoOptions({ range: "all" }).options.chartRange).toBe("all");
+  });
 });

@@ -28,6 +28,10 @@ describe("chart range", () => {
     expect(month.at(-1)).toEqual(series.at(-1));
     expect(seriesInRange(series, "12m")).toHaveLength(120);
   });
+
+  it("keeps every point for all time", () => {
+    expect(seriesInRange(series, "all")).toEqual(series);
+  });
 });
 
 describe("resolved state", () => {
