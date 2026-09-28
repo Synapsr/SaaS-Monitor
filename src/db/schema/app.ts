@@ -240,7 +240,10 @@ export const screenAccounts = pgTable(
   (table) => [primaryKey({ columns: [table.screenId, table.accountId] })],
 );
 
-/** Cached exchange rates, refreshed daily, to combine accounts billed in different currencies. */
+/**
+ * Cached exchange rates, refreshed every 12 hours (`src/server/fx.ts`), to combine accounts billed
+ * in different currencies.
+ */
 export const exchangeRates = pgTable("exchange_rates", {
   base: text().primaryKey(),
   /** Units of each quote currency for one unit of `base`, keyed by lowercase ISO code. */
