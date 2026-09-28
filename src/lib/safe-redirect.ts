@@ -11,7 +11,9 @@ export function safeRedirectPath(value: unknown, fallback = "/app"): string {
     // Resolving against a fixed origin normalises every trick browsers accept (backslashes, tabs,
     // protocol-relative URLs): anything that escapes this origin is not a local path.
     const url = new URL(value, PLACEHOLDER_ORIGIN);
-    if (url.origin !== PLACEHOLDER_ORIGIN) return fallback;
+    // Dot segments can also normalise into `//host` (`/.//evil.example`): a leading double slash
+    // would make the returned path protocol-relative.
+    if (url.origin !== PLACEHOLDER_ORIGIN || url.pathname.startsWith("//")) return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return fallback;
