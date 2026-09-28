@@ -34,7 +34,26 @@ describe("syncing an account", () => {
 
   describe("lease", () => {
     it("lets a single sync run at a time", async () => {
-      const reports = await Promise.all([syncAt(NOW), syncAt(NOW), syncAt(NOW)]);
+      // The first sync to list subscriptions waits until the two others finished, so they run
+      // while it holds the lease, however fast it would be. Were the lease broken, they would
+      // list subscriptions too and complete.
+      const othersFinished = Promise.withResolvers<void>();
+      const listSubscriptions = stripe.listSubscriptions.bind(stripe);
+      let listings = 0;
+      stripe.listSubscriptions = async (startingAfter) => {
+        if (++listings === 1) await othersFinished.promise;
+        return listSubscriptions(startingAfter);
+      };
+      let finished = 0;
+      const sync = async () => {
+        try {
+          return await syncAt(NOW);
+        } finally {
+          if (++finished === 2) othersFinished.resolve();
+        }
+      };
+
+      const reports = await Promise.all([sync(), sync(), sync()]);
 
       expect(reports.filter((report) => report !== null)).toHaveLength(1);
       expect(await db().$count(mrrMovements)).toBe(1);
