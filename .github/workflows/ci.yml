@@ -52,6 +52,12 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
+      # A schema change committed without its migration makes drizzle-kit generate one here.
+      - name: Check that migrations match the schema
+        run: |
+          pnpm db:generate
+          git add --intent-to-add drizzle
+          git diff --exit-code drizzle
       - run: pnpm test
       - run: pnpm build
 
