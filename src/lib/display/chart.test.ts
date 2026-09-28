@@ -23,9 +23,25 @@ describe("MRR chart layout", () => {
     expect(layout.yTicks.map((tick) => tick.label)).toEqual(["$6K", "$8K", "$10K", "$12K", "$14K"]);
   });
 
+  it("labels a month with weekly dates, all inside the plot", () => {
+    const month = { ...options, series: series.slice(-31), target: 2_500_000, monthly: false };
+    const layout = layoutMrrChart(month);
+    expect(layout.xTicks.map((tick) => tick.label)).toEqual([
+      "Aug 31",
+      "Sep 7",
+      "Sep 14",
+      "Sep 21",
+    ]);
+    const halfLabel = (16 * 5.5) / 2;
+    for (const tick of layout.xTicks) {
+      expect(tick.x - halfLabel).toBeGreaterThanOrEqual(0);
+      expect(tick.x + halfLabel).toBeLessThanOrEqual(1180);
+    }
+  });
+
   it("uses fewer ticks when there is less room", () => {
     const month = { ...options, series: series.slice(-31), target: 2_500_000, monthly: false };
-    expect(layoutMrrChart({ ...month, width: 500 }).xTicks.length).toBeLessThan(
+    expect(layoutMrrChart({ ...month, width: 300 }).xTicks.length).toBeLessThan(
       layoutMrrChart(month).xTicks.length,
     );
     expect(layoutMrrChart({ ...month, height: 110 }).yTicks.length).toBeLessThan(

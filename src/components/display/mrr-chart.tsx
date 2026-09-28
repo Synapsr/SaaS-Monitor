@@ -231,10 +231,7 @@ function Plot({ series, currency, range, target, width, height, fontSize }: Plot
             <span
               key={tick.x}
               style={{ left: tick.x }}
-              className={cn(
-                "absolute top-2.5 text-base whitespace-nowrap text-(--ink-3)",
-                tick.x > width - fontSize * 2 ? "-translate-x-full" : "-translate-x-1/2",
-              )}
+              className="absolute top-2.5 -translate-x-1/2 text-base whitespace-nowrap text-(--ink-3)"
             >
               {tick.label}
             </span>

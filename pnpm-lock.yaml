@@ -32,6 +32,9 @@ importers:
       d3-shape:
         specifier: 3.2.0
         version: 3.2.0
+      d3-time:
+        specifier: 3.1.0
+        version: 3.1.0
       drizzle-orm:
         specifier: 0.45.3
         version: 0.45.3(kysely@0.29.6)(postgres@3.4.9)
@@ -93,6 +96,9 @@ importers:
       '@types/d3-shape':
         specifier: ^3.2.0
         version: 3.2.0
+      '@types/d3-time':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/node':
         specifier: ^24.19.0
         version: 24.19.0

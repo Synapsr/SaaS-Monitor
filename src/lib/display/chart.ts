@@ -1,11 +1,18 @@
 import { scaleLinear, scaleUtc, type ScaleLinear, type ScaleTime } from "d3-scale";
 import { area, curveMonotoneX, line } from "d3-shape";
+import { utcDay, utcMonday, utcMonth, type TimeInterval } from "d3-time";
 import { dayToUtcDate, formatChartDay } from "@/lib/display/time";
 import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 
 /** The goal line is drawn when the target is this close above the highest value. */
 const HORIZON_REACH = 1.3;
+/** Width of a date label such as "Sep 27", in font sizes, with some air around it. */
+const DATE_LABEL_WIDTH = 5.5;
+const MAX_DATE_TICKS = 8;
+/** Candidate label spacings, densest first. Weeks start on Mondays so that gaps stay even. */
+const MONTH_INTERVALS = [1, 2, 3, 6].map((step) => utcMonth.every(step));
+const DAY_INTERVALS = [utcDay, utcMonday, utcMonday.every(2)];
 
 export interface ChartPoint {
   date: Date;
@@ -78,13 +85,11 @@ export function layoutMrrChart({
     .y1((point) => y(point.value))
     .curve(curveMonotoneX);
 
-  // Labels need room: about eleven characters apart across, three lines apart down.
-  const xTicks = x
-    .ticks(Math.max(2, Math.floor((width - gutter) / (fontSize * 11))))
-    .map((date) => {
-      const day = date.toISOString().slice(0, 10);
-      return { x: x(date), label: formatChartDay(day, monthly && day.endsWith("-01")) };
-    });
+  const xTicks = dateTicks(x, monthly, fontSize).map((date) => ({
+    x: x(date),
+    label: formatChartDay(date.toISOString().slice(0, 10), monthly),
+  }));
+  // Value labels need about three lines of room between them.
   const yTicks = y
     .ticks(Math.min(5, Math.max(2, Math.floor(height / (fontSize * 3.2)))))
     .map((value) => ({ y: y(value), label: formatMoney(value, currency, { compact: true }) }))
@@ -104,4 +109,27 @@ export function layoutMrrChart({
       ? { y: y(target), label: formatMoney(target, currency, { compact: true }) }
       : null,
   };
+}
+
+/**
+ * Round dates to label: month starts on long ranges, days or weeks on short ones, as many as fit
+ * without labels colliding. Labels are centred on their date, so those that would stick out of
+ * the plot are left out.
+ */
+function dateTicks(x: ScaleTime<number, number>, monthly: boolean, fontSize: number): Date[] {
+  const [left, right] = x.range();
+  const labelWidth = fontSize * DATE_LABEL_WIDTH;
+  // A calm axis: a handful of dates is enough to read a trend from across the room.
+  const fitting = Math.min(MAX_DATE_TICKS, Math.max(2, Math.floor((right - left) / labelWidth)));
+  const [first, last] = x.domain();
+  const intervals: (TimeInterval | null)[] = monthly ? MONTH_INTERVALS : DAY_INTERVALS;
+  const candidates = intervals.flatMap((interval) =>
+    interval ? [interval.range(first, new Date(last.getTime() + 1))] : [],
+  );
+  const dates = candidates.find((ticks) => ticks.length <= fitting) ?? candidates.at(-1) ?? [];
+  // Below the plot, labels may extend under the value gutter but not past either side.
+  return dates.filter((date) => {
+    const position = x(date);
+    return position - labelWidth / 2 >= 0 && position + labelWidth / 2 <= right;
+  });
 }
