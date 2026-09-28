@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, type Transaction } from "@/db";
 import { screenAccounts, screens, stripeAccounts } from "@/db/schema";
-import type { ActionResult } from "@/lib/action-result";
+import { invalidInput, type ActionResult } from "@/lib/action-result";
 import {
   parseScreenSettings,
   screenSettingsSchema,
@@ -72,10 +72,6 @@ export function generatePublicToken(): string {
 
 function isUuid(value: string): boolean {
   return z.uuid().safeParse(value).success;
-}
-
-function invalidInput(error: z.ZodError): { ok: false; error: string } {
-  return { ok: false, error: error.issues[0]?.message ?? "Some values are invalid." };
 }
 
 function inWorkspace(workspaceId: string, screenId: string): SQL | undefined {

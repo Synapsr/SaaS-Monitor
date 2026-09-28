@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import type { ActionResult } from "@/lib/action-result";
+import { invalidInput, type ActionResult } from "@/lib/action-result";
 import { createFirstScreen } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
 import {
@@ -35,16 +35,12 @@ const connectSchema = z.object({
 
 export type ConnectAccountResult = { ok: false; error: string; missingPermissions?: string[] };
 
-function invalid(error: z.ZodError): { ok: false; error: string } {
-  return { ok: false, error: error.issues[0]?.message ?? "Some values are invalid." };
-}
-
 export async function connectAccountAction(
   input: z.input<typeof connectSchema>,
 ): Promise<ConnectAccountResult> {
   const { workspace } = await requireWorkspace();
   const parsed = connectSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
   const { name, secretKey, timeZone } = parsed.data;
 
   const result = await connectStripeAccount({ workspaceId: workspace.id, name, secretKey });
@@ -81,7 +77,7 @@ export async function renameAccountAction(accountId: string, name: string): Prom
     accountId,
     name,
   });
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
   return attempt(
     () => renameStripeAccount(workspace.id, parsed.data.accountId, parsed.data.name),
     "We couldn't rename this account. Please try again.",
@@ -91,7 +87,7 @@ export async function renameAccountAction(accountId: string, name: string): Prom
 export async function reimportAccountAction(accountId: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = accountIdSchema.safeParse(accountId);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
   return attempt(
     () => reimportStripeAccount(workspace.id, parsed.data),
     "We couldn't start the import. Please try again.",
@@ -101,7 +97,7 @@ export async function reimportAccountAction(accountId: string): Promise<ActionRe
 export async function disconnectAccountAction(accountId: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = accountIdSchema.safeParse(accountId);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
   return attempt(
     () => disconnectStripeAccount(workspace.id, parsed.data),
     "We couldn't disconnect this account. Please try again.",
@@ -111,7 +107,7 @@ export async function disconnectAccountAction(accountId: string): Promise<Action
 export async function enableInstantUpdatesAction(accountId: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = accountIdSchema.safeParse(accountId);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await enableInstantUpdates(workspace.id, parsed.data);
   if (result.ok) revalidatePath("/app", "layout");
@@ -133,7 +129,7 @@ export async function saveWebhookSecretAction(
         .max(500),
     })
     .safeParse({ accountId, secret });
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await setWebhookSigningSecret(
     workspace.id,

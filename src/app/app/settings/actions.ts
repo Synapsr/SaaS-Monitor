@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import type { ActionResult } from "@/lib/action-result";
+import { invalidInput, type ActionResult } from "@/lib/action-result";
 import { auth } from "@/server/auth";
 import {
   authFailure,
@@ -23,14 +23,10 @@ import {
 
 const idSchema = z.string().min(1).max(100);
 
-function invalid(error: z.ZodError): { ok: false; error: string } {
-  return { ok: false, error: error.issues[0]?.message ?? "Some values are invalid." };
-}
-
 export async function renameWorkspaceAction(name: string): Promise<ActionResult> {
   const context = await requireWorkspace();
   const parsed = z.string().max(200).safeParse(name);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await renameWorkspace(context, await headers(), parsed.data);
   if (result.ok) revalidatePath("/app", "layout");
@@ -42,7 +38,7 @@ export async function inviteMemberAction(
 ): Promise<ActionResult<{ invitationId: string }>> {
   const context = await requireWorkspace();
   const parsed = inviteSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await inviteMember(context, await headers(), parsed.data);
   if (result.ok) revalidatePath("/app/settings");
@@ -52,7 +48,7 @@ export async function inviteMemberAction(
 export async function revokeInvitationAction(invitationId: string): Promise<ActionResult> {
   const context = await requireWorkspace();
   const parsed = idSchema.safeParse(invitationId);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await revokeInvitation(context, await headers(), parsed.data);
   if (result.ok) revalidatePath("/app/settings");
@@ -62,7 +58,7 @@ export async function revokeInvitationAction(invitationId: string): Promise<Acti
 export async function removeMemberAction(memberId: string): Promise<ActionResult> {
   const context = await requireWorkspace();
   const parsed = idSchema.safeParse(memberId);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await removeMember(context, await headers(), parsed.data);
   if (result.ok) revalidatePath("/app/settings");
@@ -97,7 +93,7 @@ export async function updateProfileAction(name: string): Promise<ActionResult> {
     .min(1, "Enter your name.")
     .max(100, "Keep your name under 100 characters.")
     .safeParse(name);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) return invalidInput(parsed.error);
 
   try {
     await auth().api.updateUser({ headers: await headers(), body: { name: parsed.data } });

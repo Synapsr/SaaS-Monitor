@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { members, organizations, stripeAccounts } from "@/db/schema";
-import type { ActionResult } from "@/lib/action-result";
+import { invalidInput, type ActionResult } from "@/lib/action-result";
 import { auth } from "@/server/auth";
 import { authFailure, parseRole } from "@/server/members";
 import type { WorkspaceContext } from "@/server/session";
@@ -63,7 +63,7 @@ export async function createWorkspace(
   name: string,
 ): Promise<ActionResult<{ workspaceId: string }>> {
   const parsed = workspaceNameSchema.safeParse(name);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return invalidInput(parsed.error);
   try {
     const workspace = await auth().api.createOrganization({
       headers: requestHeaders,
@@ -86,7 +86,7 @@ export async function renameWorkspace(
     return { ok: false, error: "Only owners and admins can rename the workspace." };
   }
   const parsed = workspaceNameSchema.safeParse(name);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return invalidInput(parsed.error);
   try {
     await auth().api.updateOrganization({
       headers: requestHeaders,
