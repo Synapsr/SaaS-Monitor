@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SOUND_PACKS } from "@/lib/screens/settings";
-import { isAudioUnlocked, playSound, unlockAudio, type SoundEvent } from "@/lib/sounds";
+import { playSound, unlockAudio, type SoundEvent } from "@/lib/sounds";
 import { SOUND_RECIPES } from "@/lib/sounds/packs";
 import type { Voice } from "@/lib/sounds/synth";
 
@@ -130,7 +130,6 @@ describe("sound packs", () => {
 describe("sound engine", () => {
   it("is safe to use where there is no audio, like on the server", async () => {
     expect(() => playSound("payment", { pack: "register", volume: 1 })).not.toThrow();
-    expect(isAudioUnlocked()).toBe(false);
     await expect(unlockAudio()).resolves.toBe(false);
   });
 });

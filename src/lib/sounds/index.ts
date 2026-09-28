@@ -1,5 +1,5 @@
 import type { SoundPack } from "@/lib/screens/settings";
-import { getAudioGraph, peekAudioGraph } from "@/lib/sounds/graph";
+import { getAudioGraph } from "@/lib/sounds/graph";
 import { SOUND_RECIPES } from "@/lib/sounds/packs";
 
 /**
@@ -65,17 +65,6 @@ export function playSound(event: SoundEvent, options: PlaySoundOptions): void {
   } catch {
     // Sound is a bonus: it must never break a screen.
   }
-}
-
-/** Whether the browser currently allows audio (usually false until the first user gesture). */
-export function isAudioUnlocked(): boolean {
-  const graph = peekAudioGraph();
-  if (graph) return graph.context.state === "running";
-  if (typeof navigator === "undefined") return false;
-  // Browsers implementing the Autoplay Policy Detection API (Firefox) tell without a context.
-  const policy = (navigator as { getAutoplayPolicy?: (type: "audiocontext") => string })
-    .getAutoplayPolicy;
-  return policy?.call(navigator, "audiocontext") === "allowed";
 }
 
 /** Call from a user gesture handler (click, key press) to allow audio. */

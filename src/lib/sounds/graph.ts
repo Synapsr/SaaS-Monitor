@@ -3,8 +3,8 @@
  * synthetic room), then goes through one compressor so that chords and quick sequences stay
  * clean on TV speakers at high volume.
  */
-export interface AudioGraph<Context extends BaseAudioContext = AudioContext> {
-  context: Context;
+export interface AudioGraph {
+  context: AudioContext;
   input: AudioNode;
   reverb: AudioNode;
 }
@@ -14,11 +14,6 @@ type AudioContextConstructor = new (options?: AudioContextOptions) => AudioConte
 // `undefined` until first needed: creating a context has a cost, and browsers complain when it
 // happens before a user gesture on pages that never play anything.
 let graph: AudioGraph | null | undefined;
-
-/** The existing graph, without creating it. */
-export function peekAudioGraph(): AudioGraph | null {
-  return graph ?? null;
-}
 
 /** The shared graph, created on first use. `null` on the server or without Web Audio. */
 export function getAudioGraph(): AudioGraph | null {
@@ -36,10 +31,8 @@ export function getAudioGraph(): AudioGraph | null {
   return graph;
 }
 
-/** Builds the master chain on any context, including an `OfflineAudioContext` for rendering. */
-export function createAudioGraph<Context extends BaseAudioContext>(
-  context: Context,
-): AudioGraph<Context> {
+/** The master chain: the dry input and the reverb send, into one compressor. */
+function createAudioGraph(context: AudioContext): AudioGraph {
   const compressor = context.createDynamicsCompressor();
   compressor.threshold.value = -16;
   compressor.knee.value = 10;
