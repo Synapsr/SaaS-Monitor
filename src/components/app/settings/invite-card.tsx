@@ -91,7 +91,11 @@ export function InviteCard({
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${id}-error` : undefined}
             />
-            <Select value={role} onValueChange={(value) => setRole(value as WorkspaceRole)}>
+            <Select
+              name="role"
+              value={role}
+              onValueChange={(value) => setRole(value as WorkspaceRole)}
+            >
               <SelectTrigger aria-label="Role" className="h-9 w-full sm:w-32">
                 <SelectValue />
               </SelectTrigger>

@@ -148,6 +148,7 @@ export function SoundSettings({
             <span className="text-sm text-muted-foreground tabular-nums">{volumePercent}%</span>
           </div>
           <SliderPrimitive.Root
+            name="volume"
             min={0}
             max={100}
             step={5}

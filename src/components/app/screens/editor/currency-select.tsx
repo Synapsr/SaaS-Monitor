@@ -56,7 +56,7 @@ export function CurrencySelect({
     ),
   ];
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select name="currency" value={value} onValueChange={onChange}>
       <SelectTrigger id={id} className="h-9 w-full">
         <SelectValue />
       </SelectTrigger>
