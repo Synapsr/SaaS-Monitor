@@ -1,12 +1,15 @@
 import { motion, useReducedMotion } from "motion/react";
 import { formatAmount } from "@/lib/display/format";
+import type { RecurringMetric } from "@/lib/display/metric";
 import type { GoalProgress as Progress } from "@/lib/display/milestones";
 import { formatEta } from "@/lib/display/time";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 interface GoalProgressProps {
+  /** Measured in the screen's metric, like its goal. */
   progress: Progress;
+  recurring: RecurringMetric;
   currency: string;
   timeZone: string;
   now: number;
@@ -14,10 +17,17 @@ interface GoalProgressProps {
 }
 
 /** How far the next goal is: prominent enough to motivate, quiet enough to live with. */
-export function GoalProgress({ progress, currency, timeZone, now, className }: GoalProgressProps) {
+export function GoalProgress({
+  progress,
+  recurring,
+  currency,
+  timeZone,
+  now,
+  className,
+}: GoalProgressProps) {
   const reducedMotion = useReducedMotion();
   const percent = Math.round(progress.progress * 1000) / 10;
-  const target = formatMoney(progress.target, currency, { compact: true });
+  const target = `${formatMoney(progress.target, currency, { compact: true })} ${recurring.label}`;
   const eta = progress.eta && formatEta(progress.eta, new Date(now), timeZone);
 
   return (
@@ -27,13 +37,13 @@ export function GoalProgress({ progress, currency, timeZone, now, className }: G
           <span className="text-(--ink-2)">
             {progress.kind === "goal" ? "Goal" : "Next milestone"}
           </span>{" "}
-          <span className="font-semibold">{target} MRR</span>
+          <span className="font-semibold">{target}</span>
         </h2>
         <p className="text-(--ink-2) tabular-nums">{Math.floor(percent)}%</p>
       </div>
       <div
         role="progressbar"
-        aria-label={`${target} MRR`}
+        aria-label={target}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}

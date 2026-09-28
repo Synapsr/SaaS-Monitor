@@ -33,11 +33,18 @@ describe("chart range", () => {
 describe("resolved state", () => {
   it("applies the editor's unsaved changes, except the currency", () => {
     const state = displayState();
-    const settings = { ...defaultScreenSettings, accent: "rose" as const, currency: "eur" };
+    const settings = {
+      ...defaultScreenSettings,
+      accent: "rose" as const,
+      metric: "arr" as const,
+      currency: "eur",
+    };
     const resolved = resolveDisplayState(state, { name: "Lobby", settings });
     expect(resolved.screen.name).toBe("Lobby");
-    expect(resolved.screen.settings.accent).toBe("rose");
+    expect(resolved.screen.settings).toMatchObject({ accent: "rose", metric: "arr" });
     expect(resolved.screen.settings.currency).toBe("usd");
+    // Amounts stay in MRR: the display presents them in the metric it is told.
+    expect(resolved.metrics).toEqual(state.metrics);
   });
 
   it("hides customer names unless the screen shows them", () => {

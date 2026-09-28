@@ -3,6 +3,7 @@ import { ArrowDownRightIcon, ArrowUpRightIcon } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { calendarDay, displayCalendar } from "@/lib/display/calendar";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
+import type { RecurringMetric } from "@/lib/display/metric";
 import { formatMonth } from "@/lib/display/time";
 import type { DisplayMetrics } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
@@ -10,19 +11,22 @@ import { cn } from "@/lib/utils";
 
 interface KpiTilesProps {
   metrics: DisplayMetrics;
+  /** Net new MRR, or ARR: revenue is cash received, the same whatever the screen's metric. */
+  recurring: RecurringMetric;
   currency: string;
   timeZone: string;
   now: number;
 }
 
-/** The four numbers worth a glance: today, this month, customers and net new MRR. */
-export function KpiTiles({ metrics, currency, timeZone, now }: KpiTilesProps) {
+/** The four numbers worth a glance: today, this month, customers and net new MRR (or ARR). */
+export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTilesProps) {
   const { revenue, thisMonth } = metrics;
   const calendar = displayCalendar(calendarDay(new Date(now), timeZone));
   const previousMonth = formatMonth(calendar.previousMonthStart);
   const monthChange = percentChange(revenue.monthToDate, revenue.previousMonthToDate);
-  const gained = thisMonth.new + thisMonth.expansion + thisMonth.reactivation;
-  const lost = thisMonth.contraction + thisMonth.churn;
+  const net = recurring.fromMrr(thisMonth.net);
+  const gained = recurring.fromMrr(thisMonth.new + thisMonth.expansion + thisMonth.reactivation);
+  const lost = recurring.fromMrr(thisMonth.contraction + thisMonth.churn);
 
   return (
     <dl className="grid grid-cols-4 gap-5 portrait:grid-cols-2">
@@ -57,9 +61,9 @@ export function KpiTiles({ metrics, currency, timeZone, now }: KpiTilesProps) {
           .join(" · ") || "Paying customers"}
       </Tile>
       <Tile
-        label="Net new MRR"
-        value={<NumberFlow {...moneyFlow(thisMonth.net, currency, { signed: true })} />}
-        characters={formatMoney(thisMonth.net, currency, { signed: true }).length}
+        label={`Net new ${recurring.label}`}
+        value={<NumberFlow {...moneyFlow(net, currency, { signed: true })} />}
+        characters={formatMoney(net, currency, { signed: true }).length}
       >
         {formatAmount(gained, currency, { signed: true })} gained ·{" "}
         {formatAmount(lost, currency, { signed: true })} lost

@@ -4,6 +4,7 @@ import { useId, useMemo, useState, type PointerEvent } from "react";
 import { useElementSize } from "@/hooks/use-element-size";
 import { layoutMrrChart } from "@/lib/display/chart";
 import { formatAmount, formatPercent, percentChange } from "@/lib/display/format";
+import type { RecurringMetric } from "@/lib/display/metric";
 import { formatChartDay } from "@/lib/display/time";
 import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
@@ -19,17 +20,33 @@ const RANGE_LABELS: Record<ChartRange, string> = {
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
 interface MrrChartProps {
+  /** MRR history, drawn in the screen's metric. */
   series: SeriesPoint[];
+  recurring: RecurringMetric;
   currency: string;
   range: ChartRange;
-  /** Next goal or milestone, in minor units. */
+  /** Next goal or milestone, in minor units of the screen's metric. */
   target: number;
   className?: string;
 }
 
-/** MRR over the chart range: a soft area, the live end glowing, and the next goal as a horizon. */
-export function MrrChart({ series, currency, range, target, className }: MrrChartProps) {
+/**
+ * MRR (or ARR) over the chart range: a soft area, the live end glowing, and the next goal as a
+ * horizon.
+ */
+export function MrrChart({
+  series: mrrSeries,
+  recurring,
+  currency,
+  range,
+  target,
+  className,
+}: MrrChartProps) {
   const [plotRef, size] = useElementSize<HTMLDivElement>();
+  const series = useMemo(
+    () => mrrSeries.map(({ date, value }) => ({ date, value: recurring.fromMrr(value) })),
+    [mrrSeries, recurring],
+  );
   const first = series[0];
   const last = series.at(-1);
   const change = first && last ? last.value - first.value : 0;
@@ -40,7 +57,7 @@ export function MrrChart({ series, currency, range, target, className }: MrrChar
     <figure className={cn("flex min-h-0 flex-col gap-3", className)}>
       <figcaption className="flex items-baseline justify-between gap-6 text-lg">
         <span className="text-(--ink-2)">
-          MRR <span className="text-(--ink-3)">· {RANGE_LABELS[range]}</span>
+          {recurring.label} <span className="text-(--ink-3)">· {RANGE_LABELS[range]}</span>
         </span>
         {series.length > 1 && (
           <span className="flex items-center gap-2 text-(--ink-2) tabular-nums">
@@ -63,7 +80,14 @@ export function MrrChart({ series, currency, range, target, className }: MrrChar
         ) : (
           size.width > 0 &&
           size.height > 0 && (
-            <Plot series={series} currency={currency} range={range} target={target} {...size} />
+            <Plot
+              series={series}
+              label={recurring.label}
+              currency={currency}
+              range={range}
+              target={target}
+              {...size}
+            />
           )
         )}
       </div>
@@ -71,13 +95,15 @@ export function MrrChart({ series, currency, range, target, className }: MrrChar
   );
 }
 
-interface PlotProps extends Omit<MrrChartProps, "className"> {
+interface PlotProps extends Omit<MrrChartProps, "recurring" | "className"> {
+  /** Values in the screen's metric, named by `label`. */
+  label: RecurringMetric["label"];
   width: number;
   height: number;
   fontSize: number;
 }
 
-function Plot({ series, currency, range, target, width, height, fontSize }: PlotProps) {
+function Plot({ series, label, currency, range, target, width, height, fontSize }: PlotProps) {
   const gradientId = useId();
   const reducedMotion = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
@@ -99,7 +125,7 @@ function Plot({ series, currency, range, target, width, height, fontSize }: Plot
   const end = chart.points[chart.points.length - 1];
   const draw = reducedMotion ? { duration: 0 } : { duration: 1.6, ease: EASE_OUT };
   const morph = reducedMotion ? { duration: 0 } : { duration: 1.1, ease: EASE_OUT };
-  const summary = `MRR over the ${RANGE_LABELS[range]}: from ${formatMoney(start.value, currency)} to ${formatMoney(end.value, currency)}.`;
+  const summary = `${label} over the ${RANGE_LABELS[range]}: from ${formatMoney(start.value, currency)} to ${formatMoney(end.value, currency)}.`;
 
   // The crosshair snaps to the nearest day: readers aim at a date, not at a thin line.
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {

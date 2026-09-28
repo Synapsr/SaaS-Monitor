@@ -5,6 +5,7 @@ import { MilestoneCelebration } from "@/components/display/milestone-celebration
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
 import { itemContext } from "@/lib/display/feed";
 import { formatAmount, formatPayment } from "@/lib/display/format";
+import { recurringMetric } from "@/lib/display/metric";
 import { isMrrIncrease, type Moment } from "@/lib/display/moments";
 import type { DisplayState, FeedItemKind } from "@/lib/display/types";
 import { formatMoney, toMajorUnits, toMinorUnits } from "@/lib/money";
@@ -23,6 +24,7 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
           <MilestoneCelebration
             key={moment.id}
             amount={moment.amount}
+            metric={moment.metric}
             isGoal={moment.isGoal}
             currency={state.currency}
           />
@@ -53,7 +55,10 @@ function count(value: number, noun: string): string | null {
 function describe(moment: Moment, state: DisplayState): MomentCardContent {
   const { currency } = state;
   const showAccount = state.accounts.length > 1;
-  const mrr = (amount: number) => `${formatAmount(amount, currency, { signed: true })} MRR`;
+  const recurring = recurringMetric(state.screen.settings.metric);
+  // Subscription changes in the screen's metric: "+$149" of MRR is "+$1,788" of ARR.
+  const change = (mrr: number) => formatAmount(recurring.fromMrr(mrr), currency, { signed: true });
+  const labeledChange = (mrr: number) => `${change(mrr)} ${recurring.label}`;
 
   switch (moment.kind) {
     case "payment": {
@@ -64,7 +69,7 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
         eyebrow: TITLES[kind],
         amount: formatPayment(moment.payment.amount, currency),
         details: itemContext(moment.payment, { showAccount }),
-        footnote: moment.movement ? mrr(moment.movement.amount) : null,
+        footnote: moment.movement ? labeledChange(moment.movement.amount) : null,
         tone: "celebration",
       };
     }
@@ -72,8 +77,8 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       return {
         icon: KIND_ICONS[moment.movement.kind],
         eyebrow: TITLES[moment.movement.kind],
-        amount: formatAmount(moment.movement.amount, currency, { signed: true }),
-        recurring: true,
+        amount: change(moment.movement.amount),
+        metric: recurring.label,
         details: itemContext(moment.movement, { showAccount }),
         tone: isMrrIncrease(moment.movement) ? "celebration" : "calm",
       };
@@ -83,15 +88,13 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       return {
         icon: CircleDollarSignIcon,
         eyebrow: "Catching up",
-        amount: received
-          ? formatPayment(moment.revenue, currency)
-          : formatAmount(moment.mrrChange, currency, { signed: true }),
-        recurring: !received,
+        amount: received ? formatPayment(moment.revenue, currency) : change(moment.mrrChange),
+        metric: received ? undefined : recurring.label,
         details: [
           count(moment.payments, "new payment"),
           count(moment.changes, "subscription change"),
         ].filter((part): part is string => part !== null),
-        footnote: received && moment.mrrChange !== 0 ? mrr(moment.mrrChange) : null,
+        footnote: received && moment.mrrChange !== 0 ? labeledChange(moment.mrrChange) : null,
         tone: received || moment.mrrChange >= 0 ? "celebration" : "calm",
       };
     }
@@ -113,7 +116,7 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
         icon: PartyPopperIcon,
         eyebrow: moment.isGoal ? "Goal reached" : "Milestone reached",
         amount: formatMoney(moment.amount, currency, { compact: true }),
-        recurring: true,
+        metric: recurringMetric(moment.metric).label,
         details: [],
         tone: "celebration",
       };

@@ -1,4 +1,5 @@
 import { countryFlag, countryName, formatAmount, formatPayment } from "@/lib/display/format";
+import type { RecurringMetric } from "@/lib/display/metric";
 import type { FeedItem, FeedItemKind } from "@/lib/display/types";
 
 /* How a screen describes feed items, in the feed and in the moments that announce them. */
@@ -17,11 +18,21 @@ export function isGoodNews(kind: FeedItemKind): boolean {
   return kind !== "contraction" && kind !== "churn";
 }
 
-/** "$49" for a payment, "+$99" or "-$29" for a change of MRR. */
-export function itemAmount(item: FeedItem, currency: string): string {
+/**
+ * "$49" for a payment, "+$99" or "-$29" for a change of MRR. A screen showing ARR writes changes
+ * as ARR ("+$1,188"); a payment is money received, the same in either.
+ */
+export function itemAmount(item: FeedItem, currency: string, recurring: RecurringMetric): string {
   return item.kind === "payment"
     ? formatPayment(item.amount, currency)
-    : formatAmount(item.amount, currency, { signed: true });
+    : formatAmount(recurring.fromMrr(item.amount), currency, { signed: true });
+}
+
+/** The amount before conversion, in the same metric: "€45" next to "$49". */
+export function itemOriginalAmount(item: FeedItem, recurring: RecurringMetric): string | null {
+  if (!item.original) return null;
+  const { amount, currency } = item.original;
+  return formatPayment(item.kind === "payment" ? amount : recurring.fromMrr(amount), currency);
 }
 
 /** What a screen may say about an item: customer (when shown), plan, country, account. */

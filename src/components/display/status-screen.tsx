@@ -2,6 +2,7 @@ import { CircleAlertIcon, PlugIcon } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { ScreenMessage } from "@/components/display/screen-message";
 import { LogoPulse } from "@/components/logo";
+import { recurringMetric } from "@/lib/display/metric";
 import type { DisplayAccount, DisplayState } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
 
@@ -71,8 +72,9 @@ export function StatusScreen({ state }: { state: DisplayState }) {
   return (
     <ScreenMessage icon={<PlugIcon />} title="Connect Stripe to bring this screen to life">
       <p>
-        Add a Stripe account to “{state.screen.name}” in your dashboard. Your MRR, revenue and every
-        new payment will show up here, live.
+        Add a Stripe account to “{state.screen.name}” in your dashboard. Your{" "}
+        {recurringMetric(state.screen.settings.metric).label}, revenue and every new payment will
+        show up here, live.
       </p>
       {dashboard && (
         <p className="rounded-full bg-(--surface) px-6 py-2.5 font-mono text-xl text-(--ink) ring-1 ring-(--hairline)">

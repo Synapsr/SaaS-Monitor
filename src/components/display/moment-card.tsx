@@ -1,14 +1,15 @@
 import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
+import type { RecurringMetric } from "@/lib/display/metric";
 import { cn } from "@/lib/utils";
 
 export interface MomentCardContent {
   icon: LucideIcon;
   eyebrow: string;
   amount: string;
-  /** A change of MRR rather than money received: the amount reads "+$99 MRR". */
-  recurring?: boolean;
+  /** For a change of recurring revenue rather than money received: "+$99 MRR", "+$1,188 ARR". */
+  metric?: RecurringMetric["label"];
   details: string[];
   footnote?: string | null;
   /** Losses are honest, never alarming: no glow, no color. */
@@ -22,7 +23,7 @@ export function MomentCard({
   icon: Icon,
   eyebrow,
   amount,
-  recurring,
+  metric,
   details,
   footnote,
   tone,
@@ -71,8 +72,8 @@ export function MomentCard({
         <Reveal delay={0.18}>
           <p className="flex items-baseline gap-4 text-[length:calc(var(--rem)*7.5)] leading-none font-semibold tracking-[-0.04em] tabular-nums">
             <span className={celebration ? undefined : "text-(--ink-2)"}>{amount}</span>
-            {recurring && (
-              <span className="text-4xl font-medium tracking-tight text-(--ink-3)">MRR</span>
+            {metric && (
+              <span className="text-4xl font-medium tracking-tight text-(--ink-3)">{metric}</span>
             )}
           </p>
         </Reveal>

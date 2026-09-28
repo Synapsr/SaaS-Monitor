@@ -1,8 +1,9 @@
 import { diffFeed } from "@/lib/display/feed-diff";
+import { recurringMetric } from "@/lib/display/metric";
 import { crossedMilestone } from "@/lib/display/milestones";
 import type { DisplayState, FeedItem } from "@/lib/display/types";
 import { toMinorUnits } from "@/lib/money";
-import type { ScreenSettings } from "@/lib/screens/settings";
+import type { Metric, ScreenSettings } from "@/lib/screens/settings";
 import type { SoundEvent } from "@/lib/sounds";
 
 /** Something worth a sound and a moment on screen. */
@@ -15,7 +16,14 @@ export type Moment =
       movement: FeedItem | null;
     }
   | { id: string; kind: "movement"; movement: FeedItem }
-  | { id: string; kind: "milestone"; amount: number; isGoal: boolean }
+  | {
+      id: string;
+      kind: "milestone";
+      /** In minor units of `metric`, the screen's metric when it was crossed: "$1M ARR". */
+      amount: number;
+      metric: Metric;
+      isGoal: boolean;
+    }
   | {
       id: string;
       kind: "summary";
@@ -96,8 +104,11 @@ export interface MomentTracker {
   previous: DisplayState | null;
   seen: Set<string> | null;
   testEventId: string | null;
-  /** Milestones already celebrated, so MRR hovering around one celebrates it only once. */
-  celebrated: ReadonlySet<number>;
+  /**
+   * Ids of the milestone moments already played, so a value hovering around a milestone
+   * celebrates it only once. They name the metric: $250K of MRR and of ARR are two milestones.
+   */
+  celebrated: ReadonlySet<string>;
 }
 
 export const initialMomentTracker: MomentTracker = {
@@ -110,7 +121,7 @@ export const initialMomentTracker: MomentTracker = {
 /**
  * Compares a new state with the previous one. The first state, and any state that follows an
  * import, a currency change or a change of the screen's accounts, only sets the baseline: moments
- * come from what happens next.
+ * come from what happens next. A new metric or goal is a new baseline for milestones only.
  */
 export function trackMoments(
   tracker: MomentTracker,
@@ -128,23 +139,29 @@ export function trackMoments(
   const moments = planMoments(fresh);
 
   let celebrated = tracker.celebrated;
-  const milestone = comparable
-    ? crossedMilestone(
-        previous.metrics.mrr,
-        state.metrics.mrr,
-        state.screen.settings.goal,
-        state.currency,
-      )
-    : null;
-  if (milestone !== null && !celebrated.has(milestone)) {
-    celebrated = new Set(celebrated).add(milestone);
-    const goal = state.screen.settings.goal;
-    moments.push({
-      id: `milestone:${milestone}`,
-      kind: "milestone",
-      amount: milestone,
-      isGoal: goal !== null && milestone === toMinorUnits(goal, state.currency),
-    });
+  const { metric, goal } = state.screen.settings;
+  const { fromMrr } = recurringMetric(metric);
+  const milestone =
+    comparable && showSameMetricAndGoal(previous, state)
+      ? crossedMilestone(
+          fromMrr(previous.metrics.mrr),
+          fromMrr(state.metrics.mrr),
+          goal,
+          state.currency,
+        )
+      : null;
+  if (milestone !== null) {
+    const id = `milestone:${metric}:${milestone}`;
+    if (!celebrated.has(id)) {
+      celebrated = new Set(celebrated).add(id);
+      moments.push({
+        id,
+        kind: "milestone",
+        amount: milestone,
+        metric,
+        isGoal: goal !== null && milestone === toMinorUnits(goal, state.currency),
+      });
+    }
   }
 
   const testEventId = state.testEvent?.id ?? null;
@@ -162,6 +179,18 @@ export function trackMoments(
 function showSameAccounts(a: DisplayState, b: DisplayState): boolean {
   const ids = new Set(a.accounts.map((account) => account.id));
   return a.accounts.length === b.accounts.length && b.accounts.every(({ id }) => ids.has(id));
+}
+
+/**
+ * Switching from MRR to ARR multiplies the value by twelve, crossing milestones that were never
+ * reached, and a new goal may sit just below the value. Neither is progress: payments and
+ * subscriptions keep their moments, but milestones start over from the new baseline.
+ */
+function showSameMetricAndGoal(a: DisplayState, b: DisplayState): boolean {
+  return (
+    a.screen.settings.metric === b.screen.settings.metric &&
+    a.screen.settings.goal === b.screen.settings.goal
+  );
 }
 
 /** The sound of a moment, and whether the screen's settings let it play. */

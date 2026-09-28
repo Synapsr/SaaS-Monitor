@@ -2,6 +2,7 @@ import NumberFlow from "@number-flow/react";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import type { CSSProperties } from "react";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
+import { recurringMetric, type RecurringMetric } from "@/lib/display/metric";
 import type { DisplayMetrics } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -11,18 +12,22 @@ const ROLL: EffectTiming = { duration: 1400, easing: "cubic-bezier(0.19, 1, 0.22
 
 interface HeroProps {
   metrics: DisplayMetrics;
+  /** MRR or ARR in large, the other one under it. */
+  recurring: RecurringMetric;
   currency: string;
   /** Lights up (or gently dims) the number while an MRR change is being celebrated. */
   highlight: "up" | "down" | null;
 }
 
-export function Hero({ metrics, currency, highlight }: HeroProps) {
-  // Sized from the column width and the number of characters, so that any MRR fits on one line.
-  const characters = formatMoney(metrics.mrr, currency).length;
+export function Hero({ metrics, recurring, currency, highlight }: HeroProps) {
+  const value = recurring.fromMrr(metrics.mrr);
+  const other = recurringMetric(recurring.other);
+  // Sized from the column width and the number of characters, so that any amount fits on one line.
+  const characters = formatMoney(value, currency).length;
   return (
-    <section aria-labelledby="mrr-title" className="@container relative flex flex-col gap-4">
-      <h2 id="mrr-title" className="text-2xl font-medium text-(--ink-2)">
-        Monthly recurring revenue
+    <section aria-labelledby="metric-title" className="@container relative flex flex-col gap-4">
+      <h2 id="metric-title" className="text-2xl font-medium text-(--ink-2)">
+        {recurring.name}
       </h2>
       <div className="relative">
         <div
@@ -33,7 +38,7 @@ export function Hero({ metrics, currency, highlight }: HeroProps) {
           )}
         />
         <NumberFlow
-          {...moneyFlow(metrics.mrr, currency)}
+          {...moneyFlow(value, currency)}
           transformTiming={ROLL}
           spinTiming={ROLL}
           willChange
@@ -45,11 +50,15 @@ export function Hero({ metrics, currency, highlight }: HeroProps) {
         />
       </div>
       <div className="flex flex-wrap items-center gap-x-7 gap-y-3 text-2xl">
-        <Growth mrr={metrics.mrr} before={metrics.mrr30DaysAgo} currency={currency} />
+        <Growth
+          value={value}
+          before={recurring.fromMrr(metrics.mrr30DaysAgo)}
+          currency={currency}
+        />
         <p className="text-(--ink-3)">
-          ARR{" "}
+          {other.label}{" "}
           <span className="font-medium text-(--ink-2) tabular-nums">
-            {formatAmount(metrics.arr, currency)}
+            {formatAmount(other.fromMrr(metrics.mrr), currency)}
           </span>
         </p>
       </div>
@@ -57,9 +66,9 @@ export function Hero({ metrics, currency, highlight }: HeroProps) {
   );
 }
 
-function Growth({ mrr, before, currency }: { mrr: number; before: number; currency: string }) {
-  const change = mrr - before;
-  const ratio = percentChange(mrr, before);
+function Growth({ value, before, currency }: { value: number; before: number; currency: string }) {
+  const change = value - before;
+  const ratio = percentChange(value, before);
   const growing = change >= 0;
   const Icon = growing ? TrendingUpIcon : TrendingDownIcon;
   return (

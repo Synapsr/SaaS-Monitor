@@ -3,7 +3,13 @@ import { MomentQueue } from "@/lib/display/moment-queue";
 import type { Moment } from "@/lib/display/moments";
 
 const test = (id: string): Moment => ({ id, kind: "test" });
-const milestone = (id: string): Moment => ({ id, kind: "milestone", amount: 1, isGoal: false });
+const milestone = (id: string): Moment => ({
+  id,
+  kind: "milestone",
+  amount: 1,
+  metric: "mrr",
+  isGoal: false,
+});
 
 describe("moment queue", () => {
   beforeEach(() => vi.useFakeTimers());

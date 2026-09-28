@@ -1,6 +1,10 @@
-import type { DisplayMetrics } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 import { toMajorUnits, toMinorUnits } from "@/lib/money";
+
+/*
+ * Goals and milestones apply to the recurring revenue a screen shows, MRR or ARR: values here are
+ * in the screen's metric, like its goal. `$1M` is a milestone of either.
+ */
 
 /**
  * The milestone ladder founders celebrate, in major units: 100, 250, 500, 1k, 2.5k, 5k, 10k…
@@ -40,8 +44,14 @@ export interface GoalProgress {
   remaining: number;
   /** Share of the target already reached, from 0 to 1. */
   progress: number;
-  /** When the target is reached if MRR keeps its 30-day pace; `null` when it is not growing. */
+  /** When the target is reached at the 30-day pace; `null` when the value is not growing. */
   eta: Date | null;
+}
+
+/** Recurring revenue in the screen's metric (minor units), now and 30 days ago. */
+export interface RecurringValue {
+  current: number;
+  thirtyDaysAgo: number;
 }
 
 /** Beyond this, an estimate says more about noise than about the business. */
@@ -52,30 +62,30 @@ const MAX_ETA_DAYS = 3650;
  * is reached the ladder takes over, so a screen always has something to look forward to.
  */
 export function goalProgress(
-  metrics: Pick<DisplayMetrics, "mrr" | "mrr30DaysAgo">,
+  value: RecurringValue,
   goal: number | null,
   currency: string,
   now: Date,
 ): GoalProgress {
-  const mrr = Math.max(0, metrics.mrr);
-  const current = toMajorUnits(mrr, currency);
+  const reached = Math.max(0, value.current);
+  const current = toMajorUnits(reached, currency);
   const kind = goal !== null && goal > current ? "goal" : "milestone";
   const target = toMinorUnits(
     kind === "goal" && goal !== null ? goal : nextMilestone(current),
     currency,
   );
-  const remaining = Math.max(0, target - mrr);
+  const remaining = Math.max(0, target - reached);
 
-  const dailyPace = (metrics.mrr - metrics.mrr30DaysAgo) / 30;
+  const dailyPace = (value.current - value.thirtyDaysAgo) / 30;
   const days = dailyPace > 0 ? remaining / dailyPace : Infinity;
   const eta = days <= MAX_ETA_DAYS ? new Date(now.getTime() + days * DAY_MS) : null;
 
-  return { kind, target, remaining, progress: Math.min(1, mrr / target), eta };
+  return { kind, target, remaining, progress: Math.min(1, reached / target), eta };
 }
 
 /**
- * The milestone (minor units) crossed when MRR moved from `before` to `after`: the highest ladder
- * step or custom goal in `(before, after]`, or `null` when none was crossed.
+ * The milestone (minor units) crossed when the value moved from `before` to `after`: the highest
+ * ladder step or custom goal in `(before, after]`, or `null` when none was crossed.
  */
 export function crossedMilestone(
   before: number,

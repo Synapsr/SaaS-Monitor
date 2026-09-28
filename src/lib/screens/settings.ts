@@ -3,13 +3,16 @@ import { z } from "zod";
 export const SOUND_PACKS = ["register", "chime", "arcade"] as const;
 export const ACCENTS = ["emerald", "violet", "sky", "amber", "rose"] as const;
 export const CHART_RANGES = ["30d", "90d", "12m"] as const;
+/** The recurring revenue a screen shows: monthly (MRR) or annual (ARR, twelve times MRR). */
+export const METRICS = ["mrr", "arr"] as const;
 
-/** Highest MRR goal a screen accepts, in major units. */
+/** Highest goal a screen accepts, in major units. */
 export const MAX_GOAL = 1_000_000_000;
 
 export type SoundPack = (typeof SOUND_PACKS)[number];
 export type Accent = (typeof ACCENTS)[number];
 export type ChartRange = (typeof CHART_RANGES)[number];
+export type Metric = (typeof METRICS)[number];
 
 /**
  * Whether `value` is an IANA time zone this runtime knows, e.g. `Europe/Paris`, aliases included:
@@ -39,7 +42,15 @@ export const screenSettingsSchema = z.object({
     .default("usd"),
   /** IANA time zone that defines "today" and "this month". */
   timeZone: z.string().refine(isTimeZone, "Unknown time zone").default("UTC"),
-  /** MRR target in major units (e.g. 10000 for $10k). `null` follows the milestone ladder. */
+  /**
+   * The screen's main metric. Display states stay in MRR: a screen showing ARR multiplies every
+   * recurring figure by twelve as it presents them (`src/lib/display/metric.ts`).
+   */
+  metric: z.enum(METRICS).default("mrr"),
+  /**
+   * Target of `metric` in major units (e.g. 10000 for $10k MRR, or 1000000 for $1M ARR). `null`
+   * follows the milestone ladder.
+   */
   goal: z.number().int().positive().max(MAX_GOAL).nullable().default(null),
   sound: z
     .object({

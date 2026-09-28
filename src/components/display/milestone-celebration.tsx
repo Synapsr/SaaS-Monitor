@@ -1,17 +1,25 @@
 import { motion } from "motion/react";
 import { Reveal } from "@/components/display/moment-card";
+import { recurringMetric } from "@/lib/display/metric";
 import { nextMilestone } from "@/lib/display/milestones";
 import { formatMoney, toMajorUnits, toMinorUnits } from "@/lib/money";
+import type { Metric } from "@/lib/screens/settings";
 
 interface MilestoneCelebrationProps {
-  /** The milestone crossed, in minor units. */
+  /** The milestone crossed, in minor units of `metric`. */
   amount: number;
+  metric: Metric;
   isGoal: boolean;
   currency: string;
 }
 
 /** The whole screen for a milestone: a moment worth stopping for, then the next one to chase. */
-export function MilestoneCelebration({ amount, isGoal, currency }: MilestoneCelebrationProps) {
+export function MilestoneCelebration({
+  amount,
+  metric,
+  isGoal,
+  currency,
+}: MilestoneCelebrationProps) {
   const next = toMinorUnits(nextMilestone(toMajorUnits(amount, currency)), currency);
   return (
     <motion.div
@@ -42,7 +50,10 @@ export function MilestoneCelebration({ amount, isGoal, currency }: MilestoneCele
           transition={{ type: "spring", duration: 1.1, bounce: 0.3, delay: 0.3 }}
         >
           {formatMoney(amount, currency, { compact: true })}
-          <span className="text-[0.3em] font-medium tracking-tight text-(--ink-2)"> MRR</span>
+          <span className="text-[0.3em] font-medium tracking-tight text-(--ink-2)">
+            {" "}
+            {recurringMetric(metric).label}
+          </span>
         </motion.p>
         <Reveal delay={0.75}>
           <p className="text-3xl text-(--ink-2)">

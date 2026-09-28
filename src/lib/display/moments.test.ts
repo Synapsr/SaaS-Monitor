@@ -10,7 +10,7 @@ import {
   type MomentTracker,
 } from "@/lib/display/moments";
 import type { DisplayState } from "@/lib/display/types";
-import { defaultScreenSettings } from "@/lib/screens/settings";
+import { defaultScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { displayState, feedItem, withActivity } from "@/test/display";
 
 function track(states: DisplayState[]): Moment[][] {
@@ -20,6 +20,17 @@ function track(states: DisplayState[]): Moment[][] {
     tracker = result.tracker;
     return result.moments;
   });
+}
+
+function atMrr(mrr: number): DisplayState {
+  return displayState({ metrics: { ...displayState().metrics, mrr } });
+}
+
+function withSettings(state: DisplayState, settings: Partial<ScreenSettings>): DisplayState {
+  return {
+    ...state,
+    screen: { ...state.screen, settings: { ...state.screen.settings, ...settings } },
+  };
 }
 
 describe("moment planning", () => {
@@ -102,18 +113,72 @@ describe("moment tracking", () => {
 
     const moments = track([state, crossed, back, again]);
     expect(moments[1].map((moment) => moment.kind)).toEqual(["movement", "milestone"]);
-    expect(moments[1][1]).toMatchObject({ amount: 1_000_000, isGoal: false });
+    expect(moments[1][1]).toMatchObject({ amount: 1_000_000, metric: "mrr", isGoal: false });
     expect(moments[3].map((moment) => moment.kind)).toEqual(["movement"]);
   });
 
   it("flags the custom goal", () => {
-    const settings = { ...defaultScreenSettings, goal: 15_000 };
-    const state = displayState({
-      screen: { name: "Office", settings },
-      metrics: { ...displayState().metrics, mrr: 1_490_000 },
-    });
+    const state = withSettings(atMrr(1_490_000), { goal: 15_000 });
     const [, moments] = track([state, withActivity(state, [feedItem()], 1_520_000)]);
     expect(moments.at(-1)).toMatchObject({ kind: "milestone", amount: 1_500_000, isGoal: true });
+  });
+
+  it("celebrates round ARR numbers on a screen showing ARR", () => {
+    // $20,800 of MRR is $249,600 of ARR.
+    const state = withSettings(atMrr(2_080_000), { metric: "arr" });
+    const [, moments] = track([state, withActivity(state, [feedItem()], 2_085_000)]);
+    expect(moments.at(-1)).toEqual({
+      id: "milestone:arr:25000000",
+      kind: "milestone",
+      amount: 25_000_000,
+      metric: "arr",
+      isGoal: false,
+    });
+  });
+
+  it("sets a new baseline for milestones when the metric changes, but keeps the activity", () => {
+    const inMrr = atMrr(2_080_000);
+    const sale = feedItem();
+    // Switched to ARR as a sale lifts it from $249,600 to $250,200: the screen showed $20,800 of
+    // MRR a moment ago, nothing was crossed.
+    const inArr = withSettings(withActivity(inMrr, [sale], 2_085_000), { metric: "arr" });
+    const upgrade = feedItem({ kind: "expansion", amount: 2_085_000 });
+
+    const moments = track([
+      inMrr,
+      inArr,
+      withSettings(inArr, { metric: "mrr" }),
+      inArr,
+      withActivity(inArr, [upgrade], 4_170_000),
+    ]);
+
+    expect(moments.map((played) => played.map((moment) => moment.kind))).toEqual([
+      [],
+      ["payment"],
+      [],
+      [],
+      ["movement", "milestone"],
+    ]);
+    expect(moments[4][1]).toMatchObject({ amount: 50_000_000, metric: "arr" });
+  });
+
+  it("sets a new baseline for milestones when the goal changes", () => {
+    const state = atMrr(1_490_000);
+    // The goal is set to $15K as a sale lifts MRR past it: MRR did not reach the goal, the
+    // founder moved it. Then it is raised to $16K, which MRR reaches.
+    const set = withSettings(withActivity(state, [feedItem()], 1_520_000), { goal: 15_000 });
+    const raised = withSettings(set, { goal: 16_000 });
+    const reached = withActivity(raised, [feedItem({ kind: "new", amount: 90_000 })], 1_610_000);
+
+    const moments = track([state, set, raised, reached]);
+
+    expect(moments.map((played) => played.map((moment) => moment.kind))).toEqual([
+      [],
+      ["payment"],
+      [],
+      ["movement", "milestone"],
+    ]);
+    expect(moments[3][1]).toMatchObject({ amount: 1_600_000, isGoal: true });
   });
 
   it("sets a new baseline when the import completes", () => {
@@ -166,9 +231,9 @@ describe("moment sounds", () => {
   it("maps moments to sounds", () => {
     expect(momentSound(payment, sound)).toBe("payment");
     expect(momentSound(churn, sound)).toBe("mrrDown");
-    expect(momentSound({ id: "m", kind: "milestone", amount: 1, isGoal: false }, sound)).toBe(
-      "milestone",
-    );
+    expect(
+      momentSound({ id: "m", kind: "milestone", amount: 1, metric: "mrr", isGoal: false }, sound),
+    ).toBe("milestone");
   });
 
   it("respects the master switch and each event's toggle", () => {
@@ -196,9 +261,9 @@ describe("moment celebrations", () => {
     expect(
       momentCelebration({ id: "p", kind: "payment", payment: feedItem(), movement: null }),
     ).toBe("payment");
-    expect(momentCelebration({ id: "m", kind: "milestone", amount: 1, isGoal: true })).toBe(
-      "milestone",
-    );
+    expect(
+      momentCelebration({ id: "m", kind: "milestone", amount: 1, metric: "mrr", isGoal: true }),
+    ).toBe("milestone");
     expect(momentCelebration({ id: "t", kind: "test" })).toBe("payment");
     expect(momentCelebration(summary(4_900))).toBe("payment");
     expect(momentCelebration(summary(0))).toBeNull();

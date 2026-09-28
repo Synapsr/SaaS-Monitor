@@ -3,8 +3,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { KindIcon } from "@/components/display/feed-kind-icon";
 import { useNow } from "@/hooks/use-now";
-import { isGoodNews, itemAmount, itemContext, KIND_LABELS } from "@/lib/display/feed";
-import { formatPayment } from "@/lib/display/format";
+import {
+  isGoodNews,
+  itemAmount,
+  itemContext,
+  itemOriginalAmount,
+  KIND_LABELS,
+} from "@/lib/display/feed";
+import type { RecurringMetric } from "@/lib/display/metric";
 import { formatFeedTime } from "@/lib/display/time";
 import type { FeedItem } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
@@ -14,6 +20,8 @@ const MAX_ITEMS = 14;
 
 interface LiveFeedProps {
   feed: FeedItem[];
+  /** Subscription changes read "+$149 MRR", or "+$1,788 ARR". */
+  recurring: RecurringMetric;
   currency: string;
   timeZone: string;
   serverTime: number;
@@ -24,6 +32,7 @@ interface LiveFeedProps {
 
 export function LiveFeed({
   feed,
+  recurring,
   currency,
   timeZone,
   serverTime,
@@ -63,6 +72,7 @@ export function LiveFeed({
                 <FeedRow
                   key={item.id}
                   item={item}
+                  recurring={recurring}
                   currency={currency}
                   relativeTime={formatFeedTime(new Date(item.occurredAt), new Date(now), timeZone)}
                   showAccount={showAccount}
@@ -85,14 +95,16 @@ export function LiveFeed({
 
 interface FeedRowProps {
   item: FeedItem;
+  recurring: RecurringMetric;
   currency: string;
   relativeTime: string;
   showAccount: boolean;
   arrived: boolean;
 }
 
-function FeedRow({ item, currency, relativeTime, showAccount, arrived }: FeedRowProps) {
+function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived }: FeedRowProps) {
   const payment = item.kind === "payment";
+  const original = itemOriginalAmount(item, recurring);
   return (
     <motion.li
       layout="position"
@@ -115,14 +127,12 @@ function FeedRow({ item, currency, relativeTime, showAccount, arrived }: FeedRow
                 !isGoodNews(item.kind) && "text-(--ink-2)",
               )}
             >
-              {itemAmount(item, currency)}
+              {itemAmount(item, currency, recurring)}
             </span>
-            {!payment && <span className="text-base font-medium text-(--ink-3)">MRR</span>}
-            {item.original && (
-              <span className="text-base text-(--ink-3)">
-                {formatPayment(item.original.amount, item.original.currency)}
-              </span>
+            {!payment && (
+              <span className="text-base font-medium text-(--ink-3)">{recurring.label}</span>
             )}
+            {original && <span className="text-base text-(--ink-3)">{original}</span>}
           </p>
           <p className="shrink-0 text-base whitespace-nowrap text-(--ink-3)">{relativeTime}</p>
         </div>
