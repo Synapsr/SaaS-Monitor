@@ -44,6 +44,47 @@ Stripe doesn't keep a history of past subscription changes, so the MRR chart bef
 reconstructed from each subscription's start, end and current amount. From then on, every change
 is recorded as it happens.
 
+## How MRR is computed
+
+SaaS Monitor follows [Stripe's definition of MRR](https://docs.stripe.com/billing/subscriptions/analytics),
+so the number on the wall matches your Stripe Dashboard:
+
+- Only `active` and `past_due` subscriptions count: trials and `canceled`, `unpaid`, `paused` or
+  `incomplete` subscriptions don't.
+- A subscription set to cancel at the end of its period stops counting as soon as the cancellation
+  is requested. One with a cancellation date (`cancel_at`) counts until that date.
+- Each item is brought to a month with its own billing interval: a yearly price counts for a
+  twelfth, a weekly one 52 times a year divided by 12. Quantities, tiers and volume prices are
+  priced as Stripe invoices them.
+- Metered usage and one-time prices are left out, and taxes are not added (a tax-inclusive price
+  counts as is).
+- `forever` discounts, and `repeating` ones until they end, are subtracted; `once` discounts are
+  not. A customer's discount applies to the subscriptions without a discount of their own.
+
+Every change of a subscription's MRR is recorded as a movement: **new** (it starts paying),
+**expansion** and **contraction** (its amount changes), **churn** (it stops counting) and
+**reactivation** (it pays again after stopping). Net new MRR adds up this month's movements. A
+_new customer_ paid nothing when the month began; a customer adding a second subscription is not
+one.
+
+Some limits to keep in mind:
+
+- **History before the import** is rebuilt, as explained above: each subscription counts at its
+  current amount from its start, so upgrades and downgrades that happened before the import don't
+  show on the chart.
+- **Freshness** depends on how updates reach SaaS Monitor: within seconds with a webhook,
+  otherwise at the pace described in [Instant updates](#instant-updates). A daily check also
+  compares every subscription with Stripe, for changes Stripe makes without an event, such as a
+  repeating coupon that ends.
+- **Several currencies**: a screen converts every amount to its currency at today's exchange rate
+  (European Central Bank rates, refreshed every 12 hours), past values included. The chart then
+  shows the business growing rather than exchange rates moving, but a past value can differ from
+  what Stripe showed that day. Amounts in a currency without a rate are left out, and the screen
+  says so.
+
+Revenue is what customers paid, net of refunds: today, this month, and the same number of days of
+the previous month for comparison. Days and months follow the screen's time zone.
+
 ## Instant updates
 
 Stripe limits how often an app may read an account (about 500 read requests per payment over 30

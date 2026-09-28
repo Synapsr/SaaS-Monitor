@@ -44,8 +44,8 @@ when a payment lands, and confetti flies when you cross $10K MRR.
   the sound on the TV.
 - **Several Stripe accounts** on one screen, converted to your currency, or one screen per product.
 - **Teams**: workspaces, invitations by link, as many screens as you like.
-- **Honest numbers**: MRR follows [Stripe's own definition](docs/stripe.md), so the TV matches
-  your Stripe Dashboard.
+- **Honest numbers**: MRR follows [Stripe's own definition](docs/stripe.md#how-mrr-is-computed), so
+  the TV matches your Stripe Dashboard.
 - **Private and secure**: read-only restricted keys encrypted at rest, unguessable screen links,
   customer names hidden unless you allow them.
 - **Real time within Stripe's limits**: webhooks for instant updates, and polling that respects
