@@ -68,6 +68,24 @@ describe("members", { timeout: 30_000 }, () => {
     expect(await inviteMember(owner, ada.requestHeaders, input)).toEqual(invitation);
   });
 
+  it("only shows owner invitations to owners", async () => {
+    const { ada, owner, person, context: admin } = await workspaceWithMember("admin");
+    for (const [email, role] of [
+      ["carol@example.com", "member"],
+      ["dave@example.com", "owner"],
+    ] as const) {
+      const invitation = await inviteMember(owner, ada.requestHeaders, { email, role });
+      if (!invitation.ok) throw new Error(invitation.error);
+    }
+
+    expect(
+      (await listPendingInvitations(owner, ada.requestHeaders)).map(({ email }) => email),
+    ).toEqual(expect.arrayContaining(["carol@example.com", "dave@example.com"]));
+    expect(
+      (await listPendingInvitations(admin, person.requestHeaders)).map(({ email }) => email),
+    ).toEqual(["carol@example.com"]);
+  });
+
   it("only lets the invited email address join", async () => {
     const ada = await signUp("Ada");
     const owner = await workspaceContext(ada.userId, ada.personalWorkspaceId);

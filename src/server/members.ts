@@ -120,6 +120,9 @@ export async function listPendingInvitations(
     query: { organizationId: context.workspace.id },
   });
   const now = Date.now();
+  // An invitation link grants its role to whoever signs up with the invited address (emails are
+  // not verified), so only owners may see the links that make someone an owner.
+  const isVisible = (role: WorkspaceRole) => context.role === "owner" || role !== "owner";
   return rows
     .filter(({ status, expiresAt }) => status === "pending" && new Date(expiresAt).getTime() > now)
     .map(({ id, email, role, expiresAt }) => ({
@@ -128,6 +131,7 @@ export async function listPendingInvitations(
       role: parseRole(role),
       expiresAt: new Date(expiresAt),
     }))
+    .filter((invitation) => isVisible(invitation.role))
     .sort((a, b) => +b.expiresAt - +a.expiresAt);
 }
 
