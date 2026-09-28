@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
-import { testDatabaseUrl } from "./src/test/database-url";
+import { testDatabaseUrl } from "./src/test/database-url.ts";
 
 const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
 
