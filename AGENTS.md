@@ -21,7 +21,7 @@ pnpm db:up          # Postgres 18 + stripe-mock in Docker (compose.dev.yaml)
 pnpm db:migrate     # apply migrations in ./drizzle
 pnpm db:generate    # create a migration after editing src/db/schema
 pnpm dev            # http://localhost:3000 (use -p to pick another port)
-pnpm test           # Vitest; DB tests use the `saas_monitor_test` database
+pnpm test           # Vitest: unit + db projects (db uses saas_monitor_test)
 pnpm lint && pnpm typecheck && pnpm format:check
 ```
 
@@ -55,8 +55,9 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   `formatMoney`.
 - **Screen settings** are JSON: every new field needs a default in `screenSettingsSchema`.
 - Validate all user input with Zod at the boundary (server actions, route handlers).
-- Tests sit next to the code (`*.test.ts`). Pure logic gets unit tests; DB code gets
-  integration tests against the test database.
+- Tests sit next to the code. Pure logic gets unit tests (`*.test.ts`); code that needs
+  PostgreSQL gets integration tests named `*.db.test.ts`, run serially against the test database
+  (`TEST_DATABASE_URL`, migrated automatically; see `src/test/db.ts` for helpers).
 
 ## Style
 
