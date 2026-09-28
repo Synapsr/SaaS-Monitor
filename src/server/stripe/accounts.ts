@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, inArray, sum } from "drizzle-orm";
 import { db } from "@/db";
 import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
-import type { StripePermissionId } from "@/lib/stripe-permissions";
+import { permissionLabel, type StripePermissionId } from "@/lib/stripe-permissions";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
 import { createCurrencyConverter } from "@/server/fx";
 import { toUnixTime } from "@/server/sync/context";
@@ -10,7 +10,7 @@ import { scheduleSync } from "@/server/sync";
 import { updatesMode } from "@/server/sync/policy";
 import { newBackfill } from "@/server/sync/scan";
 import { recentPaymentCounts, toSyncState, workingStatus } from "@/server/sync/state";
-import { permissionLabel, StripeAccessError } from "./errors";
+import { StripeAccessError } from "./errors";
 import { SYNC_EVENT_TYPES } from "./event-types";
 import {
   createStripeGateway,
@@ -159,14 +159,14 @@ async function checkReadAccess(gateway: StripeGateway): Promise<ReadAccess> {
   if (!missing.length) {
     return { ok: false, error: "Stripe could not be reached. Try again in a moment." };
   }
-  const missingPermissions = missing.map(({ error, permission }) =>
-    permissionLabel(error.permission ?? permission),
-  );
-  const [permissions, them] =
-    missing.length === 1 ? ["a permission", "it"] : ["permissions", "them"];
+  // Stripe names the permission it wanted; the probe's is the fallback.
+  const missingPermissions = missing.map(({ error, permission }) => error.permission ?? permission);
   return {
     ok: false,
-    error: `This key is missing ${permissions}: ${missingPermissions.join(", ")}. Edit the key in the Stripe Dashboard to allow ${them}.`,
+    error:
+      missingPermissions.length === 1
+        ? "This key is missing a permission."
+        : `This key is missing ${missingPermissions.length} permissions.`,
     missingPermissions,
   };
 }

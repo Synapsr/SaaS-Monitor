@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { describePermission } from "./key-permissions";
+import { permissionLabel } from "@/lib/stripe-permissions";
 
 type ConnectInput = Parameters<typeof connectAccountAction>[0];
 
@@ -49,6 +49,7 @@ export function ConnectAccountForm() {
   );
   const keyHintId = useId();
   const hint = keyHint(secretKey);
+  const missingPermissions = (state && !state.ok && state.missingPermissions) || [];
 
   return (
     <form
@@ -113,14 +114,17 @@ export function ConnectAccountForm() {
 
         {state && !state.ok && (
           <Alert variant="destructive">
-            {state.missingPermissions?.length ? <TriangleAlertIcon /> : <CircleAlertIcon />}
+            {missingPermissions.length > 0 ? <TriangleAlertIcon /> : <CircleAlertIcon />}
             <AlertTitle>{state.error}</AlertTitle>
-            {state.missingPermissions && state.missingPermissions.length > 0 && (
+            {missingPermissions.length > 0 && (
               <AlertDescription>
-                <p>Add these permissions to the key in Stripe, then try again:</p>
+                <p>
+                  Add {missingPermissions.length === 1 ? "it" : "them"} to the key in the Stripe
+                  Dashboard, then try again:
+                </p>
                 <ul className="mt-1.5 list-disc pl-4">
-                  {state.missingPermissions.map((permission) => (
-                    <li key={permission}>{describePermission(permission)}</li>
+                  {missingPermissions.map((permission) => (
+                    <li key={permission}>{permissionLabel(permission)}</li>
                   ))}
                 </ul>
               </AlertDescription>

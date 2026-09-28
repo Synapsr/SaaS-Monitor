@@ -1,6 +1,6 @@
 import "server-only";
 import Stripe from "stripe";
-import { STRIPE_KEY_PERMISSIONS } from "@/lib/stripe-permissions";
+import { permissionLabel } from "@/lib/stripe-permissions";
 
 export type StripeErrorKind =
   /** 401: the key is invalid, revoked or was rolled. */
@@ -79,12 +79,6 @@ export function toStripeAccessError(error: unknown): unknown {
  */
 export function redactSecrets(text: string): string {
   return text.replace(/\b((?:sk|rk|pk)_(?:live|test)_|whsec_)[A-Za-z0-9*]+/g, "$1…");
-}
-
-/** Dashboard label of a permission, e.g. `Charges and Refunds (Read)`. */
-export function permissionLabel(permission: string): string {
-  const known = STRIPE_KEY_PERMISSIONS.find((candidate) => candidate.id === permission);
-  return known ? `${known.label} (${known.access})` : permission;
 }
 
 /** User-facing explanation of an error that needs the user to act, shown in the dashboard. */

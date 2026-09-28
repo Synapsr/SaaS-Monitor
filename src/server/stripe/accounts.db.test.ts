@@ -94,15 +94,14 @@ describe("Stripe accounts", () => {
       });
     });
 
-    it("lists the missing permissions as the Dashboard names them", async () => {
+    it("says which permissions the key is missing", async () => {
       stripe.deniedResources.add("coupons");
       stripe.deniedResources.add("events");
 
       expect(await connect()).toEqual({
         ok: false,
-        error:
-          "This key is missing permissions: Events (Read), Coupons (Read). Edit the key in the Stripe Dashboard to allow them.",
-        missingPermissions: ["Events (Read)", "Coupons (Read)"],
+        error: "This key is missing 2 permissions.",
+        missingPermissions: ["rak_event_read", "rak_coupon_read"],
       });
       expect(await db().$count(stripeAccounts)).toBe(0);
     });

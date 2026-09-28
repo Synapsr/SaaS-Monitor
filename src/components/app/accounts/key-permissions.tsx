@@ -18,12 +18,6 @@ function sections(): [string, StripeKeyPermission[]][] {
   return [...groups].sort(([a], [b]) => rank(a) - rank(b));
 }
 
-/** "Subscriptions (Read)" for a permission id reported as missing by Stripe. */
-export function describePermission(id: string): string {
-  const permission = STRIPE_KEY_PERMISSIONS.find((candidate) => candidate.id === id);
-  return permission ? `${permission.label} (${permission.access})` : id;
-}
-
 /** The permissions to set on the restricted key, as Stripe's form names them. */
 export function KeyPermissions() {
   return (

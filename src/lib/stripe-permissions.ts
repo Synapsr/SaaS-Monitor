@@ -32,6 +32,12 @@ export interface StripeKeyPermission {
 
 export type StripePermissionId = (typeof STRIPE_KEY_PERMISSIONS)[number]["id"];
 
+/** How the Stripe Dashboard names a permission, e.g. `Charges and Refunds (Read)`. */
+export function permissionLabel(id: string): string {
+  const permission = STRIPE_KEY_PERMISSIONS.find((candidate) => candidate.id === id);
+  return permission ? `${permission.label} (${permission.access})` : id;
+}
+
 /**
  * Opens the Stripe Dashboard on the restricted key form with the permissions pre-selected.
  * Stripe does not document these parameters, so the UI must also list the permissions.
