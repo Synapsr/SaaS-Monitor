@@ -91,9 +91,10 @@ export function layoutMrrChart({
     label: formatChartDay(date.toISOString().slice(0, 10), monthly),
   }));
   // Value labels need about three lines of room between them.
-  const yTicks = y
-    .ticks(Math.min(5, Math.max(2, Math.floor(height / (fontSize * 3.2)))))
-    .map((value) => ({ y: y(value), label: formatMoney(value, currency, { compact: true }) }))
+  const tickValues = y.ticks(Math.min(5, Math.max(2, Math.floor(height / (fontSize * 3.2)))));
+  const labels = valueLabels(tickValues, currency);
+  const yTicks = tickValues
+    .map((value, index) => ({ y: y(value), label: labels[index] }))
     // A label at the very top would touch the caption above the chart.
     .filter((tick) => tick.y > fontSize);
 
@@ -110,6 +111,21 @@ export function layoutMrrChart({
       ? { y: y(target), label: formatMoney(target, currency, { compact: true }) }
       : null,
   };
+}
+
+/**
+ * Compact amounts with the fewest decimals that tell them apart: ticks $20K apart around $1M read
+ * "$1.02M" and "$1.04M", not "$1M" twice.
+ */
+function valueLabels(values: readonly number[], currency: string): string[] {
+  let labels: string[] = [];
+  for (let digits = 1; digits <= 3; digits += 1) {
+    labels = values.map((value) =>
+      formatMoney(value, currency, { compact: true, compactDigits: digits }),
+    );
+    if (new Set(labels).size === labels.length) break;
+  }
+  return labels;
 }
 
 /**

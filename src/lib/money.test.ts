@@ -27,6 +27,8 @@ describe("money", () => {
     expect(formatMoney(1_248_050, "usd")).toBe("$12,481");
     expect(formatMoney(1_248_050, "usd", { cents: true })).toBe("$12,480.50");
     expect(formatMoney(1_248_050, "usd", { compact: true })).toBe("$12.5K");
+    expect(formatMoney(102_000_000, "usd", { compact: true })).toBe("$1M");
+    expect(formatMoney(102_000_000, "usd", { compact: true, compactDigits: 2 })).toBe("$1.02M");
     expect(formatMoney(12_000, "usd", { signed: true })).toBe("+$120");
     expect(formatMoney(-12_000, "eur", { signed: true })).toBe("-€120");
     expect(formatMoney(1500, "jpy")).toBe("¥1,500");

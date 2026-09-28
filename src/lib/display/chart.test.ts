@@ -23,6 +23,15 @@ describe("MRR chart layout", () => {
     expect(layout.yTicks.map((tick) => tick.label)).toEqual(["$6K", "$8K", "$10K", "$12K", "$14K"]);
   });
 
+  it("writes close values with the decimals that tell them apart", () => {
+    // ARR from $1M to $1.1M: in compact amounts with one decimal, most ticks would read "$1.1M".
+    const arr = series.map((point, index) => ({ ...point, value: 100_000_000 + index * 111_111 }));
+    const labels = layoutMrrChart({ ...options, series: arr, target: 500_000_000 }).yTicks.map(
+      (tick) => tick.label,
+    );
+    expect(labels).toEqual(["$950K", "$1M", "$1.05M", "$1.1M"]);
+  });
+
   it("labels a month with weekly dates, all inside the plot", () => {
     const month = { ...options, series: series.slice(-31), target: 2_500_000, monthly: false };
     const layout = layoutMrrChart(month);

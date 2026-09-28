@@ -50,6 +50,8 @@ export function convertAmount(amount: number, from: string, to: string, rate: nu
 export interface FormatMoneyOptions {
   /** `$12.5K` instead of `$12,480`. */
   compact?: boolean;
+  /** Most decimals of a compact amount: 1 by default (`$1.2M`), more to tell `$1.02M` apart. */
+  compactDigits?: number;
   /** Show the minor unit (`$12,480.50`). Off by default: big screens favor round numbers. */
   cents?: boolean;
   /** Always show the sign, e.g. `+$120` for growth. */
@@ -64,7 +66,7 @@ export function formatMoney(amount: number, currency: string, options: FormatMon
     currency: currency.toUpperCase(),
     notation: options.compact ? "compact" : "standard",
     minimumFractionDigits: options.compact ? 0 : digits,
-    maximumFractionDigits: options.compact ? 1 : digits,
+    maximumFractionDigits: options.compact ? (options.compactDigits ?? 1) : digits,
     signDisplay: options.signed ? "exceptZero" : "auto",
   }).format(toMajorUnits(amount, currency));
 }

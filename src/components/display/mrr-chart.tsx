@@ -159,7 +159,7 @@ function Plot({ series, label, currency, range, target, width, height, fontSize 
 
         {chart.yTicks.map((tick) => (
           <line
-            key={tick.label}
+            key={tick.y}
             x1={chart.gutter}
             x2={width}
             y1={tick.y}
@@ -237,7 +237,7 @@ function Plot({ series, label, currency, range, target, width, height, fontSize 
       <div aria-hidden>
         {chart.yTicks.map((tick) => (
           <span
-            key={tick.label}
+            key={tick.y}
             style={{ top: tick.y, width: chart.gutter - fontSize * 0.9 }}
             className="absolute left-0 -translate-y-1/2 text-right text-base text-(--ink-3) tabular-nums"
           >
