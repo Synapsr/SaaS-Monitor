@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { BUILD_ID } from "@/lib/build-id";
 
 const RELOADED_FOR = "saas-monitor:reloaded-for";
 
@@ -8,8 +9,7 @@ const RELOADED_FOR = "saas-monitor:reloaded-for";
  */
 export function useVersionReload(serverVersion: string, enabled: boolean): void {
   useEffect(() => {
-    const clientVersion = process.env.NEXT_PUBLIC_BUILD_ID;
-    if (!enabled || !clientVersion || !serverVersion || serverVersion === clientVersion) return;
+    if (!enabled || !serverVersion || serverVersion === BUILD_ID) return;
     // Servers of two builds behind one load balancer (during a rolling deploy) must not make a
     // screen reload in a loop: one reload per server version and session.
     try {

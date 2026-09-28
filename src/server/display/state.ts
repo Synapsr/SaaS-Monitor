@@ -1,4 +1,5 @@
 import "server-only";
+import { BUILD_ID } from "@/lib/build-id";
 import type { DisplayAccount, DisplayState, FeedItem } from "@/lib/display/types";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
@@ -97,7 +98,7 @@ export async function getDisplayStateByToken(
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]));
 
   return {
-    version: process.env.NEXT_PUBLIC_BUILD_ID ?? "development",
+    version: BUILD_ID,
     generatedAt: now.toISOString(),
     screen: { name: screen.name, settings },
     currency,

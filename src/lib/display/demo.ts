@@ -1,3 +1,4 @@
+import { BUILD_ID } from "@/lib/build-id";
 import {
   createRandom,
   pick,
@@ -568,7 +569,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
   const customers = world.customers.length;
 
   return {
-    version: process.env.NEXT_PUBLIC_BUILD_ID ?? "demo",
+    version: BUILD_ID,
     generatedAt: now.toISOString(),
     screen: {
       name: SCREEN_NAME,

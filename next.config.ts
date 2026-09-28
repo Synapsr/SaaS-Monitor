@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
-/** Identifies a build: open wall displays reload themselves when it changes. */
-const buildId = process.env.BUILD_ID ?? Date.now().toString(36);
+/**
+ * Identifies a build: open wall displays reload themselves when it changes. Docker Compose passes
+ * an empty `BUILD_ID` when none is set, which must also get a unique value.
+ */
+const buildId = process.env.BUILD_ID || Date.now().toString(36);
 
 /**
  * Nothing is loaded from other sites except social sign-in avatars. Inline scripts and styles
