@@ -24,6 +24,7 @@ import type {
   SeriesPoint,
 } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
+import { toMinorUnits } from "@/lib/money";
 import {
   ACCENTS,
   CHART_RANGES,
@@ -44,7 +45,8 @@ import {
 /** Picked so that the history ends about $300 below the goal, crossed a minute after loading. */
 const DEMO_SEED = 70;
 const SCREEN_NAME = "Acme Analytics";
-/** Major units: the goal the demo crosses within its first minutes. */
+const DEMO_CURRENCY = "usd";
+/** The goal the demo crosses within its first minutes, in major units like `settings.goal`. */
 export const DEMO_GOAL = 15_000;
 
 export interface DemoOptions {
@@ -484,7 +486,7 @@ function play(draft: Draft, random: Random, event: LiveEvent, at: number, plan?:
 export function advanceDemo(world: DemoWorld, now: Date): DemoWorld {
   const random = createRandom(world.seed);
   const at = now.getTime();
-  const goal = DEMO_GOAL * 100;
+  const goal = toMinorUnits(DEMO_GOAL, DEMO_CURRENCY);
 
   // The first event always shows the best moment: a new customer, paid on the spot.
   const event =
@@ -567,7 +569,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
       name: SCREEN_NAME,
       settings: {
         ...defaultScreenSettings,
-        currency: "usd",
+        currency: DEMO_CURRENCY,
         timeZone: options.timeZone,
         goal: DEMO_GOAL,
         sound: {
@@ -580,7 +582,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
         accent: options.accent,
       },
     },
-    currency: "usd",
+    currency: DEMO_CURRENCY,
     status: "ready",
     accounts: [{ id: "demo", name: SCREEN_NAME, status: "ready", livemode: true }],
     metrics: {

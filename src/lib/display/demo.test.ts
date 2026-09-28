@@ -10,8 +10,11 @@ import {
   type DemoWorld,
 } from "@/lib/display/demo";
 import type { DisplayState } from "@/lib/display/types";
+import { toMinorUnits } from "@/lib/money";
 
 const { options } = parseDemoOptions({});
+/** The demo's goal in cents, like every amount of its state. */
+const GOAL = toMinorUnits(DEMO_GOAL, "usd");
 const now = new Date("2026-09-28T14:32:00Z");
 
 /** Runs the live simulation for `events` events, returning every state a screen would see. */
@@ -103,8 +106,8 @@ describe("demo history", () => {
     expect(state.series.mrr).toHaveLength(91);
     expect(state.series.mrr[0].value).toBeGreaterThan(850_000);
     expect(state.series.mrr[0].value).toBeLessThan(950_000);
-    expect(state.metrics.mrr).toBeGreaterThan(DEMO_GOAL * 100 - 50_000);
-    expect(state.metrics.mrr).toBeLessThan(DEMO_GOAL * 100 - 20_000);
+    expect(state.metrics.mrr).toBeGreaterThan(GOAL - 50_000);
+    expect(state.metrics.mrr).toBeLessThan(GOAL - 20_000);
     expect(state.metrics.mrr).toBeGreaterThan(state.metrics.mrr30DaysAgo);
   });
 
@@ -163,7 +166,7 @@ describe("demo simulation", () => {
   });
 
   it("crosses the goal within the first minutes", () => {
-    const crossing = states.findIndex((state) => state.metrics.mrr >= DEMO_GOAL * 100);
+    const crossing = states.findIndex((state) => state.metrics.mrr >= GOAL);
     expect(crossing).toBeGreaterThanOrEqual(1);
     expect(crossing).toBeLessThan(8);
   });
@@ -174,9 +177,9 @@ describe("demo simulation", () => {
 
   it("never falls back below the goal once it has been celebrated", () => {
     const { states: long } = simulate(world, 120);
-    const crossing = long.findIndex((state) => state.metrics.mrr >= DEMO_GOAL * 100);
+    const crossing = long.findIndex((state) => state.metrics.mrr >= GOAL);
     for (const state of long.slice(crossing)) {
-      expect(state.metrics.mrr).toBeGreaterThanOrEqual(DEMO_GOAL * 100);
+      expect(state.metrics.mrr).toBeGreaterThanOrEqual(GOAL);
     }
   });
 

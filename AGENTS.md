@@ -65,7 +65,9 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   public display must not expose anything beyond `DisplayState`.
 - **No work at import time**: use `env()`, `db()`, `auth()`; builds must not need secrets.
 - **Money** is an integer in the currency's minor unit everywhere (like Stripe). Format with
-  `formatMoney`.
+  `formatMoney`. One deliberate exception: a screen's goal (`settings.goal`) is in major units,
+  as founders type it ("10000" for $10k); convert it with `toMinorUnits` before comparing it
+  with amounts.
 - **Screen settings** are JSON: every new field needs a default in `screenSettingsSchema`.
 - Validate all user input with Zod at the boundary (server actions, route handlers).
 - Tests sit next to the code. Pure logic gets unit tests (`*.test.ts`); code that needs
