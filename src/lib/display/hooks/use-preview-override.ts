@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isPreviewMessage } from "@/lib/display/preview";
+import { isPreviewMessage, PREVIEW_READY_TYPE } from "@/lib/display/preview";
 import type { PreviewOverride } from "@/lib/display/state";
 import { parseScreenSettings } from "@/lib/screens/settings";
 
@@ -20,6 +20,9 @@ export function usePreviewOverride(enabled: boolean): PreviewOverride | null {
       });
     };
     window.addEventListener("message", onMessage);
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: PREVIEW_READY_TYPE }, window.location.origin);
+    }
     return () => window.removeEventListener("message", onMessage);
   }, [enabled]);
 

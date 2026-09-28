@@ -19,3 +19,17 @@ export function isPreviewMessage(value: unknown): value is PreviewMessage {
     (value as { type?: unknown }).type === PREVIEW_MESSAGE_TYPE
   );
 }
+
+/**
+ * Sent by the embedded display once it listens: settings posted before that are lost while it
+ * hydrates, so the editor posts them again.
+ */
+export const PREVIEW_READY_TYPE = "saas-monitor:preview-ready";
+
+export function isPreviewReadyMessage(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { type?: unknown }).type === PREVIEW_READY_TYPE
+  );
+}

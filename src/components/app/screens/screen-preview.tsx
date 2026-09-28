@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PREVIEW_MESSAGE_TYPE, type PreviewMessage } from "@/lib/display/preview";
+import {
+  isPreviewReadyMessage,
+  PREVIEW_MESSAGE_TYPE,
+  type PreviewMessage,
+} from "@/lib/display/preview";
 import type { ScreenSettings } from "@/lib/screens/settings";
 import { cn } from "@/lib/utils";
 import { ScreenThumbnail } from "./screen-thumbnail";
@@ -52,17 +56,24 @@ export function ScreenPreview({
     }
   }, [token]);
 
+  // The display may still be hydrating when it loads: it says when it listens, and each time the
+  // settings are posted again (applying the same settings twice is harmless).
+  const [readySignals, setReadySignals] = useState(0);
   useEffect(() => {
-    if (!loaded) return;
+    const onMessage = (event: MessageEvent) => {
+      const fromFrame = event.source !== null && event.source === frameRef.current?.contentWindow;
+      if (fromFrame && event.origin === window.location.origin && isPreviewReadyMessage(event.data))
+        setReadySignals((count) => count + 1);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded && !readySignals) return;
     const message: PreviewMessage = { type: PREVIEW_MESSAGE_TYPE, name, settings };
-    const post = () =>
-      frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
-    post();
-    // The display can still be hydrating when its load event fires, and would miss the first
-    // message: repeat it shortly after (applying the same settings twice is harmless).
-    const retries = [300, 1500].map((delay) => setTimeout(post, delay));
-    return () => retries.forEach(clearTimeout);
-  }, [loaded, name, settings]);
+    frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
+  }, [loaded, readySignals, name, settings]);
 
   return (
     // A thin bezel makes it read as a TV, and separates it from dark pages.
