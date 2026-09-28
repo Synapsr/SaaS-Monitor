@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -42,12 +43,17 @@ export const mrrMovementKind = pgEnum("mrr_movement_kind", [
   "churn",
 ]);
 
-/** Resumable state of the initial import, so large accounts can be imported in several runs. */
-export interface BackfillProgress {
+/**
+ * Resumable state of a full scan of a Stripe account: the initial import or a reconcile. Large
+ * accounts are scanned in several short runs, so a scan survives restarts and serverless limits.
+ */
+export interface ScanProgress {
   phase: "subscriptions" | "payments";
   /** Stripe pagination cursor (`starting_after`) within the current phase. */
   cursor: string | null;
   startedAt: string;
+  /** Unix time (seconds) of the oldest charge to import; `null` skips the payments phase. */
+  paymentsSince: number | null;
   subscriptions: number;
   payments: number;
 }
@@ -61,7 +67,10 @@ export const stripeAccounts = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     name: text().notNull(),
-    /** `acct_…` identifier, used to prevent connecting the same account twice. */
+    /**
+     * `acct_…` identifier, used to prevent connecting the same account twice. Test mode shares it
+     * with live mode, although their data is separate: both may be connected.
+     */
     stripeAccountId: text(),
     livemode: boolean().notNull(),
     /** API key encrypted with ENCRYPTION_KEY, see src/server/crypto.ts. Never sent to clients. */
@@ -71,13 +80,20 @@ export const stripeAccounts = pgTable(
     defaultCurrency: text(),
     status: stripeAccountStatus().notNull().default("importing"),
     lastError: text(),
-    backfill: jsonb().$type<BackfillProgress>(),
+    /** Initial import in progress; `null` once the account is imported. */
+    backfill: jsonb().$type<ScanProgress>(),
+    /** Daily reconcile in progress, see src/server/sync/scan.ts. */
+    reconcile: jsonb().$type<ScanProgress>(),
     /** Unix time (seconds) of the newest Stripe event applied by the incremental sync. */
     eventsCursor: bigint({ mode: "number" }),
+    /** Creation time of the newest Stripe event applied: webhooks are healthy if they keep up. */
+    lastEventAt: timestamptz(),
     lastSyncedAt: timestamptz(),
     lastReconciledAt: timestamptz(),
     /** Sync lease: a sync may only start when this is null or in the past. */
     syncLockedUntil: timestamptz(),
+    /** Consecutive failed syncs (rate limits, network): the next attempt backs off accordingly. */
+    syncFailures: integer().notNull().default(0),
     /** Set by incoming webhooks: a sync must run as soon as possible. */
     syncRequestedAt: timestamptz(),
     /**
@@ -92,7 +108,7 @@ export const stripeAccounts = pgTable(
   },
   (table) => [
     index().on(table.workspaceId),
-    uniqueIndex().on(table.workspaceId, table.stripeAccountId),
+    uniqueIndex().on(table.workspaceId, table.stripeAccountId, table.livemode),
   ],
 );
 
@@ -156,7 +172,13 @@ export const mrrMovements = pgTable(
     stripeEventId: text(),
     createdAt: timestamptz().defaultNow().notNull(),
   },
-  (table) => [index().on(table.accountId, table.occurredAt)],
+  (table) => [
+    index().on(table.accountId, table.occurredAt),
+    // A subscription's history decides between "new" and "reactivation".
+    index().on(table.accountId, table.stripeSubscriptionId),
+    // New and churned customers of the month are derived from each customer's movements.
+    index().on(table.accountId, table.stripeCustomerId),
+  ],
 );
 
 /** Successful charges, used for revenue metrics and the "payment received" moments. */
