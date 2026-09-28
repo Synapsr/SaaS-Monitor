@@ -107,7 +107,8 @@ export const initialMomentTracker: MomentTracker = {
 
 /**
  * Compares a new state with the previous one. The first state, and any state that follows an
- * import or a currency change, only sets the baseline: moments come from what happens next.
+ * import, a currency change or a change of the screen's accounts, only sets the baseline: moments
+ * come from what happens next.
  */
 export function trackMoments(
   tracker: MomentTracker,
@@ -118,7 +119,8 @@ export function trackMoments(
     previous !== null &&
     previous.status === "ready" &&
     state.status === "ready" &&
-    previous.currency === state.currency;
+    previous.currency === state.currency &&
+    showSameAccounts(previous, state);
 
   const { fresh, seen } = diffFeed(comparable ? tracker.seen : null, state.feed);
   const moments = planMoments(fresh);
@@ -149,6 +151,15 @@ export function trackMoments(
   }
 
   return { tracker: { previous: state, seen, testEventId, celebrated }, moments };
+}
+
+/**
+ * An account added to a screen brings its history at once: live items the screen never showed,
+ * and MRR that may cross milestones. None of it just happened.
+ */
+function showSameAccounts(a: DisplayState, b: DisplayState): boolean {
+  const ids = new Set(a.accounts.map((account) => account.id));
+  return a.accounts.length === b.accounts.length && b.accounts.every(({ id }) => ids.has(id));
 }
 
 /** The sound of a moment, and whether the screen's settings let it play. */

@@ -107,6 +107,27 @@ describe("moment tracking", () => {
     expect(track([importing, ready])).toEqual([[], []]);
   });
 
+  it("sets a new baseline when the screen's accounts change", () => {
+    const acme = displayState().accounts[0];
+    const beta = { ...acme, id: "b1", name: "Beta" };
+    const alone = displayState({ metrics: { ...displayState().metrics, mrr: 300_000 } });
+    // Beta brings its history: a payment detected live last week, and $9k of MRR.
+    const history = [feedItem({ accountName: "Beta", occurredAt: "2026-09-21T10:00:00Z" })];
+    const together = { ...withActivity(alone, history, 1_200_000), accounts: [acme, beta] };
+    const sale = feedItem({ accountName: "Beta" });
+
+    // Beta is added, removed and added again, then makes a sale.
+    const moments = track([alone, together, alone, together, withActivity(together, [sale])]);
+
+    expect(moments).toEqual([
+      [],
+      [],
+      [],
+      [],
+      [expect.objectContaining({ kind: "payment", payment: sale })],
+    ]);
+  });
+
   it("plays a test celebration when a new test event arrives", () => {
     const state = displayState({ testEvent: { id: "t1" } });
     const moments = track([

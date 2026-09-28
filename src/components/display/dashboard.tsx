@@ -48,6 +48,8 @@ export function Dashboard({ state, moment, serverTime }: DashboardProps) {
         <KpiTiles metrics={metrics} currency={currency} timeZone={settings.timeZone} now={now} />
       </div>
       <LiveFeed
+        // Another set of accounts brings its history at once: none of it just arrived.
+        key={state.accounts.map((account) => account.id).join()}
         feed={state.feed}
         currency={currency}
         timeZone={settings.timeZone}
