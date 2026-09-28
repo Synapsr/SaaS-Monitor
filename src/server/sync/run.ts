@@ -135,18 +135,26 @@ interface Failure {
   expected: boolean;
 }
 
+/** What the user must do when only they can fix the error (a new key, a permission). */
+function actionFor(error: unknown): string | null {
+  if (error instanceof UnreadableKeyError) {
+    return "The saved Stripe key can no longer be decrypted (was ENCRYPTION_KEY changed?). Connect the account again.";
+  }
+  if (
+    error instanceof StripeAccessError &&
+    (error.kind === "authentication" || error.kind === "permission")
+  ) {
+    return describeAccessError(error);
+  }
+  return null;
+}
+
 /** Errors only the user can fix put the account in `error`; others are retried with backoff. */
 function describeFailure(account: StripeAccountRow, error: unknown, now: Date): Failure {
   const syncFailures = account.syncFailures + 1;
   const retryAt = (seconds: number) => new Date(now.getTime() + seconds * 1000);
 
-  const userMessage =
-    error instanceof UnreadableKeyError
-      ? "The saved Stripe key can no longer be decrypted (was ENCRYPTION_KEY changed?). Connect the account again."
-      : error instanceof StripeAccessError &&
-          (error.kind === "authentication" || error.kind === "permission")
-        ? describeAccessError(error)
-        : null;
+  const userMessage = actionFor(error);
   if (userMessage) {
     // Checked again now and then: a fixed permission brings the account back on its own.
     return {

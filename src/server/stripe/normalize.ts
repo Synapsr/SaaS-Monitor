@@ -42,6 +42,9 @@ const decimal = z.unknown().transform((value, context) => {
   return amount;
 });
 
+/** ISO 4217 codes are compared everywhere in lowercase, as Stripe writes them. */
+const currencyCode = z.string().transform((code) => code.toLowerCase());
+
 /** An expandable reference: either the id or the expanded object. */
 const reference = z.union([z.string(), z.object({ id: z.string() })]);
 const idOf = (value: z.infer<typeof reference>) => (typeof value === "string" ? value : value.id);
@@ -113,7 +116,7 @@ export const priceSchema = priceAmountsSchema
       z.object({ id: z.string(), name: z.string().nullish(), deleted: z.boolean().optional() }),
     ]),
     nickname: z.string().nullish(),
-    currency: z.string(),
+    currency: currencyCode,
     recurring: z
       .object({
         interval: z.string(),
@@ -182,7 +185,7 @@ export const subscriptionSchema = z
     id: z.string(),
     customer: customerSchema,
     status: z.string(),
-    currency: z.string(),
+    currency: currencyCode,
     start_date: z.number(),
     trial_end: z.number().nullish(),
     ended_at: z.number().nullish(),
@@ -211,7 +214,7 @@ export const couponSchema = z
     id: z.string(),
     percent_off: z.number().nullish(),
     amount_off: z.number().nullish(),
-    currency: z.string().nullish(),
+    currency: currencyCode.nullish(),
     currency_options: z.record(z.string(), z.object({ amount_off: z.number() })).optional(),
     duration: z.string(),
     applies_to: z.object({ products: z.array(z.string()) }).nullish(),
@@ -220,7 +223,7 @@ export const couponSchema = z
     id: coupon.id,
     percentOff: coupon.percent_off ?? null,
     amountOff: coupon.amount_off ?? null,
-    currency: coupon.currency?.toLowerCase() ?? null,
+    currency: coupon.currency ?? null,
     amountOffByCurrency: Object.fromEntries(
       Object.entries(coupon.currency_options ?? {}).map(([currency, option]) => [
         currency.toLowerCase(),
@@ -243,7 +246,7 @@ export const chargeSchema = z
     amount_captured: z.number().int().nullish(),
     amount_refunded: z.number().int().nullish(),
     captured: z.boolean().nullish(),
-    currency: z.string(),
+    currency: currencyCode,
     created: z.number(),
     status: z.string(),
     customer: reference.nullish(),
@@ -263,7 +266,7 @@ export const chargeSchema = z
     customerId: charge.customer ? idOf(charge.customer) : null,
     amount: charge.amount_captured || charge.amount,
     amountRefunded: charge.amount_refunded ?? 0,
-    currency: charge.currency.toLowerCase(),
+    currency: charge.currency,
     created: charge.created,
     collected: charge.status === "succeeded" && charge.captured !== false,
     description: charge.description || null,
@@ -285,12 +288,12 @@ export const accountSchema = z
       .object({ dashboard: z.object({ display_name: z.string().nullish() }).nullish() })
       .nullish(),
     business_profile: z.object({ name: z.string().nullish() }).nullish(),
-    default_currency: z.string().nullish(),
+    default_currency: currencyCode.nullish(),
   })
   .transform((account): AccountInfo => ({
     id: account.id,
     name: account.settings?.dashboard?.display_name || account.business_profile?.name || null,
-    defaultCurrency: account.default_currency?.toLowerCase() ?? null,
+    defaultCurrency: account.default_currency ?? null,
   }));
 
 export const eventSchema = z

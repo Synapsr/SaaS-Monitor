@@ -219,16 +219,28 @@ export async function applyCharges(
         amountRefunded: sql`excluded.amount_refunded`,
         updatedAt: new Date(),
       },
-      setWhere: sql`(${payments.amount}, ${payments.amountRefunded}) is distinct from (excluded.amount, excluded.amount_refunded)`,
+      // Unchanged rows are neither written nor counted as changes.
+      setWhere: sql`
+        (${payments.amount}, ${payments.amountRefunded})
+        is distinct from (excluded.amount, excluded.amount_refunded)
+      `,
     })
     .returning({ id: payments.id });
   return written.length;
 }
 
+interface KnownCustomer {
+  name: string | null;
+  country: string | null;
+}
+
 /** Charges often lack a billing name: the customer's subscriptions know it. */
-async function knownCustomers(tx: Transaction, accountId: string, customerIds: string[]) {
-  if (!customerIds.length)
-    return new Map<string, { name: string | null; country: string | null }>();
+async function knownCustomers(
+  tx: Transaction,
+  accountId: string,
+  customerIds: string[],
+): Promise<Map<string, KnownCustomer>> {
+  if (!customerIds.length) return new Map();
   const rows = await tx
     .selectDistinctOn([subscriptions.stripeCustomerId], {
       id: subscriptions.stripeCustomerId,
