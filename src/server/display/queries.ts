@@ -8,6 +8,7 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
   sql,
   sum,
   type AnyColumn,
@@ -259,6 +260,7 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
         accountId: payments.accountId,
         customerName: payments.customerName,
         country: payments.customerCountry,
+        customerId: payments.stripeCustomerId,
       })
       .from(payments)
       // Fully refunded payments are not worth showing.
@@ -269,16 +271,50 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       .limit(limit),
   ]);
 
+  const plans = await mainPlans(
+    accountIds,
+    paymentRows.flatMap((row) => (row.customerId ? [row.customerId] : [])),
+  );
   const rows: FeedRow[] = [
     ...movementRows.map((row) => ({ ...row, source: "movement" as const })),
-    ...paymentRows.map((row) => ({
+    ...paymentRows.map(({ customerId, ...row }) => ({
       ...row,
       source: "payment" as const,
       kind: "payment" as const,
-      planName: null,
+      planName: (customerId && plans.get(`${row.accountId}:${customerId}`)) || null,
     })),
   ];
   return rows
     .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime() || b.id.localeCompare(a.id))
     .slice(0, limit);
+}
+
+/**
+ * Charges don't say which plan they pay for: name each customer's main subscription (the one
+ * bringing the most MRR, then the latest), keyed by `<account id>:<customer id>`.
+ */
+async function mainPlans(accountIds: string[], customerIds: string[]) {
+  const plans = new Map<string, string>();
+  if (!customerIds.length) return plans;
+
+  const rows = await db()
+    .select({
+      accountId: subscriptions.accountId,
+      customerId: subscriptions.stripeCustomerId,
+      planName: subscriptions.planName,
+    })
+    .from(subscriptions)
+    .where(
+      and(
+        inArray(subscriptions.accountId, accountIds),
+        inArray(subscriptions.stripeCustomerId, [...new Set(customerIds)]),
+        isNotNull(subscriptions.planName),
+      ),
+    )
+    .orderBy(desc(subscriptions.mrr), desc(subscriptions.startedAt));
+  for (const row of rows) {
+    const key = `${row.accountId}:${row.customerId}`;
+    if (row.planName && !plans.has(key)) plans.set(key, row.planName);
+  }
+  return plans;
 }

@@ -25,7 +25,14 @@ async function readyAccount(
 
 async function addSubscription(
   accountId: string,
-  row: { id: string; mrr: number; customer?: string; status?: string; currency?: string },
+  row: {
+    id: string;
+    mrr: number;
+    customer?: string;
+    status?: string;
+    currency?: string;
+    plan?: string;
+  },
 ) {
   await db()
     .insert(subscriptions)
@@ -36,6 +43,7 @@ async function addSubscription(
       status: row.status ?? (row.mrr > 0 ? "active" : "canceled"),
       currency: row.currency ?? "usd",
       mrr: row.mrr,
+      planName: row.plan ?? null,
       startedAt: new Date("2026-01-01T00:00:00Z"),
     });
 }
@@ -79,6 +87,7 @@ async function addPayment(
     refunded?: number;
     currency?: string;
     origin?: "backfill" | "live" | "reconcile";
+    customer?: string;
   },
 ) {
   const [payment] = await db()
@@ -86,6 +95,7 @@ async function addPayment(
     .values({
       accountId,
       stripeChargeId: `ch_${crypto.randomUUID()}`,
+      stripeCustomerId: row.customer ?? null,
       customerName: "Grace Hopper",
       customerCountry: "US",
       amount: row.amount,
@@ -432,6 +442,23 @@ describe("display state", () => {
       }),
       expect.objectContaining({ id: `payment:${imported}`, live: false }),
     ]);
+  });
+
+  it("names the plan a payment pays for after the customer's main subscription", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, {
+      id: "sub_addon",
+      mrr: 900,
+      customer: "cus_1",
+      plan: "Seats",
+    });
+    await addSubscription(accountId, { id: "sub_main", mrr: 4900, customer: "cus_1", plan: "Pro" });
+    await addPayment(accountId, { amount: 5800, at: "2026-03-15T10:00:00Z", customer: "cus_1" });
+    await addPayment(accountId, { amount: 1200, at: "2026-03-14T10:00:00Z" });
+
+    const { feed } = await displayOf([accountId]);
+
+    expect(feed.map((item) => item.planName)).toEqual(["Pro", null]);
   });
 
   it("only shows customer names when the screen allows it", async () => {
