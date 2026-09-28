@@ -5,6 +5,7 @@ import { AuthCard, AuthHeader, AuthShell } from "@/components/auth/auth-shell";
 import { AcceptInvitationButton, SwitchAccountButton } from "@/components/auth/invitation-actions";
 import { ROLES } from "@/components/app/settings/roles";
 import { Button } from "@/components/ui/button";
+import { invitationPath } from "@/lib/invitations";
 import { withRedirect } from "@/lib/safe-redirect";
 import { getInvitationPreview, type InvitationPreview } from "@/server/members";
 import { getSession } from "@/server/session";
@@ -18,7 +19,6 @@ export const metadata: Metadata = {
 export default async function InvitationPage({ params }: PageProps<"/invite/[id]">) {
   const { id } = await params;
   const [invitation, session] = await Promise.all([getInvitationPreview(id), getSession()]);
-  const invitationPath = `/invite/${encodeURIComponent(id)}`;
 
   return (
     <AuthShell>
@@ -52,11 +52,7 @@ export default async function InvitationPage({ params }: PageProps<"/invite/[id]
             signedIn={Boolean(session)}
           />
         ) : (
-          <PendingInvitation
-            invitation={invitation}
-            invitationPath={invitationPath}
-            signedInEmail={session?.user.email ?? null}
-          />
+          <PendingInvitation invitation={invitation} signedInEmail={session?.user.email ?? null} />
         )}
       </AuthCard>
     </AuthShell>
@@ -65,13 +61,12 @@ export default async function InvitationPage({ params }: PageProps<"/invite/[id]
 
 function PendingInvitation({
   invitation,
-  invitationPath,
   signedInEmail,
 }: {
   invitation: InvitationPreview;
-  invitationPath: string;
   signedInEmail: string | null;
 }) {
+  const path = invitationPath(invitation.id);
   const header = (
     <>
       <WorkspaceMark name={invitation.workspaceName} />
@@ -102,10 +97,10 @@ function PendingInvitation({
         {header}
         <div className="flex flex-col gap-2">
           <Button asChild size="lg" className="w-full">
-            <Link href={withRedirect("/sign-up", invitationPath)}>Create my account</Link>
+            <Link href={withRedirect("/sign-up", path)}>Create my account</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="w-full">
-            <Link href={withRedirect("/sign-in", invitationPath)}>I already have an account</Link>
+            <Link href={withRedirect("/sign-in", path)}>I already have an account</Link>
           </Button>
         </div>
       </>
@@ -120,7 +115,7 @@ function PendingInvitation({
           You’re signed in as <span className="font-medium text-foreground">{signedInEmail}</span>.
           Switch to the invited account to accept it.
         </p>
-        <SwitchAccountButton invitationPath={invitationPath} />
+        <SwitchAccountButton invitationPath={path} />
       </>
     );
   }

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { invitationPath } from "@/lib/invitations";
 import type { WorkspaceRole } from "@/server/workspaces";
 import { ROLES } from "./roles";
 import { SettingsCard } from "./settings-card";
@@ -29,7 +30,7 @@ export interface InvitationRow {
 }
 
 function invitationUrl(appUrl: string, invitationId: string) {
-  return `${appUrl}/invite/${invitationId}`;
+  return `${appUrl}${invitationPath(invitationId)}`;
 }
 
 /** No email provider needed: invitations are links that the inviter shares however they like. */

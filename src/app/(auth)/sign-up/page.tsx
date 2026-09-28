@@ -6,6 +6,7 @@ import { AuthCard, AuthHeader } from "@/components/auth/auth-shell";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { Button } from "@/components/ui/button";
 import { env } from "@/env";
+import { invitationIdFromPath } from "@/lib/invitations";
 import { safeRedirectPath, withRedirect } from "@/lib/safe-redirect";
 import { getInvitationPreview } from "@/server/members";
 import { getSession } from "@/server/session";
@@ -15,9 +16,9 @@ export const metadata: Metadata = { title: "Create your account" };
 
 /** Signing up from an invitation link: the invitation decides which email address to use. */
 async function pendingInvitation(next: string) {
-  const id = /^\/invite\/([^/?#]+)$/.exec(next)?.[1];
+  const id = invitationIdFromPath(next);
   if (!id) return null;
-  const invitation = await getInvitationPreview(decodeURIComponent(id));
+  const invitation = await getInvitationPreview(id);
   return invitation?.status === "pending" ? invitation : null;
 }
 
