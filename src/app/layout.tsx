@@ -7,8 +7,12 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Social previews need absolute URLs. APP_URL is read at build time when it is set there.
+  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
   title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
   description: siteConfig.description,
+  openGraph: { type: "website", siteName: siteConfig.name },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
