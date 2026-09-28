@@ -240,46 +240,78 @@ export interface ActivityRow {
   planName: string | null;
 }
 
+/**
+ * The screen's accounts as rows of `account(id)`, to read each one's latest rows in a lateral
+ * subquery filtered on `ACCOUNT_ID`: they come from the end of its `(account_id, occurred_at)`
+ * index. Given several accounts in one condition, PostgreSQL reads and sorts their whole history.
+ */
+function eachAccount(accountIds: readonly string[]) {
+  const ids = sql.join(
+    accountIds.map((id) => sql`${id}`),
+    sql`, `,
+  );
+  return sql`unnest(array[${ids}]::uuid[]) as account(id)`;
+}
+
+const ACCOUNT_ID = sql`account.id`;
+
 /** The latest movements and payments, newest first. */
 export async function latestActivity(accountIds: string[], limit: number): Promise<ActivityRow[]> {
+  const movement = db()
+    .select({
+      id: mrrMovements.id,
+      kind: mrrMovements.kind,
+      amount: mrrMovements.amount,
+      currency: mrrMovements.currency,
+      occurredAt: mrrMovements.occurredAt,
+      origin: mrrMovements.origin,
+      accountId: mrrMovements.accountId,
+      customerId: mrrMovements.stripeCustomerId,
+      customerName: mrrMovements.customerName,
+      country: mrrMovements.customerCountry,
+      planName: mrrMovements.planName,
+    })
+    .from(mrrMovements)
+    .where(eq(mrrMovements.accountId, ACCOUNT_ID))
+    .orderBy(desc(mrrMovements.occurredAt), desc(mrrMovements.id))
+    .limit(limit)
+    .as("movement");
+  const payment = db()
+    .select({
+      id: payments.id,
+      amount: sql<number>`${payments.amount} - ${payments.amountRefunded}`
+        .mapWith(Number)
+        .as("net_amount"),
+      currency: payments.currency,
+      occurredAt: payments.occurredAt,
+      origin: payments.origin,
+      accountId: payments.accountId,
+      customerName: payments.customerName,
+      country: payments.customerCountry,
+      customerId: payments.stripeCustomerId,
+    })
+    .from(payments)
+    // Fully refunded payments are not worth showing.
+    .where(and(eq(payments.accountId, ACCOUNT_ID), gt(payments.amount, payments.amountRefunded)))
+    .orderBy(desc(payments.occurredAt), desc(payments.id))
+    .limit(limit)
+    .as("payment");
+
   const [movementRows, paymentRows] = await Promise.all([
     db()
-      .select({
-        id: mrrMovements.id,
-        kind: mrrMovements.kind,
-        amount: mrrMovements.amount,
-        currency: mrrMovements.currency,
-        occurredAt: mrrMovements.occurredAt,
-        origin: mrrMovements.origin,
-        accountId: mrrMovements.accountId,
-        customerId: mrrMovements.stripeCustomerId,
-        customerName: mrrMovements.customerName,
-        country: mrrMovements.customerCountry,
-        planName: mrrMovements.planName,
-      })
-      .from(mrrMovements)
-      .where(inArray(mrrMovements.accountId, accountIds))
-      .orderBy(desc(mrrMovements.occurredAt), desc(mrrMovements.id))
-      .limit(limit),
+      .select()
+      .from(eachAccount(accountIds))
+      .crossJoinLateral(movement)
+      .orderBy(desc(movement.occurredAt), desc(movement.id))
+      .limit(limit)
+      .then((rows) => rows.map((row) => row.movement)),
     db()
-      .select({
-        id: payments.id,
-        amount: sql<number>`${payments.amount} - ${payments.amountRefunded}`.mapWith(Number),
-        currency: payments.currency,
-        occurredAt: payments.occurredAt,
-        origin: payments.origin,
-        accountId: payments.accountId,
-        customerName: payments.customerName,
-        country: payments.customerCountry,
-        customerId: payments.stripeCustomerId,
-      })
-      .from(payments)
-      // Fully refunded payments are not worth showing.
-      .where(
-        and(inArray(payments.accountId, accountIds), gt(payments.amount, payments.amountRefunded)),
-      )
-      .orderBy(desc(payments.occurredAt), desc(payments.id))
-      .limit(limit),
+      .select()
+      .from(eachAccount(accountIds))
+      .crossJoinLateral(payment)
+      .orderBy(desc(payment.occurredAt), desc(payment.id))
+      .limit(limit)
+      .then((rows) => rows.map((row) => row.payment)),
   ]);
 
   const plans = await mainPlans(

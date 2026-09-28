@@ -432,6 +432,35 @@ describe("display state", () => {
     ]);
   });
 
+  it("merges the latest activity of every account, newest first", async () => {
+    const acme = await readyAccount("Acme");
+    const beta = await readyAccount("Beta");
+    // Acme sells on even minutes and Beta on odd ones, then Beta records an upgrade.
+    for (let minute = 0; minute < 30; minute += 1) {
+      await addPayment(minute % 2 ? beta : acme, {
+        amount: 100 + minute,
+        at: new Date(Date.UTC(2026, 2, 15, 10, minute)).toISOString(),
+      });
+    }
+    await addMovement(beta, {
+      subscription: "sub_1",
+      kind: "expansion",
+      amount: 1000,
+      at: "2026-03-15T11:00:00Z",
+    });
+
+    const { feed } = await displayOf([acme, beta]);
+
+    const latestPayments = Array.from({ length: 19 }, (_, index) => {
+      const minute = 29 - index;
+      return [minute % 2 ? "Beta" : "Acme", 100 + minute];
+    });
+    expect(feed.map((item) => [item.accountName, item.amount])).toEqual([
+      ["Beta", 1000],
+      ...latestPayments,
+    ]);
+  });
+
   it("names the plan a payment pays for after the customer's main subscription", async () => {
     const accountId = await readyAccount();
     await addSubscription(accountId, {
