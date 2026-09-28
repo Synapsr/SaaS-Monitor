@@ -94,15 +94,15 @@ function ErrorDetails({ accountId, message }: { accountId: string; message: stri
       </p>
       {message && <p className="text-pretty">{message}</p>}
       <p className="text-pretty text-muted-foreground">
-        Most often the key was deleted or lost a permission. Create a new restricted key, then
-        disconnect this account and{" "}
+        Most often the key was revoked or lost a permission. Fix the key in Stripe (it is checked
+        again every 30 minutes), or create a new restricted key and{" "}
         <Link
           href="/app/accounts/new"
           className="font-medium text-foreground underline underline-offset-4"
         >
-          connect it again
+          connect the account again
         </Link>
-        . If Stripe was only briefly unavailable, re-importing is enough.
+        : your imported data is kept.
       </p>
       <div className="pt-1">
         <ReimportButton accountId={accountId} />
