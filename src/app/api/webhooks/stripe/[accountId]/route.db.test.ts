@@ -68,6 +68,30 @@ describe("Stripe webhook endpoint", () => {
     );
   });
 
+  it("stops reading oversized payloads, even without a declared length", async () => {
+    const signature = Stripe.webhooks.generateTestHeaderString({ payload, secret: SECRET });
+    const megabyte = new Uint8Array(1024 * 1024);
+    let sent = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += megabyte.byteLength;
+        if (sent > 32 * megabyte.byteLength) controller.close();
+        else controller.enqueue(megabyte);
+      },
+    });
+    const request = new Request(`http://localhost/api/webhooks/stripe/${accountId}`, {
+      method: "POST",
+      body,
+      headers: { "stripe-signature": signature },
+      duplex: "half",
+    } as RequestInit & { duplex: "half" });
+
+    const response = await POST(request, { params: Promise.resolve({ accountId }) });
+
+    expect(response.status).toBe(413);
+    expect(sent).toBeLessThan(4 * megabyte.byteLength);
+  });
+
   it("does not know other accounts", async () => {
     const signature = Stripe.webhooks.generateTestHeaderString({ payload, secret: SECRET });
 

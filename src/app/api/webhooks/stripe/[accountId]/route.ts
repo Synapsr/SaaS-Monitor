@@ -16,17 +16,14 @@ export async function POST(
 ) {
   const accountId = z.uuid().safeParse((await context.params).accountId);
   if (!accountId.success) return Response.json({ error: "Unknown account." }, { status: 404 });
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_PAYLOAD_BYTES) {
-    return Response.json({ error: "Payload too large." }, { status: 413 });
-  }
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) return Response.json({ error: "Invalid signature." }, { status: 400 });
 
   // The signature covers the raw body: it must be read as text, not parsed.
-  const payload = await request.text();
-  const reception = await receiveWebhook(
-    accountId.data,
-    payload,
-    request.headers.get("stripe-signature"),
-  );
+  const payload = await readBody(request, MAX_PAYLOAD_BYTES);
+  if (payload === null) return Response.json({ error: "Payload too large." }, { status: 413 });
+
+  const reception = await receiveWebhook(accountId.data, payload, signature);
   if (reception === "unknown_account") {
     return Response.json({ error: "Unknown account." }, { status: 404 });
   }
@@ -36,4 +33,26 @@ export async function POST(
 
   scheduleSync([accountId.data]);
   return Response.json({ received: true });
+}
+
+/**
+ * Reads the body as text, or returns `null` as soon as it exceeds `maxBytes`. The declared
+ * `Content-Length` cannot be trusted (chunked requests have none): count what actually arrives.
+ */
+async function readBody(request: Request, maxBytes: number): Promise<string | null> {
+  if (Number(request.headers.get("content-length") ?? 0) > maxBytes) return null;
+  if (!request.body) return "";
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+    size += chunk.value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(chunk.value);
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
