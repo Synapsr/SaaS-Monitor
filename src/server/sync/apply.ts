@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, lt } from "drizzle-orm";
 import type { Transaction } from "@/db";
 import { mrrMovements, payments, subscriptions, type dataOrigin } from "@/db/schema";
 import { mainInterval, planName } from "@/server/stripe/mrr";
@@ -273,8 +273,9 @@ function hasChanged(row: SubscriptionRow, values: SubscriptionValues): boolean {
 }
 
 /**
- * Records collected charges. A charge seen again (replayed event, refund) only updates its
- * amounts: it keeps its origin, so a payment is never celebrated twice.
+ * Records collected charges and returns how many payments were added or changed. A charge seen
+ * again (replayed event, refund) only updates its amounts: it keeps its origin, so a payment is
+ * never celebrated twice. Stored rows are locked first, like subscriptions.
  */
 export async function applyCharges(
   tx: Transaction,
@@ -285,14 +286,58 @@ export async function applyCharges(
   const collected = charges.filter((charge) => charge.collected);
   if (!collected.length) return 0;
 
+  const chargeIds = collected.map((charge) => charge.id);
+  const storedRows = await tx
+    .select({
+      id: payments.id,
+      chargeId: payments.stripeChargeId,
+      amount: payments.amount,
+      amountRefunded: payments.amountRefunded,
+    })
+    .from(payments)
+    .where(and(eq(payments.accountId, accountId), inArray(payments.stripeChargeId, chargeIds)))
+    .for("update");
+  const stored = new Map(storedRows.map((row) => [row.chargeId, row]));
+
+  const added: Charge[] = [];
+  let changed = 0;
+  for (const charge of collected) {
+    const previous = stored.get(charge.id);
+    if (!previous) {
+      added.push(charge);
+    } else if (
+      previous.amount !== charge.amount ||
+      previous.amountRefunded !== charge.amountRefunded
+    ) {
+      await tx
+        .update(payments)
+        .set({ amount: charge.amount, amountRefunded: charge.amountRefunded })
+        .where(eq(payments.id, previous.id));
+      changed += 1;
+    }
+  }
+  if (added.length) {
+    // A concurrent insert of the same charge fails here, and the sync is retried later.
+    await tx.insert(payments).values(await newPayments(tx, accountId, added, origin));
+  }
+  return added.length + changed;
+}
+
+/** Rows of charges seen for the first time, named after their customer when the charge is not. */
+async function newPayments(
+  tx: Transaction,
+  accountId: string,
+  charges: readonly Charge[],
+  origin: DataOrigin,
+): Promise<(typeof payments.$inferInsert)[]> {
   const customers = await knownCustomers(
     tx,
     accountId,
-    collected.flatMap((charge) =>
+    charges.flatMap((charge) =>
       charge.customerId && (!charge.customerName || !charge.country) ? [charge.customerId] : [],
     ),
   );
-  const rows = collected.map((charge) => {
+  return charges.map((charge) => {
     const customer = charge.customerId ? customers.get(charge.customerId) : undefined;
     return {
       accountId,
@@ -308,25 +353,6 @@ export async function applyCharges(
       origin,
     };
   });
-
-  const written = await tx
-    .insert(payments)
-    .values(rows)
-    .onConflictDoUpdate({
-      target: [payments.accountId, payments.stripeChargeId],
-      set: {
-        amount: sql`excluded.amount`,
-        amountRefunded: sql`excluded.amount_refunded`,
-        updatedAt: new Date(),
-      },
-      // Unchanged rows are neither written nor counted as changes.
-      setWhere: sql`
-        (${payments.amount}, ${payments.amountRefunded})
-        is distinct from (excluded.amount, excluded.amount_refunded)
-      `,
-    })
-    .returning({ id: payments.id });
-  return written.length;
 }
 
 interface KnownCustomer {
