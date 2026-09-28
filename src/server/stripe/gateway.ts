@@ -81,6 +81,11 @@ export interface StripeGateway {
 /** Creates the gateway of one Stripe account. Tests swap it for the fake. */
 export type GatewayFactory = (secretKey: string) => StripeGateway;
 
+/** For tests: how to reach Stripe with a given key. */
+export interface StripeAccessOptions {
+  createGateway?: GatewayFactory;
+}
+
 /** Reads every page of a list. Only for lists known to be short, such as coupons. */
 export async function listAll<T extends { id: string }>(
   list: (startingAfter?: string) => Promise<Page<T>>,

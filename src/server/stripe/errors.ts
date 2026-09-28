@@ -2,6 +2,12 @@ import "server-only";
 import Stripe from "stripe";
 import { permissionLabel } from "@/lib/stripe-permissions";
 
+/** The result for an account that does not exist, or belongs to another workspace. */
+export const ACCOUNT_NOT_FOUND = {
+  ok: false,
+  error: "This Stripe account no longer exists.",
+} as const;
+
 export type StripeErrorKind =
   /** 401: the key is invalid, revoked or was rolled. */
   | "authentication"

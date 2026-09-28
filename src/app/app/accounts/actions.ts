@@ -11,13 +11,15 @@ import {
   connectAccountSchema,
   connectStripeAccount,
   disconnectStripeAccount,
-  enableInstantUpdates,
   reimportStripeAccount,
   renameStripeAccount,
-  setWebhookSigningSecret,
   type MissingPermissions,
 } from "@/server/stripe/accounts";
-import { webhookSigningSecretSchema } from "@/server/stripe/webhooks";
+import {
+  enableInstantUpdates,
+  setWebhookSigningSecret,
+  webhookSigningSecretSchema,
+} from "@/server/stripe/webhooks";
 
 const accountIdSchema = z.uuid();
 

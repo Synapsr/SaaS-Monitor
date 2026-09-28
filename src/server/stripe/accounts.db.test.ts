@@ -10,16 +10,18 @@ import { createStripeAccount, getStripeAccount } from "@/test/stripe-accounts";
 import {
   connectStripeAccount,
   disconnectStripeAccount,
-  enableInstantUpdates,
   listStripeAccountSummaries,
   reimportStripeAccount,
   renameStripeAccount,
-  setWebhookSigningSecret,
-  webhookSetupInstructions,
 } from "./accounts";
 import { StripeAccessError } from "./errors";
 import { SYNC_EVENT_TYPES } from "./event-types";
 import { secretKeySchema } from "./keys";
+import {
+  enableInstantUpdates,
+  setWebhookSigningSecret,
+  webhookSetupInstructions,
+} from "./webhooks";
 
 vi.mock("next/server", () => ({ after: vi.fn() }));
 // Stripe only delivers webhooks to public HTTPS addresses.

@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
 import { getStripeAccount } from "@/test/stripe-accounts";
-import { connectStripeAccount, enableInstantUpdates } from "./accounts";
+import { connectStripeAccount } from "./accounts";
 import { secretKeySchema } from "./keys";
+import { enableInstantUpdates } from "./webhooks";
 
 vi.mock("next/server", () => ({ after: vi.fn() }));
 

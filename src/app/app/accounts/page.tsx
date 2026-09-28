@@ -14,7 +14,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { requireWorkspace } from "@/server/session";
-import { listStripeAccountSummaries, webhookSetupInstructions } from "@/server/stripe/accounts";
+import { listStripeAccountSummaries } from "@/server/stripe/accounts";
+import { webhookSetupInstructions } from "@/server/stripe/webhooks";
 import { scheduleSync } from "@/server/sync";
 
 export const metadata: Metadata = { title: "Stripe accounts" };

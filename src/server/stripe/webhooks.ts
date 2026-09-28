@@ -1,15 +1,17 @@
 import "server-only";
 import { BlockList, isIP } from "node:net";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import Stripe from "stripe";
 import { z } from "zod";
 import { db } from "@/db";
 import { stripeAccounts } from "@/db/schema";
 import { env } from "@/env";
+import type { ActionResult } from "@/lib/action-result";
+import { permissionLabel } from "@/lib/stripe-permissions";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
-import { StripeAccessError } from "./errors";
+import { ACCOUNT_NOT_FOUND, StripeAccessError } from "./errors";
 import { SYNC_EVENT_TYPES } from "./event-types";
-import type { StripeGateway } from "./gateway";
+import { createStripeGateway, type StripeAccessOptions, type StripeGateway } from "./gateway";
 
 /*
  * Webhooks only make syncs instant: an incoming event marks the account as needing a sync, and
@@ -105,6 +107,58 @@ export async function registerWebhookEndpoint(
     .set({ webhookEndpointId: endpoint.id, encryptedWebhookSecret: encryptSecret(endpoint.secret) })
     .where(eq(stripeAccounts.id, accountId));
   return { ok: true };
+}
+
+/**
+ * Registers a webhook endpoint through the API (needs the "Webhook Endpoints: Write" permission
+ * and a public HTTPS `APP_URL`). Returns a user-facing error when it is not possible.
+ */
+export async function enableInstantUpdates(
+  workspaceId: string,
+  accountId: string,
+  options: StripeAccessOptions = {},
+): Promise<ActionResult> {
+  const [account] = await db()
+    .select({
+      encryptedSecretKey: stripeAccounts.encryptedSecretKey,
+      webhookEndpointId: stripeAccounts.webhookEndpointId,
+    })
+    .from(stripeAccounts)
+    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+  if (!account) return ACCOUNT_NOT_FOUND;
+  if (account.webhookEndpointId) return { ok: true };
+
+  const gateway = (options.createGateway ?? createStripeGateway)(
+    decryptSecret(account.encryptedSecretKey),
+  );
+  const registration = await registerWebhookEndpoint(accountId, gateway);
+  if (registration.ok) return { ok: true };
+  const errors = {
+    private_url:
+      "Stripe can only send updates to a public HTTPS address. Set APP_URL to the public URL of this app.",
+    refused: `Stripe refused to create the webhook. Give the key the “${permissionLabel("rak_webhook_write")}” permission, or add the endpoint manually.`,
+    unavailable: "Stripe could not be reached. Try again in a moment.",
+  };
+  return { ok: false, error: errors[registration.reason] };
+}
+
+/** Stores the signing secret (`whsec_…`) of an endpoint the user created in the Dashboard. */
+export async function setWebhookSigningSecret(
+  workspaceId: string,
+  accountId: string,
+  signingSecret: string,
+): Promise<ActionResult> {
+  const updated = await db()
+    .update(stripeAccounts)
+    .set({ encryptedWebhookSecret: encryptSecret(signingSecret) })
+    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
+    .returning({ id: stripeAccounts.id });
+  return updated.length ? { ok: true } : ACCOUNT_NOT_FOUND;
+}
+
+/** Endpoint URL and events to configure when adding the webhook manually in the Dashboard. */
+export function webhookSetupInstructions(accountId: string): { url: string; events: string[] } {
+  return { url: webhookEndpointUrl(accountId), events: [...SYNC_EVENT_TYPES] };
 }
 
 export type WebhookReception = "accepted" | "unknown_account" | "invalid_signature";
