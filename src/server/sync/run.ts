@@ -1,6 +1,11 @@
 import "server-only";
 import { decryptSecret } from "@/server/crypto";
-import { describeAccessError, redactSecrets, StripeAccessError } from "@/server/stripe/errors";
+import {
+  describeAccessError,
+  redactSecrets,
+  StripeAccessError,
+  UNREADABLE_KEY_ERROR,
+} from "@/server/stripe/errors";
 import {
   createStripeGateway,
   type GatewayFactory,
@@ -137,9 +142,7 @@ interface Failure {
 
 /** What the user must do when only they can fix the error (a new key, a permission). */
 function actionFor(error: unknown): string | null {
-  if (error instanceof UnreadableKeyError) {
-    return "The saved Stripe key can no longer be decrypted (was ENCRYPTION_KEY changed?). Connect the account again.";
-  }
+  if (error instanceof UnreadableKeyError) return UNREADABLE_KEY_ERROR;
   if (
     error instanceof StripeAccessError &&
     (error.kind === "authentication" || error.kind === "permission")

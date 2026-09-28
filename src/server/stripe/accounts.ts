@@ -13,7 +13,12 @@ import { scheduleSync } from "@/server/sync";
 import { updatesMode } from "@/server/sync/policy";
 import { newBackfill } from "@/server/sync/scan";
 import { recentPaymentCounts, toSyncState, workingStatus } from "@/server/sync/state";
-import { ACCOUNT_NOT_FOUND, StripeAccessError } from "./errors";
+import {
+  ACCOUNT_NOT_FOUND,
+  describeAccessError,
+  StripeAccessError,
+  UNREADABLE_KEY_ERROR,
+} from "./errors";
 import {
   createStripeGateway,
   type ProbedResource,
@@ -142,17 +147,26 @@ export async function connectStripeAccount(
   return { ok: true, accountId: account.id };
 }
 
-async function checkReadAccess(
+const STRIPE_UNREACHABLE = "Stripe could not be reached. Try again in a moment.";
+
+/** The reads Stripe refused to the key, among those every metric depends on. */
+async function probeReadAccess(
   gateway: StripeGateway,
-): Promise<ActionResult<object, MissingPermissions>> {
+): Promise<{ error: StripeAccessError; permission: StripePermissionId }[]> {
   const results = await Promise.allSettled(
     REQUIRED_READS.map(({ resource }) => gateway.probe(resource)),
   );
-  const failures = results.flatMap((result, index) => {
+  return results.flatMap((result, index) => {
     if (result.status === "fulfilled") return [];
     if (!(result.reason instanceof StripeAccessError)) throw result.reason;
     return [{ error: result.reason, permission: REQUIRED_READS[index].permission }];
   });
+}
+
+async function checkReadAccess(
+  gateway: StripeGateway,
+): Promise<ActionResult<object, MissingPermissions>> {
+  const failures = await probeReadAccess(gateway);
   if (!failures.length) return { ok: true };
 
   if (failures.some(({ error }) => error.kind === "authentication")) {
@@ -162,9 +176,7 @@ async function checkReadAccess(
     };
   }
   const missing = failures.filter(({ error }) => error.kind === "permission");
-  if (!missing.length) {
-    return { ok: false, error: "Stripe could not be reached. Try again in a moment." };
-  }
+  if (!missing.length) return { ok: false, error: STRIPE_UNREACHABLE };
   // Stripe names the permission it wanted; the probe's is the fallback.
   const missingPermissions = missing.map(({ error, permission }) => error.permission ?? permission);
   return {
@@ -307,11 +319,24 @@ export async function disconnectStripeAccount(
   return { ok: true };
 }
 
-/** Drops the imported data and imports the account again from scratch. */
+/**
+ * Drops the imported data and imports the account again from scratch. Only with a key that can
+ * still read Stripe: the data would be gone for nothing otherwise, and the upgrades and downgrades
+ * recorded as they happened can never be imported again.
+ */
 export async function reimportStripeAccount(
   workspaceId: string,
   accountId: string,
+  options: StripeAccessOptions = {},
 ): Promise<ActionResult> {
+  const [account] = await db()
+    .select({ encryptedSecretKey: stripeAccounts.encryptedSecretKey })
+    .from(stripeAccounts)
+    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+  if (!account) return ACCOUNT_NOT_FOUND;
+  const access = await checkStoredKey(account.encryptedSecretKey, options);
+  if (!access.ok) return access;
+
   const now = new Date();
   const reset = await db().transaction(async (tx) => {
     const [account] = await tx
@@ -341,4 +366,23 @@ export async function reimportStripeAccount(
   if (!reset) return ACCOUNT_NOT_FOUND;
   scheduleSync([accountId]);
   return { ok: true };
+}
+
+/** Whether the stored key can still read everything an import needs. */
+async function checkStoredKey(
+  encryptedSecretKey: string,
+  options: StripeAccessOptions,
+): Promise<ActionResult> {
+  let key: string;
+  try {
+    key = decryptSecret(encryptedSecretKey);
+  } catch {
+    return { ok: false, error: UNREADABLE_KEY_ERROR };
+  }
+  const failures = await probeReadAccess((options.createGateway ?? createStripeGateway)(key));
+  const refusal =
+    failures.find(({ error }) => error.kind === "authentication") ??
+    failures.find(({ error }) => error.kind === "permission");
+  if (refusal) return { ok: false, error: describeAccessError(refusal.error) };
+  return failures.length ? { ok: false, error: STRIPE_UNREACHABLE } : { ok: true };
 }

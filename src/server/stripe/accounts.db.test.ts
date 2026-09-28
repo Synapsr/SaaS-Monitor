@@ -285,11 +285,13 @@ describe("Stripe accounts", () => {
       });
 
       const other = await createUserWithWorkspace("Grace Hopper");
-      expect(await reimportStripeAccount(other.workspaceId, account.id)).toEqual(NOT_FOUND);
+      expect(await reimportStripeAccount(other.workspaceId, account.id, options)).toEqual(
+        NOT_FOUND,
+      );
       expect(await db().$count(payments)).toBe(1);
       expect(after).not.toHaveBeenCalled();
 
-      expect(await reimportStripeAccount(workspaceId, account.id)).toEqual({ ok: true });
+      expect(await reimportStripeAccount(workspaceId, account.id, options)).toEqual({ ok: true });
 
       expect(await getStripeAccount(account.id)).toMatchObject({
         status: "importing",
@@ -299,6 +301,48 @@ describe("Stripe accounts", () => {
       expect(await db().$count(payments)).toBe(0);
       expect(await db().$count(mrrMovements)).toBe(0);
       expect(after).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps the data when the key can no longer read Stripe", async () => {
+      const account = await createStripeAccount(workspaceId, {
+        status: "error",
+        backfill: null,
+        lastError: "This Stripe key was revoked or rolled.",
+      });
+      await db().insert(payments).values({
+        accountId: account.id,
+        stripeChargeId: "ch_1",
+        amount: 100,
+        currency: "usd",
+        occurredAt: new Date(),
+        origin: "live",
+      });
+      const reimport = () => reimportStripeAccount(workspaceId, account.id, options);
+
+      stripe.failure = new StripeAccessError("authentication", "Invalid API Key provided");
+      expect(await reimport()).toEqual({
+        ok: false,
+        error: "This Stripe key was revoked or rolled. Connect the account again with a new key.",
+      });
+      stripe.failure = null;
+      stripe.deniedResources.add("charges");
+      expect(await reimport()).toEqual({
+        ok: false,
+        error:
+          "This Stripe key is missing the “Charges and Refunds (Read)” permission. Edit the key in the Stripe Dashboard to add it.",
+      });
+      await db()
+        .update(stripeAccounts)
+        .set({ encryptedSecretKey: "v1.bm90.YQ.Yg" })
+        .where(eq(stripeAccounts.id, account.id));
+      expect(await reimport()).toMatchObject({
+        ok: false,
+        error: expect.stringContaining("ENCRYPTION_KEY"),
+      });
+
+      expect(await getStripeAccount(account.id)).toMatchObject({ status: "error", backfill: null });
+      expect(await db().$count(payments)).toBe(1);
+      expect(after).not.toHaveBeenCalled();
     });
 
     it("enables instant updates when possible, and explains why not otherwise", async () => {

@@ -33,7 +33,13 @@ import { siteConfig } from "@/lib/site";
 
 type OpenDialog = "rename" | "reimport" | "disconnect" | null;
 
-export function AccountActions({ account }: { account: { id: string; name: string } }) {
+export function AccountActions({
+  account,
+  canReimport,
+}: {
+  account: { id: string; name: string };
+  canReimport: boolean;
+}) {
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const close = (open: boolean) => open || setDialog(null);
 
@@ -50,10 +56,12 @@ export function AccountActions({ account }: { account: { id: string; name: strin
             <PencilIcon />
             Rename
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setDialog("reimport")}>
-            <RotateCcwIcon />
-            Re-import data
-          </DropdownMenuItem>
+          {canReimport && (
+            <DropdownMenuItem onSelect={() => setDialog("reimport")}>
+              <RotateCcwIcon />
+              Re-import data
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={() => setDialog("disconnect")}>
             <UnplugIcon />
@@ -68,10 +76,17 @@ export function AccountActions({ account }: { account: { id: string; name: strin
         onOpenChange={close}
         title={`Re-import ${account.name}?`}
         description={
-          <p>
-            The data imported from this account is deleted and imported again from Stripe. Screens
-            show “Importing” until it’s done. Nothing changes in Stripe.
-          </p>
+          <>
+            <p>
+              Everything imported from this account is deleted, then imported again from Stripe.
+              Screens show “Importing” until it’s done. Nothing changes in Stripe.
+            </p>
+            <p>
+              Stripe keeps no history of subscription changes: the upgrades and downgrades recorded
+              since you connected the account are lost, and past MRR is rebuilt from current
+              amounts.
+            </p>
+          </>
         }
         confirmLabel="Re-import"
         successMessage="Import started."

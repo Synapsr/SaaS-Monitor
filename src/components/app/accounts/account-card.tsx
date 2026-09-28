@@ -1,12 +1,12 @@
-import { CircleAlertIcon } from "lucide-react";
+import { CircleAlertIcon, KeyRoundIcon } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { formatRelativeTime } from "@/lib/format";
 import type { StripeAccountSummary } from "@/server/stripe/accounts";
 import { AccountActions } from "./account-actions";
 import { ModeBadge, MrrValue, SyncStatus } from "./account-status";
 import { ImportProgress } from "./import-progress";
 import { InstantUpdates } from "./instant-updates";
-import { ReimportButton } from "./reimport-button";
 
 export function AccountCard({
   account,
@@ -38,13 +38,17 @@ export function AccountCard({
             <p className="text-xs text-muted-foreground">MRR</p>
           </div>
         )}
-        <AccountActions account={{ id: account.id, name: account.name }} />
+        <AccountActions
+          account={{ id: account.id, name: account.name }}
+          // Accounts only fail when their key needs a fix: nothing could be imported again.
+          canReimport={account.status !== "error"}
+        />
       </header>
 
       <dl className="divide-y border-t">
         <Row label="Data">
           {account.status === "error" ? (
-            <ErrorDetails accountId={account.id} message={account.lastError} />
+            <ErrorDetails message={account.lastError} />
           ) : (
             <SyncStatus account={account} />
           )}
@@ -85,7 +89,11 @@ function ImportingDetails() {
   );
 }
 
-function ErrorDetails({ accountId, message }: { accountId: string; message: string | null }) {
+/**
+ * Accounts only fail when their key needs a fix (revoked, missing a permission, undecryptable):
+ * connecting again with a new key replaces it and keeps the data, while a re-import would drop it.
+ */
+function ErrorDetails({ message }: { message: string | null }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="flex items-center gap-1.5 font-medium text-destructive">
@@ -95,17 +103,16 @@ function ErrorDetails({ accountId, message }: { accountId: string; message: stri
       {message && <p className="text-pretty">{message}</p>}
       <p className="text-pretty text-muted-foreground">
         Most often the key was revoked or lost a permission. Fix the key in Stripe (it is checked
-        again every 30 minutes), or create a new restricted key and{" "}
-        <Link
-          href="/app/accounts/new"
-          className="font-medium text-foreground underline underline-offset-4"
-        >
-          connect the account again
-        </Link>
-        : your imported data is kept.
+        again every 30 minutes), or connect the account again with a new restricted key: your
+        imported data is kept.
       </p>
       <div className="pt-1">
-        <ReimportButton accountId={accountId} />
+        <Button asChild variant="outline" size="sm">
+          <Link href="/app/accounts/new">
+            <KeyRoundIcon data-icon="inline-start" />
+            Connect with a new key
+          </Link>
+        </Button>
       </div>
     </div>
   );

@@ -87,6 +87,10 @@ export function redactSecrets(text: string): string {
   return text.replace(/\b((?:sk|rk|pk)_(?:live|test)_|whsec_)[A-Za-z0-9*]+/g, "$1…");
 }
 
+/** The stored key cannot be decrypted, typically because `ENCRYPTION_KEY` changed. */
+export const UNREADABLE_KEY_ERROR =
+  "The saved Stripe key can no longer be decrypted (was ENCRYPTION_KEY changed?). Connect the account again.";
+
 /** User-facing explanation of an error that needs the user to act, shown in the dashboard. */
 export function describeAccessError(error: StripeAccessError): string {
   if (error.kind === "authentication") {
