@@ -21,7 +21,7 @@ export async function createScreen(
       settings: screenSettingsSchema.parse(settings),
       testEventAt,
     })
-    .returning({ id: screens.id });
+    .$returningId();
   if (accountIds.length) {
     await db()
       .insert(screenAccounts)

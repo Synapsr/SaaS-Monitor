@@ -3,21 +3,24 @@ name: saas-monitor-dev
 
 services:
   db:
-    image: postgres:18-alpine
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      POSTGRES_USER: saas_monitor
-      POSTGRES_PASSWORD: saas_monitor
-      POSTGRES_DB: saas_monitor
+      MYSQL_DATABASE: saas_monitor
+      MYSQL_USER: saas_monitor
+      MYSQL_PASSWORD: saas_monitor
+      # Tests connect as root, which creates their database (see src/test/database-url.ts).
+      MYSQL_ROOT_PASSWORD: saas_monitor
     ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+      - "127.0.0.1:${MYSQL_PORT:-3307}:3306"
     volumes:
-      - postgres:/var/lib/postgresql
+      - mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U saas_monitor -d saas_monitor"]
+      # Over TCP: the server that initializes the database only listens on its socket.
+      test: ["CMD", "mysqladmin", "ping", "--host=127.0.0.1", "--silent"]
       interval: 2s
       timeout: 5s
-      retries: 30
+      retries: 60
 
   # Validates Stripe requests against the official OpenAPI spec (no real account needed). Same
   # version as in CI (.github/workflows/ci.yml).
@@ -28,4 +31,4 @@ services:
       - "127.0.0.1:${STRIPE_MOCK_PORT:-12111}:12111"
 
 volumes:
-  postgres:
+  mysql:

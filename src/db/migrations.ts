@@ -1,25 +1,35 @@
 import path from "node:path";
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/mysql2";
+import { migrate } from "drizzle-orm/mysql2/migrator";
+import { createConnection, type RowDataPacket } from "mysql2/promise";
 
-// Arbitrary but stable key for pg_advisory_lock.
-const MIGRATION_LOCK_KEY = 4_172_026_928;
+/** Named lock taken while migrating. Such names are shared by every database of the server. */
+const MIGRATION_LOCK = "saas_monitor_migrations";
+/** How long an instance waits for another one to finish migrating. */
+const LOCK_TIMEOUT_SECONDS = 10 * 60;
 
 /**
  * Applies pending migrations from `./drizzle`. Several app instances may boot at the same time:
- * an advisory lock makes them take turns, and the later ones find nothing left to apply.
+ * a named lock makes them take turns, and the later ones find nothing left to apply.
  * Shared by `pnpm db:migrate` and the server startup, hence no `server-only` import.
  */
 export async function runMigrations(databaseUrl: string) {
-  const client = postgres(databaseUrl, { max: 1, onnotice: () => {} });
+  // The lock belongs to this connection's session.
+  const connection = await createConnection(databaseUrl);
   try {
-    await client`select pg_advisory_lock(${MIGRATION_LOCK_KEY})`;
-    await migrate(drizzle({ client }), {
+    const [[{ locked }]] = await connection.query<RowDataPacket[]>(
+      "select get_lock(?, ?) as locked",
+      [MIGRATION_LOCK, LOCK_TIMEOUT_SECONDS],
+    );
+    if (locked !== 1) {
+      throw new Error("Another instance has been migrating the database for too long.");
+    }
+    await migrate(drizzle({ client: connection }), {
       migrationsFolder: path.join(process.cwd(), "drizzle"),
     });
+    await connection.query("select release_lock(?)", [MIGRATION_LOCK]);
   } finally {
-    // Ending the only session also releases the advisory lock.
-    await client.end();
+    // Ending the session also releases the lock, when migrating failed.
+    await connection.end();
   }
 }

@@ -37,11 +37,11 @@ describe("time zones", () => {
       expect(isTimeZone(zone), zone).toBe(true);
     }
     expect(isTimeZone("Asia/Kolkata")).toBe(true);
-    // POSIX signs, like PostgreSQL: UTC−5 in both.
+    // POSIX signs, which MySQL's time zone tables follow too: UTC−5 in both.
     expect(isTimeZone("Etc/GMT+5")).toBe(true);
   });
 
-  it("refuses offsets, which PostgreSQL reads with the opposite sign", () => {
+  it("refuses offsets, some of which MySQL cannot read", () => {
     for (const zone of ["+05:30", "-03:00", "+0530", "+05"]) {
       expect(isTimeZone(zone), zone).toBe(false);
     }

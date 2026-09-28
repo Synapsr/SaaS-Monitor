@@ -8,8 +8,7 @@ import type { SyncState } from "./policy";
 
 /** Status of an account that works (again): importing until its backfill completes. */
 export function workingStatus() {
-  const status = sql`case when ${stripeAccounts.backfill} is null then 'ready' else 'importing' end`;
-  return sql`(${status})::stripe_account_status`;
+  return sql`case when ${stripeAccounts.backfill} is null then 'ready' else 'importing' end`;
 }
 
 /** Payments of the last 30 days per account: they set Stripe's read allowance. */

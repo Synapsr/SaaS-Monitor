@@ -61,7 +61,7 @@ export async function getExchangeRates(
     await db()
       .insert(exchangeRates)
       .values({ base, rates, fetchedAt: now })
-      .onConflictDoUpdate({ target: exchangeRates.base, set: { rates, fetchedAt: now } });
+      .onDuplicateKeyUpdate({ set: { rates, fetchedAt: now } });
     sourceFailures.delete(base);
     return rates;
   } catch (error) {

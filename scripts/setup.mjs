@@ -4,7 +4,7 @@
 import { randomBytes } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 
-const GENERATED = ["AUTH_SECRET", "ENCRYPTION_KEY", "POSTGRES_PASSWORD"];
+const GENERATED = ["AUTH_SECRET", "ENCRYPTION_KEY", "MYSQL_PASSWORD", "MYSQL_ROOT_PASSWORD"];
 
 const template = await readFile(new URL("../.env.example", import.meta.url), "utf8");
 const content = template.replace(

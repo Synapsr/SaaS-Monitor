@@ -4,19 +4,22 @@ name: saas-monitor
 
 services:
   db:
-    image: postgres:18-alpine
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      POSTGRES_USER: saas_monitor
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: saas_monitor
+      MYSQL_DATABASE: saas_monitor
+      MYSQL_USER: saas_monitor
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
     volumes:
-      - postgres:/var/lib/postgresql
+      - mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U saas_monitor -d saas_monitor"]
+      # Over TCP: the server that initializes the database only listens on its socket.
+      test: ["CMD", "mysqladmin", "ping", "--host=127.0.0.1", "--silent"]
       interval: 5s
       timeout: 5s
       retries: 30
+      start_period: 1m
 
   app:
     build:
@@ -32,7 +35,7 @@ services:
       - "${APP_PORT:-3000}:3000"
     environment:
       APP_URL: ${APP_URL:-http://localhost:3000}
-      DATABASE_URL: postgres://saas_monitor:${POSTGRES_PASSWORD}@db:5432/saas_monitor
+      DATABASE_URL: mysql://saas_monitor:${MYSQL_PASSWORD}@db:3306/saas_monitor
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env}
       DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-false}
@@ -50,4 +53,4 @@ services:
     cap_drop: [ALL]
 
 volumes:
-  postgres:
+  mysql:

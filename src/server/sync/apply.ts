@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray, lt } from "drizzle-orm";
 import type { Transaction } from "@/db";
-import { mrrMovements, payments, subscriptions, type dataOrigin } from "@/db/schema";
+import { mrrMovements, payments, subscriptions, type DATA_ORIGINS } from "@/db/schema";
 import { mainInterval, planName } from "@/server/stripe/mrr";
 import type { Charge, UnixTime } from "@/server/stripe/types";
 import type { EventRef } from "./events";
@@ -14,7 +14,7 @@ import {
 } from "./movements";
 
 /** How data entered the database: only `live` rows trigger sounds and celebrations. */
-export type DataOrigin = (typeof dataOrigin.enumValues)[number];
+export type DataOrigin = (typeof DATA_ORIGINS)[number];
 
 export interface SubscriptionUpdate extends ValuedSubscription {
   /** The event that revealed the change, for live updates. */
@@ -368,7 +368,7 @@ async function knownCustomers(
 ): Promise<Map<string, KnownCustomer>> {
   if (!customerIds.length) return new Map();
   const rows = await tx
-    .selectDistinctOn([subscriptions.stripeCustomerId], {
+    .select({
       id: subscriptions.stripeCustomerId,
       name: subscriptions.customerName,
       country: subscriptions.customerCountry,
@@ -380,5 +380,6 @@ async function knownCustomers(
         inArray(subscriptions.stripeCustomerId, [...new Set(customerIds)]),
       ),
     );
+  // Any subscription of a customer names them.
   return new Map(rows.map((row) => [row.id, { name: row.name, country: row.country }]));
 }

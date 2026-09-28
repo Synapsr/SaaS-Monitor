@@ -15,7 +15,7 @@ export async function createStripeAccount(
     ...overrides
   }: Partial<typeof stripeAccounts.$inferInsert> & { now?: Date } = {},
 ) {
-  const [account] = await db()
+  const [{ id }] = await db()
     .insert(stripeAccounts)
     .values({
       workspaceId,
@@ -30,8 +30,8 @@ export async function createStripeAccount(
       eventsCursor: toUnixTime(now),
       ...overrides,
     })
-    .returning();
-  return account;
+    .$returningId();
+  return getStripeAccount(id);
 }
 
 export async function getStripeAccount(accountId: string) {

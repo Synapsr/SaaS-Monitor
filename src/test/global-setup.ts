@@ -1,36 +1,16 @@
-import postgres from "postgres";
+import { createConnection, escapeId } from "mysql2/promise";
 import { runMigrations } from "@/db/migrations";
 import { testDatabaseUrl } from "./database-url";
 
-/** PostgreSQL error codes: the database does not exist, or was created concurrently. */
-const UNKNOWN_DATABASE = "3D000";
-const DUPLICATE_DATABASE = "42P04";
-
-function errorCode(error: unknown): unknown {
-  return typeof error === "object" && error !== null ? (error as { code?: unknown }).code : null;
-}
-
 /** Creates the test database on first use: a fresh clone only has the development one. */
 async function ensureDatabase(url: string) {
-  const client = postgres(url, { max: 1, onnotice: () => {} });
-  try {
-    await client`select 1`;
-    return;
-  } catch (error) {
-    if (errorCode(error) !== UNKNOWN_DATABASE) throw error;
-  } finally {
-    await client.end();
-  }
-
-  // A database is created from another one of the same server.
+  // Connected to the server alone, since the database may not exist yet.
   const serverUrl = new URL(url);
   const name = decodeURIComponent(serverUrl.pathname.slice(1));
-  serverUrl.pathname = "/postgres";
-  const server = postgres(serverUrl.toString(), { max: 1, onnotice: () => {} });
+  serverUrl.pathname = "/";
+  const server = await createConnection(serverUrl.toString());
   try {
-    await server`create database ${server(name)}`;
-  } catch (error) {
-    if (errorCode(error) !== DUPLICATE_DATABASE) throw error;
+    await server.query(`create database if not exists ${escapeId(name)}`);
   } finally {
     await server.end();
   }

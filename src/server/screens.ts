@@ -165,7 +165,7 @@ async function insertScreen(
   const [screen] = await tx
     .insert(screens)
     .values({ workspaceId, name: input.name, publicToken: generatePublicToken(), settings })
-    .returning({ id: screens.id });
+    .$returningId();
   await linkAccounts(
     tx,
     screen.id,
@@ -227,15 +227,14 @@ export async function updateScreen(
   return db().transaction(async (tx): Promise<ActionResult> => {
     if (!(await ownsAccounts(tx, workspaceId, accountIds))) return FOREIGN_ACCOUNTS;
 
-    const [screen] = await tx
+    const [{ affectedRows }] = await tx
       .update(screens)
       .set({ name, settings })
-      .where(inWorkspace(workspaceId, screenId))
-      .returning({ id: screens.id });
-    if (!screen) return SCREEN_NOT_FOUND;
+      .where(inWorkspace(workspaceId, screenId));
+    if (!affectedRows) return SCREEN_NOT_FOUND;
 
-    await tx.delete(screenAccounts).where(eq(screenAccounts.screenId, screen.id));
-    await linkAccounts(tx, screen.id, accountIds);
+    await tx.delete(screenAccounts).where(eq(screenAccounts.screenId, screenId));
+    await linkAccounts(tx, screenId, accountIds);
     return { ok: true };
   });
 }
@@ -245,28 +244,24 @@ export async function regenerateScreenToken(
   workspaceId: string,
   screenId: string,
 ): Promise<ActionResult<{ publicToken: string }>> {
-  const [screen] = await db()
+  const publicToken = generatePublicToken();
+  const [{ affectedRows }] = await db()
     .update(screens)
-    .set({ publicToken: generatePublicToken() })
-    .where(inWorkspace(workspaceId, screenId))
-    .returning({ publicToken: screens.publicToken });
-  return screen ? { ok: true, publicToken: screen.publicToken } : SCREEN_NOT_FOUND;
+    .set({ publicToken })
+    .where(inWorkspace(workspaceId, screenId));
+  return affectedRows ? { ok: true, publicToken } : SCREEN_NOT_FOUND;
 }
 
 /** Asks every open display of the screen to play a fake sale, to check sound and confetti. */
 export async function sendTestEvent(workspaceId: string, screenId: string): Promise<ActionResult> {
-  const [screen] = await db()
+  const [{ affectedRows }] = await db()
     .update(screens)
-    .set({ testEventAt: sql`now()` })
-    .where(inWorkspace(workspaceId, screenId))
-    .returning({ id: screens.id });
-  return screen ? { ok: true } : SCREEN_NOT_FOUND;
+    .set({ testEventAt: sql`now(6)` })
+    .where(inWorkspace(workspaceId, screenId));
+  return affectedRows ? { ok: true } : SCREEN_NOT_FOUND;
 }
 
 export async function deleteScreen(workspaceId: string, screenId: string): Promise<ActionResult> {
-  const [screen] = await db()
-    .delete(screens)
-    .where(inWorkspace(workspaceId, screenId))
-    .returning({ id: screens.id });
-  return screen ? { ok: true } : SCREEN_NOT_FOUND;
+  const [{ affectedRows }] = await db().delete(screens).where(inWorkspace(workspaceId, screenId));
+  return affectedRows ? { ok: true } : SCREEN_NOT_FOUND;
 }

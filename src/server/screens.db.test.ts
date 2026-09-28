@@ -27,7 +27,7 @@ async function createStripeAccount(workspaceId: string, name: string, currency =
       secretKeyHint: "rk_live_…test",
       defaultCurrency: currency,
     })
-    .returning({ id: stripeAccounts.id });
+    .$returningId();
   return account.id;
 }
 

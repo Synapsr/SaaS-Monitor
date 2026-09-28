@@ -14,7 +14,7 @@ const schema = z
       .url()
       .default("http://localhost:3000")
       .transform((url) => url.replace(/\/+$/, "")),
-    DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, error: "must be a postgres:// URL" }),
+    DATABASE_URL: z.url({ protocol: /^mysql$/, error: "must be a mysql:// URL" }),
     AUTH_SECRET: z.string().min(32, "must be at least 32 characters"),
     ENCRYPTION_KEY: z
       .string()

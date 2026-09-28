@@ -4,11 +4,17 @@ import { members, organizations, users } from "@/db/schema";
 
 /** Empties every table, so each test starts from a blank database. */
 export async function resetDatabase() {
-  const tables = await db().execute<{ tablename: string }>(
-    sql`select tablename from pg_tables where schemaname = 'public'`,
-  );
-  const names = tables.map(({ tablename }) => `"${tablename}"`).join(", ");
-  if (names) await db().execute(sql.raw(`truncate ${names} restart identity cascade`));
+  const tables = await db()
+    .select({ name: sql<string>`table_name` })
+    .from(sql`information_schema.tables`)
+    // Drizzle's record of the applied migrations stays.
+    .where(sql`table_schema = database() and table_name <> '__drizzle_migrations'`);
+  for (const { name } of tables) {
+    // In any order: foreign keys are not checked.
+    await db().execute(
+      sql`delete /*+ SET_VAR(foreign_key_checks = OFF) */ from ${sql.identifier(name)}`,
+    );
+  }
 }
 
 /** Creates a user who owns a workspace, the starting point of most tenant-scoped tests. */

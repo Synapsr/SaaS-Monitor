@@ -1,5 +1,6 @@
 import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
+import type { AnyMySqlColumn } from "drizzle-orm/mysql-core";
 import { db } from "@/db";
 import { stripeAccounts, subscriptions, type ScanProgress } from "@/db/schema";
 import { DAY_SECONDS } from "@/lib/durations";
@@ -160,14 +161,13 @@ async function applyEvents(
       (await endMissingSubscriptions(tx, account.id, missing, toUnixTime(now)));
     if (digest.newest) {
       const newest = digest.newest.created;
-      const newestAt = new Date(newest * 1000).toISOString();
       // The next sync reads from a few minutes before the cursor: it skips these.
       const rereadSince = Math.max(account.eventsCursor ?? newest, newest) - CURSOR_OVERLAP_SECONDS;
       await tx
         .update(stripeAccounts)
         .set({
-          eventsCursor: sql`greatest(${stripeAccounts.eventsCursor}, ${newest})`,
-          lastEventAt: sql`greatest(${stripeAccounts.lastEventAt}, ${newestAt}::timestamptz)`,
+          eventsCursor: forwardTo(stripeAccounts.eventsCursor, newest),
+          lastEventAt: forwardTo(stripeAccounts.lastEventAt, new Date(newest * 1000)),
           recentEventIds: digest.listed
             .filter((event) => event.created >= rereadSince)
             .map((event) => event.id),
@@ -176,6 +176,15 @@ async function applyEvents(
     }
     return written;
   });
+}
+
+/**
+ * Moves `column` forward to `value`, never back: another sync may have gone further meanwhile.
+ * MySQL's `greatest()` is null as soon as one of its values is.
+ */
+function forwardTo(column: AnyMySqlColumn, value: unknown) {
+  const param = sql.param(value, column);
+  return sql`greatest(coalesce(${column}, ${param}), ${param})`;
 }
 
 /**

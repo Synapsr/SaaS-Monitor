@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, eq, inArray, sum } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
+import { isDuplicateEntry } from "@/db/errors";
 import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import type { ActionResult } from "@/lib/action-result";
 import { nameSchema } from "@/lib/names";
@@ -122,25 +123,29 @@ export async function connectStripeAccount(
   }
 
   const now = new Date();
-  const [account] = await db()
-    .insert(stripeAccounts)
-    .values({
-      workspaceId: input.workspaceId,
-      name: input.name,
-      stripeAccountId: info?.id ?? null,
-      livemode: key.livemode,
-      encryptedSecretKey: encryptSecret(key.key),
-      secretKeyHint: key.hint,
-      defaultCurrency: info?.defaultCurrency ?? null,
-      status: "importing",
-      backfill: newBackfill(now),
-      // Events from now on are replayed after the import: nothing falls between the two.
-      eventsCursor: toUnixTime(now),
-    })
-    .onConflictDoNothing()
-    .returning({ id: stripeAccounts.id });
-  // Another request connected the same account in the meantime.
-  if (!account) return { ok: false, error: "This Stripe account is already connected." };
+  let account: { id: string };
+  try {
+    [account] = await db()
+      .insert(stripeAccounts)
+      .values({
+        workspaceId: input.workspaceId,
+        name: input.name,
+        stripeAccountId: info?.id ?? null,
+        livemode: key.livemode,
+        encryptedSecretKey: encryptSecret(key.key),
+        secretKeyHint: key.hint,
+        defaultCurrency: info?.defaultCurrency ?? null,
+        status: "importing",
+        backfill: newBackfill(now),
+        // Events from now on are replayed after the import: nothing falls between the two.
+        eventsCursor: toUnixTime(now),
+      })
+      .$returningId();
+  } catch (error) {
+    if (!isDuplicateEntry(error)) throw error;
+    // Another request connected the same account in the meantime.
+    return { ok: false, error: "This Stripe account is already connected." };
+  }
 
   await registerWebhookEndpoint(account.id, gateway);
   scheduleSync([account.id]);
@@ -275,12 +280,11 @@ export async function renameStripeAccount(
   accountId: string,
   name: string,
 ): Promise<ActionResult> {
-  const renamed = await db()
+  const [{ affectedRows }] = await db()
     .update(stripeAccounts)
     .set({ name })
-    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
-    .returning({ id: stripeAccounts.id });
-  return renamed.length ? { ok: true } : ACCOUNT_NOT_FOUND;
+    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+  return affectedRows ? { ok: true } : ACCOUNT_NOT_FOUND;
 }
 
 /** Deletes the account, its imported data and the webhook endpoint the app created. */
@@ -339,7 +343,7 @@ export async function reimportStripeAccount(
 
   const now = new Date();
   const reset = await db().transaction(async (tx) => {
-    const [account] = await tx
+    const [{ affectedRows }] = await tx
       .update(stripeAccounts)
       .set({
         status: "importing",
@@ -355,9 +359,8 @@ export async function reimportStripeAccount(
         // Any sync still running for the old data loses its lease.
         syncLockedUntil: null,
       })
-      .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
-      .returning({ id: stripeAccounts.id });
-    if (!account) return false;
+      .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+    if (!affectedRows) return false;
     await tx.delete(mrrMovements).where(eq(mrrMovements.accountId, accountId));
     await tx.delete(subscriptions).where(eq(subscriptions.accountId, accountId));
     await tx.delete(payments).where(eq(payments.accountId, accountId));

@@ -35,7 +35,7 @@ export default defineConfig({
         ...shared,
         extends: true,
         test: {
-          // Tests touching PostgreSQL (`*.db.test.ts`) share one database: run files serially.
+          // Tests touching MySQL (`*.db.test.ts`) share one database: run files serially.
           name: "db",
           environment: "node",
           include: ["src/**/*.db.test.{ts,tsx}"],

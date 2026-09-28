@@ -149,12 +149,11 @@ export async function setWebhookSigningSecret(
   accountId: string,
   signingSecret: string,
 ): Promise<ActionResult> {
-  const updated = await db()
+  const [{ affectedRows }] = await db()
     .update(stripeAccounts)
     .set({ encryptedWebhookSecret: encryptSecret(signingSecret) })
-    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
-    .returning({ id: stripeAccounts.id });
-  return updated.length ? { ok: true } : ACCOUNT_NOT_FOUND;
+    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+  return affectedRows ? { ok: true } : ACCOUNT_NOT_FOUND;
 }
 
 /** Endpoint URL and events to configure when adding the webhook manually in the Dashboard. */

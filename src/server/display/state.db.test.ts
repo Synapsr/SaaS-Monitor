@@ -80,7 +80,7 @@ async function addMovement(
       occurredAt: new Date(row.at),
       origin: row.origin ?? "backfill",
     })
-    .returning({ id: mrrMovements.id });
+    .$returningId();
   return movement.id;
 }
 
@@ -109,7 +109,7 @@ async function addPayment(
       occurredAt: new Date(row.at),
       origin: row.origin ?? "backfill",
     })
-    .returning({ id: payments.id });
+    .$returningId();
   return payment.id;
 }
 
@@ -415,28 +415,30 @@ describe("display state", () => {
 
   it("buckets days like browsers in every time zone a screen accepts", async () => {
     // 20:00 UTC is already the next day from UTC+04:00 on.
-    const instant = "2026-01-01T20:00:00Z";
+    const instant = new Date("2026-01-01T20:00:00Z");
+    // MySQL knows the zones its time zone tables were loaded with: every one the editor offers,
+    // and the aliases browsers may report, must be there.
     const zones = [
+      ...Intl.supportedValuesOf("timeZone"),
       "UTC",
-      "America/New_York",
       "Asia/Calcutta",
-      "Asia/Kolkata",
-      "Pacific/Kiritimati",
       "Etc/GMT+5",
       "Etc/GMT-14",
       "+05:30",
       "-03:00",
     ].filter(isTimeZone);
 
-    const rows = await db().execute<{ zone: string; day: string }>(sql`
-      select zone, (${instant}::timestamptz at time zone zone)::date::text as day
-      from unnest(array[${sql.join(
-        zones.map((zone) => sql`${zone}`),
-        sql`, `,
-      )}]) as zone`);
+    const rows = await db()
+      .select({
+        zone: sql<string>`zone`,
+        day: sql<string>`date_format(convert_tz(${instant}, '+00:00', zone), '%Y-%m-%d')`,
+      })
+      .from(
+        sql`json_table(${JSON.stringify(zones)}, '$[*]' columns (zone text path '$')) as zones`,
+      );
 
     expect(Object.fromEntries(rows.map(({ zone, day }) => [zone, day]))).toEqual(
-      Object.fromEntries(zones.map((zone) => [zone, calendarDay(new Date(instant), zone)])),
+      Object.fromEntries(zones.map((zone) => [zone, calendarDay(instant, zone)])),
     );
   });
 

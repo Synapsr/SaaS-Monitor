@@ -3,46 +3,46 @@ import {
   bigint,
   boolean,
   index,
-  integer,
-  jsonb,
-  pgEnum,
-  pgTable,
+  int,
+  json,
+  mysqlEnum,
+  mysqlTable,
   primaryKey,
   text,
-  timestamp,
   uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+  varchar,
+} from "drizzle-orm/mysql-core";
 import type { ScreenSettings } from "@/lib/screens/settings";
 import type { CouponTerms } from "@/server/stripe/types";
 import { organizations } from "./auth";
+import { identifier, instant, now, uuid } from "./columns";
 
 // Column names are derived from keys (snake_case), see `casing` in drizzle.config.ts.
 // Money is always an integer amount in the currency's minor unit (cents), like in Stripe.
 
-const timestamptz = () => timestamp({ withTimezone: true });
 const money = () => bigint({ mode: "number" });
+/** ISO 4217 code, lowercase like Stripe. */
+const currency = () => varchar({ length: 3 });
+/** Stripe's ids have at most 255 characters. */
+const stripeId = () => identifier({ length: 255 });
+/** A Better Auth id, such as a workspace's (see ./auth.ts). */
+const authId = () => identifier({ length: 36 });
+
+const id = () =>
+  uuid()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID());
 
 const timestamps = {
-  createdAt: timestamptz().defaultNow().notNull(),
-  updatedAt: timestamptz()
-    .defaultNow()
+  createdAt: instant().default(now).notNull(),
+  updatedAt: instant()
+    .default(now)
     .notNull()
     .$onUpdate(() => new Date()),
 };
 
-export const stripeAccountStatus = pgEnum("stripe_account_status", ["importing", "ready", "error"]);
-
 /** How a row entered the database. Only `live` rows trigger sounds and celebrations. */
-export const dataOrigin = pgEnum("data_origin", ["backfill", "live", "reconcile"]);
-
-export const mrrMovementKind = pgEnum("mrr_movement_kind", [
-  "new",
-  "expansion",
-  "reactivation",
-  "contraction",
-  "churn",
-]);
+export const DATA_ORIGINS = ["backfill", "live", "reconcile"] as const;
 
 /**
  * Resumable state of a full scan of a Stripe account: the initial import or a reconcile. Large
@@ -65,11 +65,11 @@ export interface ScanProgress {
 }
 
 /** A Stripe account connected to a workspace with a (preferably restricted, read-only) API key. */
-export const stripeAccounts = pgTable(
+export const stripeAccounts = mysqlTable(
   "stripe_accounts",
   {
-    id: uuid().primaryKey().defaultRandom(),
-    workspaceId: text()
+    id: id(),
+    workspaceId: authId()
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     name: text().notNull(),
@@ -77,89 +77,99 @@ export const stripeAccounts = pgTable(
      * `acct_…` identifier, used to prevent connecting the same account twice. Test mode shares it
      * with live mode, although their data is separate: both may be connected.
      */
-    stripeAccountId: text(),
+    stripeAccountId: stripeId(),
     livemode: boolean().notNull(),
     /** API key encrypted with ENCRYPTION_KEY, see src/server/crypto.ts. Never sent to clients. */
     encryptedSecretKey: text().notNull(),
     /** Masked key for the UI, e.g. `rk_live_…4f2a`. */
     secretKeyHint: text().notNull(),
-    defaultCurrency: text(),
-    status: stripeAccountStatus().notNull().default("importing"),
+    defaultCurrency: currency(),
+    status: mysqlEnum(["importing", "ready", "error"]).notNull().default("importing"),
     lastError: text(),
     /** Initial import in progress; `null` once the account is imported. */
-    backfill: jsonb().$type<ScanProgress>(),
+    backfill: json().$type<ScanProgress>(),
     /** Daily reconcile in progress, see src/server/sync/scan.ts. */
-    reconcile: jsonb().$type<ScanProgress>(),
+    reconcile: json().$type<ScanProgress>(),
     /** Unix time (seconds) of the newest Stripe event applied by the incremental sync. */
     eventsCursor: bigint({ mode: "number" }),
     /**
      * Events already handled that the next sync lists again, as it reads from a few minutes before
      * `eventsCursor` (events may be listed late): it skips them.
      */
-    recentEventIds: text().array().notNull().default([]),
+    recentEventIds: json().$type<string[]>().notNull().default([]),
     /** Creation time of the newest Stripe event applied: webhooks are healthy if they keep up. */
-    lastEventAt: timestamptz(),
-    lastSyncedAt: timestamptz(),
-    lastReconciledAt: timestamptz(),
+    lastEventAt: instant(),
+    lastSyncedAt: instant(),
+    lastReconciledAt: instant(),
     /** Sync lease: a sync may only start when this is null or in the past. */
-    syncLockedUntil: timestamptz(),
+    syncLockedUntil: instant(),
     /** Consecutive failed syncs (rate limits, network): the next attempt backs off accordingly. */
-    syncFailures: integer().notNull().default(0),
+    syncFailures: int().notNull().default(0),
     /** Set by incoming webhooks: a sync must run as soon as possible. */
-    syncRequestedAt: timestamptz(),
+    syncRequestedAt: instant(),
     /**
      * Instant updates. Stripe caps read requests (~500 per transaction over 30 days), so polling
      * is slow for small accounts; a webhook tells us exactly when to sync. The endpoint id is set
      * when the app created the endpoint itself, so it can remove it on disconnect.
      */
-    webhookEndpointId: text(),
+    webhookEndpointId: stripeId(),
     encryptedWebhookSecret: text(),
-    lastWebhookAt: timestamptz(),
+    lastWebhookAt: instant(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.workspaceId),
-    uniqueIndex().on(table.workspaceId, table.stripeAccountId, table.livemode),
+    index("stripe_accounts_workspace_id_index").on(table.workspaceId),
+    uniqueIndex("stripe_accounts_workspace_id_stripe_account_id_livemode_index").on(
+      table.workspaceId,
+      table.stripeAccountId,
+      table.livemode,
+    ),
   ],
 );
 
 /** Local mirror of every Stripe subscription, with its current contribution to MRR. */
-export const subscriptions = pgTable(
+export const subscriptions = mysqlTable(
   "subscriptions",
   {
-    id: uuid().primaryKey().defaultRandom(),
+    id: id(),
     accountId: uuid()
       .notNull()
       .references(() => stripeAccounts.id, { onDelete: "cascade" }),
-    stripeSubscriptionId: text().notNull(),
-    stripeCustomerId: text().notNull(),
+    stripeSubscriptionId: stripeId().notNull(),
+    stripeCustomerId: stripeId().notNull(),
     customerName: text(),
     /** ISO 3166-1 alpha-2 country code. */
     customerCountry: text(),
     /** Stripe status: active, past_due, trialing, canceled, unpaid, paused, incomplete… */
     status: text().notNull(),
-    currency: text().notNull(),
+    currency: currency().notNull(),
     /** Monthly-normalized recurring amount after discounts; 0 when the subscription is not paying. */
     mrr: money().notNull(),
     planName: text(),
     /** Billing interval of the main item: day, week, month or year. */
     billingInterval: text(),
-    startedAt: timestamptz().notNull(),
-    trialEndsAt: timestamptz(),
-    canceledAt: timestamptz(),
-    endedAt: timestamptz(),
+    startedAt: instant().notNull(),
+    trialEndsAt: instant(),
+    canceledAt: instant(),
+    endedAt: instant(),
     cancelAtPeriodEnd: boolean().notNull().default(false),
     /**
      * When Stripe last returned the subscription, in a scan or a live update: a complete scan ends
      * the ones it did not see (deleted test data). Rows that predate the column get the time of
      * its migration, which no scan under way at that time can end.
      */
-    lastSeenAt: timestamptz().defaultNow().notNull(),
+    lastSeenAt: instant().default(now).notNull(),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex().on(table.accountId, table.stripeSubscriptionId),
-    index().on(table.accountId, table.stripeCustomerId),
+    uniqueIndex("subscriptions_account_id_stripe_subscription_id_index").on(
+      table.accountId,
+      table.stripeSubscriptionId,
+    ),
+    index("subscriptions_account_id_stripe_customer_id_index").on(
+      table.accountId,
+      table.stripeCustomerId,
+    ),
   ],
 );
 
@@ -167,34 +177,40 @@ export const subscriptions = pgTable(
  * Ledger of MRR changes. The running sum per account and currency equals the current MRR, which
  * gives the MRR history chart and the new/expansion/contraction/churn breakdown.
  */
-export const mrrMovements = pgTable(
+export const mrrMovements = mysqlTable(
   "mrr_movements",
   {
-    id: uuid().primaryKey().defaultRandom(),
+    id: id(),
     accountId: uuid()
       .notNull()
       .references(() => stripeAccounts.id, { onDelete: "cascade" }),
-    stripeSubscriptionId: text().notNull(),
-    stripeCustomerId: text().notNull(),
+    stripeSubscriptionId: stripeId().notNull(),
+    stripeCustomerId: stripeId().notNull(),
     customerName: text(),
     customerCountry: text(),
     planName: text(),
-    kind: mrrMovementKind().notNull(),
+    kind: mysqlEnum(["new", "expansion", "reactivation", "contraction", "churn"]).notNull(),
     /** Signed change of monthly recurring revenue. */
     amount: money().notNull(),
-    currency: text().notNull(),
-    occurredAt: timestamptz().notNull(),
-    origin: dataOrigin().notNull(),
+    currency: currency().notNull(),
+    occurredAt: instant().notNull(),
+    origin: mysqlEnum(DATA_ORIGINS).notNull(),
     /** Stripe event that revealed the change, when there is one. */
-    stripeEventId: text(),
-    createdAt: timestamptz().defaultNow().notNull(),
+    stripeEventId: stripeId(),
+    createdAt: instant().default(now).notNull(),
   },
   (table) => [
-    index().on(table.accountId, table.occurredAt),
+    index("mrr_movements_account_id_occurred_at_index").on(table.accountId, table.occurredAt),
     // A subscription's history decides between "new" and "reactivation".
-    index().on(table.accountId, table.stripeSubscriptionId),
+    index("mrr_movements_account_id_stripe_subscription_id_index").on(
+      table.accountId,
+      table.stripeSubscriptionId,
+    ),
     // New and churned customers of the month are derived from each customer's movements.
-    index().on(table.accountId, table.stripeCustomerId),
+    index("mrr_movements_account_id_stripe_customer_id_index").on(
+      table.accountId,
+      table.stripeCustomerId,
+    ),
   ],
 );
 
@@ -203,67 +219,70 @@ export const mrrMovements = pgTable(
  * existing discounts keep applying, but Stripe no longer returns the coupon, so its terms are read
  * here (see `loadCoupons` in src/server/stripe/catalog.ts).
  */
-export const stripeCoupons = pgTable(
+export const stripeCoupons = mysqlTable(
   "stripe_coupons",
   {
     accountId: uuid()
       .notNull()
       .references(() => stripeAccounts.id, { onDelete: "cascade" }),
-    couponId: text().notNull(),
+    couponId: stripeId().notNull(),
     /** The app's own shape (`Coupon`): a field added to it needs a fallback for older rows. */
-    terms: jsonb().$type<CouponTerms>().notNull(),
-    updatedAt: timestamptz().defaultNow().notNull(),
+    terms: json().$type<CouponTerms>().notNull(),
+    updatedAt: instant().default(now).notNull(),
   },
   (table) => [primaryKey({ columns: [table.accountId, table.couponId] })],
 );
 
 /** Successful charges, used for revenue metrics and the "payment received" moments. */
-export const payments = pgTable(
+export const payments = mysqlTable(
   "payments",
   {
-    id: uuid().primaryKey().defaultRandom(),
+    id: id(),
     accountId: uuid()
       .notNull()
       .references(() => stripeAccounts.id, { onDelete: "cascade" }),
-    stripeChargeId: text().notNull(),
-    stripeCustomerId: text(),
+    stripeChargeId: stripeId().notNull(),
+    stripeCustomerId: stripeId(),
     customerName: text(),
     customerCountry: text(),
     description: text(),
     /** Gross amount charged. */
     amount: money().notNull(),
     amountRefunded: money().notNull().default(0),
-    currency: text().notNull(),
-    occurredAt: timestamptz().notNull(),
-    origin: dataOrigin().notNull(),
+    currency: currency().notNull(),
+    occurredAt: instant().notNull(),
+    origin: mysqlEnum(DATA_ORIGINS).notNull(),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex().on(table.accountId, table.stripeChargeId),
-    index().on(table.accountId, table.occurredAt),
+    uniqueIndex("payments_account_id_stripe_charge_id_index").on(
+      table.accountId,
+      table.stripeChargeId,
+    ),
+    index("payments_account_id_occurred_at_index").on(table.accountId, table.occurredAt),
   ],
 );
 
 /** A wall display. Anyone with its public URL can view it, so it never exposes secrets. */
-export const screens = pgTable(
+export const screens = mysqlTable(
   "screens",
   {
-    id: uuid().primaryKey().defaultRandom(),
-    workspaceId: text()
+    id: id(),
+    workspaceId: authId()
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     name: text().notNull(),
     /** Unguessable secret in the public URL (`/d/<token>`). Regenerating it revokes old links. */
-    publicToken: text().notNull().unique(),
-    settings: jsonb().$type<ScreenSettings>().notNull(),
+    publicToken: identifier({ length: 64 }).notNull().unique(),
+    settings: json().$type<ScreenSettings>().notNull(),
     /** Last "send a test celebration" request, picked up by open displays. */
-    testEventAt: timestamptz(),
+    testEventAt: instant(),
     ...timestamps,
   },
-  (table) => [index().on(table.workspaceId)],
+  (table) => [index("screens_workspace_id_index").on(table.workspaceId)],
 );
 
-export const screenAccounts = pgTable(
+export const screenAccounts = mysqlTable(
   "screen_accounts",
   {
     screenId: uuid()
@@ -280,11 +299,11 @@ export const screenAccounts = pgTable(
  * Cached exchange rates, refreshed every 12 hours (`src/server/fx.ts`), to combine accounts billed
  * in different currencies.
  */
-export const exchangeRates = pgTable("exchange_rates", {
-  base: text().primaryKey(),
+export const exchangeRates = mysqlTable("exchange_rates", {
+  base: currency().primaryKey(),
   /** Units of each quote currency for one unit of `base`, keyed by lowercase ISO code. */
-  rates: jsonb().$type<Record<string, number>>().notNull(),
-  fetchedAt: timestamptz().notNull(),
+  rates: json().$type<Record<string, number>>().notNull(),
+  fetchedAt: instant().notNull(),
 });
 
 export const stripeAccountsRelations = relations(stripeAccounts, ({ one, many }) => ({

@@ -2,6 +2,7 @@ import "server-only";
 import {
   and,
   asc,
+  count,
   countDistinct,
   desc,
   eq,
@@ -11,6 +12,7 @@ import {
   sql,
   sum,
   type AnyColumn,
+  type SQL,
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -26,9 +28,9 @@ import type { MrrMovementKind } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 
 /*
- * The few queries behind a display. Days are bucketed by PostgreSQL in the screen's time zone
- * (`AT TIME ZONE`), which handles daylight saving; the coarse timestamp bounds keep them on the
- * `(account_id, occurred_at)` indexes.
+ * The few queries behind a display. Days are bucketed by MySQL in the screen's time zone
+ * (`CONVERT_TZ`, whose time zone tables know daylight saving); the coarse timestamp bounds keep
+ * them on the `(account_id, occurred_at)` indexes.
  */
 
 /**
@@ -73,9 +75,7 @@ export function subscriptionTotals(accountIds: string[]) {
     .select({
       currency: subscriptions.currency,
       mrr: sum(subscriptions.mrr).mapWith(Number),
-      trialing: sql<number>`count(*) filter (where ${subscriptions.status} = 'trialing')`.mapWith(
-        Number,
-      ),
+      trialing: count(sql`case when ${subscriptions.status} = 'trialing' then 1 end`),
     })
     .from(subscriptions)
     .where(inArray(subscriptions.accountId, accountIds))
@@ -86,16 +86,22 @@ export function subscriptionTotals(accountIds: string[]) {
 export async function payingCustomerCount(accountIds: string[]): Promise<number> {
   const [row] = await db()
     .select({
-      count: countDistinct(sql`(${subscriptions.accountId}, ${subscriptions.stripeCustomerId})`),
+      // A customer is identified by their account and Stripe id.
+      count: countDistinct(sql`${subscriptions.accountId}, ${subscriptions.stripeCustomerId}`),
     })
     .from(subscriptions)
     .where(and(inArray(subscriptions.accountId, accountIds), gt(subscriptions.mrr, 0)));
   return row?.count ?? 0;
 }
 
-/** The calendar day of a timestamp in the screen's time zone. */
-function localDay(timestamp: AnyColumn, timeZone: string) {
-  return sql<string>`(${timestamp} at time zone ${timeZone})::date`;
+/** The calendar day of an instant (stored in UTC) in the screen's time zone. */
+function localDay(instant: AnyColumn, timeZone: string) {
+  return sql<string>`date(convert_tz(${instant}, '+00:00', ${timeZone}))`;
+}
+
+/** A day as `YYYY-MM-DD` text, like `SeriesPoint.date`. */
+function dayText(day: SQL.Aliased<string>) {
+  return sql<string>`date_format(${day}, '%Y-%m-%d')`;
 }
 
 /**
@@ -126,11 +132,11 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
     .select({
       currency: local.currency,
       kind: local.kind,
-      day: sql<string>`${local.day}::text`,
+      day: dayText(local.day),
       amount: sql<number>`sum(${local.amount})`.mapWith(Number),
     })
     .from(local)
-    .where(from === null ? undefined : sql`${local.day} >= ${from}::date`)
+    .where(from === null ? undefined : gte(local.day, from))
     .groupBy(local.currency, local.kind, local.day);
 }
 
@@ -157,11 +163,11 @@ export function revenueByDay(accountIds: string[], timeZone: string, from: strin
     .with(local)
     .select({
       currency: local.currency,
-      day: sql<string>`${local.day}::text`,
+      day: dayText(local.day),
       amount: sql<number>`sum(${local.net})`.mapWith(Number),
     })
     .from(local)
-    .where(sql`${local.day} >= ${from}::date`)
+    .where(gte(local.day, from))
     .groupBy(local.currency, local.day);
 }
 
@@ -175,7 +181,7 @@ export async function newCustomerCount(
   monthStart: string,
 ): Promise<number> {
   const { accountId, stripeCustomerId, amount, kind, occurredAt } = mrrMovements;
-  const thisMonth = sql`${localDay(occurredAt, timeZone)} >= ${monthStart}::date`;
+  const thisMonth = gte(localDay(occurredAt, timeZone), monthStart);
 
   // Customers with movements this month, under new names since they are joined with the ledger.
   const touched = db()
@@ -201,10 +207,9 @@ export async function newCustomerCount(
     .as(
       db()
         .select({
-          mrrBefore: sql<number>`
-            coalesce(sum(${amount}) filter (where not ${thisMonth}), 0)
-          `.as("mrr_before"),
-          started: sql<boolean>`bool_or(${kind} = 'new' and ${thisMonth})`.as("started"),
+          mrrBefore: sql<number>`sum(if(${thisMonth}, 0, ${amount}))`.as("mrr_before"),
+          // Conditions are 0 or 1 in MySQL: the largest says whether any of them holds.
+          started: sql<boolean>`max(${kind} = 'new' and ${thisMonth})`.as("started"),
         })
         .from(mrrMovements)
         .innerJoin(
@@ -216,12 +221,9 @@ export async function newCustomerCount(
 
   const [row] = await db()
     .with(touched, customers)
-    .select({
-      count: sql<number>`
-        count(*) filter (where ${customers.started} and ${customers.mrrBefore} = 0)
-      `.mapWith(Number),
-    })
-    .from(customers);
+    .select({ count: count() })
+    .from(customers)
+    .where(sql`${customers.started} and ${customers.mrrBefore} = 0`);
   return row?.count ?? 0;
 }
 

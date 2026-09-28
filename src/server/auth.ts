@@ -50,7 +50,7 @@ function createAuth() {
     baseURL: config.APP_URL,
     secret: config.AUTH_SECRET,
     trustedOrigins: [config.APP_URL],
-    database: drizzleAdapter(db(), { provider: "pg", schema, usePlural: true }),
+    database: drizzleAdapter(db(), { provider: "mysql", schema, usePlural: true }),
     telemetry: { enabled: false },
     emailAndPassword: { enabled: true, minPasswordLength: MIN_PASSWORD_LENGTH, autoSignIn: true },
     socialProviders: socialProviders(),
