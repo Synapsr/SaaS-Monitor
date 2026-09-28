@@ -38,6 +38,7 @@
     "better-auth": "1.7.6",
     "canvas-confetti": "1.9.4",
     "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
     "cn": "^0.4.0",
     "d3-scale": "4.0.2",
     "d3-shape": "3.2.0",
