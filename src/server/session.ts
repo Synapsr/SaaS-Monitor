@@ -8,7 +8,12 @@ import { members, organizations } from "@/db/schema";
 import { auth } from "@/server/auth";
 import { ensureWorkspace, type WorkspaceRole } from "@/server/workspaces";
 
-export const getSession = cache(async () => auth().api.getSession({ headers: await headers() }));
+export const getSession = cache(async () => {
+  // Read the request first: during `next build` this marks the page as dynamic before `auth()`
+  // would need runtime configuration that builds don't have.
+  const requestHeaders = await headers();
+  return auth().api.getSession({ headers: requestHeaders });
+});
 
 export async function requireSession() {
   const session = await getSession();
