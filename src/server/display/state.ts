@@ -1,5 +1,6 @@
 import "server-only";
 import { BUILD_ID } from "@/lib/build-id";
+import { MINUTE_MS } from "@/lib/durations";
 import type { DisplayAccount, DisplayState, FeedItem } from "@/lib/display/types";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
@@ -25,7 +26,7 @@ export interface DisplayStateOptions {
 
 const FEED_LENGTH = 20;
 /** How long a "Send a test celebration" request stays visible to displays that poll. */
-const TEST_EVENT_TTL_MS = 10 * 60 * 1000;
+const TEST_EVENT_TTL_MS = 10 * MINUTE_MS;
 
 const earliest = (a: string, b: string) => (a < b ? a : b);
 

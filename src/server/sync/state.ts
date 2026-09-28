@@ -2,6 +2,7 @@ import "server-only";
 import { and, count, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { payments, stripeAccounts } from "@/db/schema";
+import { DAY_MS } from "@/lib/durations";
 import type { StripeAccountRow } from "./lease";
 import type { SyncState } from "./policy";
 
@@ -10,8 +11,6 @@ export function workingStatus() {
   const status = sql`case when ${stripeAccounts.backfill} is null then 'ready' else 'importing' end`;
   return sql`(${status})::stripe_account_status`;
 }
-
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Payments of the last 30 days per account: they set Stripe's read allowance. */
 export async function recentPaymentCounts(
@@ -25,7 +24,7 @@ export async function recentPaymentCounts(
     .where(
       and(
         inArray(payments.accountId, [...accountIds]),
-        gte(payments.occurredAt, new Date(now.getTime() - THIRTY_DAYS_MS)),
+        gte(payments.occurredAt, new Date(now.getTime() - 30 * DAY_MS)),
       ),
     )
     .groupBy(payments.accountId);

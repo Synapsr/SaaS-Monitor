@@ -1,11 +1,9 @@
+import { DAY_MS, HOUR_MS, MINUTE_MS } from "@/lib/durations";
+
 /**
  * Dates on a screen live in the screen's time zone: "today", "this month" and the chart's days
  * follow `settings.timeZone`, not the time zone of the device showing it.
  */
-
-const MINUTE = 60_000;
-const HOUR = 60 * MINUTE;
-export const DAY = 24 * HOUR;
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
@@ -46,7 +44,7 @@ export function addDays(day: string, days: number): string {
 }
 
 export function daysBetween(from: string, to: string): number {
-  return Math.round((dayToUtcDate(to).getTime() - dayToUtcDate(from).getTime()) / DAY);
+  return Math.round((dayToUtcDate(to).getTime() - dayToUtcDate(from).getTime()) / DAY_MS);
 }
 
 /** `YYYY-MM` of a calendar day. */
@@ -67,12 +65,12 @@ export function daysInRange(from: string, to: string): string[] {
 export function formatRelativeTime(date: Date, now: Date, timeZone: string): string {
   const elapsed = Math.max(0, now.getTime() - date.getTime());
   if (elapsed < 45_000) return "just now";
-  if (elapsed < HOUR) return `${Math.max(1, Math.round(elapsed / MINUTE))} min ago`;
+  if (elapsed < HOUR_MS) return `${Math.max(1, Math.round(elapsed / MINUTE_MS))} min ago`;
 
   const day = calendarDay(date, timeZone);
   const today = calendarDay(now, timeZone);
   const age = daysBetween(day, today);
-  if (age === 0 || elapsed < 6 * HOUR) return `${Math.floor(elapsed / HOUR)} h ago`;
+  if (age === 0 || elapsed < 6 * HOUR_MS) return `${Math.floor(elapsed / HOUR_MS)} h ago`;
   if (age === 1) return "yesterday";
   if (age < 7) return formatter({ timeZone, weekday: "short" }).format(date);
 
@@ -95,7 +93,7 @@ export function formatClock(now: Date, timeZone: string): { time: string; date: 
 
 /** When a goal should be reached: a precise day when it is close, else a month ("Feb 2027"). */
 export function formatEta(eta: Date, now: Date, timeZone: string): string {
-  const days = (eta.getTime() - now.getTime()) / DAY;
+  const days = (eta.getTime() - now.getTime()) / DAY_MS;
   if (days < 1) return "today";
   if (days < 2) return "tomorrow";
   if (days < 45) return formatter({ timeZone, month: "short", day: "numeric" }).format(eta);

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { mrrMovements, stripeAccounts } from "@/db/schema";
+import { MINUTE_MS } from "@/lib/durations";
 import { StripeAccessError } from "@/server/stripe/errors";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
@@ -11,7 +12,6 @@ import { acquireSyncLease } from "./lease";
 import { syncAccount } from "./run";
 
 const NOW = new Date("2026-03-15T12:00:00Z");
-const MINUTE_MS = 60_000;
 const later = (minutes: number) => new Date(NOW.getTime() + minutes * MINUTE_MS);
 
 describe("syncing an account", () => {

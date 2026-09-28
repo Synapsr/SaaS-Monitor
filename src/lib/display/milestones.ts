@@ -1,5 +1,5 @@
 import type { DisplayMetrics } from "@/lib/display/types";
-import { DAY } from "@/lib/display/time";
+import { DAY_MS } from "@/lib/durations";
 import { toMajorUnits, toMinorUnits } from "@/lib/money";
 
 /**
@@ -68,7 +68,7 @@ export function goalProgress(
 
   const dailyPace = (metrics.mrr - metrics.mrr30DaysAgo) / 30;
   const days = dailyPace > 0 ? remaining / dailyPace : Infinity;
-  const eta = days <= MAX_ETA_DAYS ? new Date(now.getTime() + days * DAY) : null;
+  const eta = days <= MAX_ETA_DAYS ? new Date(now.getTime() + days * DAY_MS) : null;
 
   return { kind, target, remaining, progress: Math.min(1, mrr / target), eta };
 }

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { DAY_SECONDS } from "@/lib/durations";
 import { subscriptionSchema } from "@/server/stripe/normalize";
 import {
   couponMap,
-  DAY,
   JANUARY_1,
   monthlyPrice,
   stripeCoupon,
@@ -20,7 +20,7 @@ import {
   valueSubscription,
 } from "./movements";
 
-const NOW = JANUARY_1 + 60 * DAY;
+const NOW = JANUARY_1 + 60 * DAY_SECONDS;
 const subscription = (fixture: SubscriptionFixture = {}) =>
   subscriptionSchema.parse(stripeSubscription(fixture));
 
@@ -39,8 +39,8 @@ describe("movement kinds", () => {
 describe("paying period", () => {
   it("starts with the subscription, or when its trial converted", () => {
     expect(payingSince(subscription(), NOW)).toBe(JANUARY_1);
-    expect(payingSince(subscription({ trial_end: JANUARY_1 + 14 * DAY }), NOW)).toBe(
-      JANUARY_1 + 14 * DAY,
+    expect(payingSince(subscription({ trial_end: JANUARY_1 + 14 * DAY_SECONDS }), NOW)).toBe(
+      JANUARY_1 + 14 * DAY_SECONDS,
     );
   });
 
@@ -48,7 +48,7 @@ describe("paying period", () => {
     for (const status of ["trialing", "incomplete", "incomplete_expired", "paused"]) {
       expect(payingSince(subscription({ status }), NOW), status).toBeNull();
     }
-    const trialEnd = JANUARY_1 + 14 * DAY;
+    const trialEnd = JANUARY_1 + 14 * DAY_SECONDS;
     expect(
       payingSince(
         subscription({ status: "canceled", trial_end: trialEnd, ended_at: trialEnd }),
@@ -60,21 +60,21 @@ describe("paying period", () => {
   it("stops when a cancellation at period end is requested", () => {
     const requested = subscription({
       cancel_at_period_end: true,
-      canceled_at: JANUARY_1 + 20 * DAY,
-      ended_at: JANUARY_1 + 31 * DAY,
+      canceled_at: JANUARY_1 + 20 * DAY_SECONDS,
+      ended_at: JANUARY_1 + 31 * DAY_SECONDS,
     });
-    expect(stoppedPayingAt(requested, NOW)).toBe(JANUARY_1 + 20 * DAY);
+    expect(stoppedPayingAt(requested, NOW)).toBe(JANUARY_1 + 20 * DAY_SECONDS);
   });
 
   it("stops when the subscription ended, or during its current period when unpaid", () => {
-    expect(stoppedPayingAt(subscription({ status: "canceled", ended_at: NOW - DAY }), NOW)).toBe(
-      NOW - DAY,
-    );
+    expect(
+      stoppedPayingAt(subscription({ status: "canceled", ended_at: NOW - DAY_SECONDS }), NOW),
+    ).toBe(NOW - DAY_SECONDS);
     const unpaid = subscription({
       status: "unpaid",
-      items: [stripeItem({ current_period_start: NOW - 5 * DAY })],
+      items: [stripeItem({ current_period_start: NOW - 5 * DAY_SECONDS })],
     });
-    expect(stoppedPayingAt(unpaid, NOW)).toBe(NOW - 5 * DAY);
+    expect(stoppedPayingAt(unpaid, NOW)).toBe(NOW - 5 * DAY_SECONDS);
   });
 });
 
@@ -92,14 +92,14 @@ describe("imported history", () => {
     const history = importedHistory(
       valued({
         status: "canceled",
-        ended_at: NOW - DAY,
+        ended_at: NOW - DAY_SECONDS,
         items: [stripeItem({ price: monthlyPrice(4900) })],
       }),
       NOW,
     );
     expect(history).toEqual([
       { kind: "new", amount: 4900, occurredAt: JANUARY_1 },
-      { kind: "churn", amount: -4900, occurredAt: NOW - DAY },
+      { kind: "churn", amount: -4900, occurredAt: NOW - DAY_SECONDS },
     ]);
   });
 
@@ -114,8 +114,8 @@ describe("imported history", () => {
     const coupon = stripeCoupon({ percent_off: 50, duration: "repeating" });
     const ended = subscription({
       status: "canceled",
-      ended_at: JANUARY_1 + 20 * DAY,
-      discounts: [stripeDiscount(coupon, { end: JANUARY_1 + 30 * DAY })],
+      ended_at: JANUARY_1 + 20 * DAY_SECONDS,
+      discounts: [stripeDiscount(coupon, { end: JANUARY_1 + 30 * DAY_SECONDS })],
       items: [stripeItem({ price: monthlyPrice(4000) })],
     });
     expect(valueSubscription(ended, couponMap([coupon]), NOW)).toMatchObject({
@@ -127,10 +127,10 @@ describe("imported history", () => {
 
 describe("reconciled changes", () => {
   it("dates starts and ends from Stripe, other changes when found", () => {
-    const ended = subscription({ status: "canceled", ended_at: NOW - 3 * DAY });
-    expect(reconciledChangeTime("churn", ended, NOW)).toBe(NOW - 3 * DAY);
-    expect(reconciledChangeTime("new", subscription({ trial_end: NOW - DAY }), NOW)).toBe(
-      NOW - DAY,
+    const ended = subscription({ status: "canceled", ended_at: NOW - 3 * DAY_SECONDS });
+    expect(reconciledChangeTime("churn", ended, NOW)).toBe(NOW - 3 * DAY_SECONDS);
+    expect(reconciledChangeTime("new", subscription({ trial_end: NOW - DAY_SECONDS }), NOW)).toBe(
+      NOW - DAY_SECONDS,
     );
     expect(reconciledChangeTime("expansion", subscription(), NOW)).toBe(NOW);
     expect(reconciledChangeTime("reactivation", subscription(), NOW)).toBe(NOW);

@@ -1,19 +1,19 @@
+import { DAY_SECONDS, HOUR_SECONDS, MINUTE_SECONDS } from "@/lib/durations";
+
 const relativeTimeFormat = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 const countFormat = new Intl.NumberFormat("en-US");
-
-const DAY = 24 * 60 * 60;
 
 /**
  * Each unit is used from `from` seconds on. Weeks and months only start at two of them:
  * "in 7 days" is clearer than "next week".
  */
 const UNITS: { unit: Intl.RelativeTimeFormatUnit; size: number; from: number }[] = [
-  { unit: "year", size: 365 * DAY, from: 365 * DAY },
-  { unit: "month", size: 30 * DAY, from: 60 * DAY },
-  { unit: "week", size: 7 * DAY, from: 14 * DAY },
-  { unit: "day", size: DAY, from: DAY },
-  { unit: "hour", size: 60 * 60, from: 60 * 60 },
-  { unit: "minute", size: 60, from: 0 },
+  { unit: "year", size: 365 * DAY_SECONDS, from: 365 * DAY_SECONDS },
+  { unit: "month", size: 30 * DAY_SECONDS, from: 60 * DAY_SECONDS },
+  { unit: "week", size: 7 * DAY_SECONDS, from: 14 * DAY_SECONDS },
+  { unit: "day", size: DAY_SECONDS, from: DAY_SECONDS },
+  { unit: "hour", size: HOUR_SECONDS, from: HOUR_SECONDS },
+  { unit: "minute", size: MINUTE_SECONDS, from: 0 },
 ];
 
 /** "just now", "3 minutes ago", "yesterday", "in 7 days"… */

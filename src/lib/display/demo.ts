@@ -9,7 +9,7 @@ import {
   type Random,
 } from "@/lib/display/random";
 import { CHART_RANGE_DAYS } from "@/lib/display/state";
-import { addDays, calendarDay, DAY, daysInRange, monthOf } from "@/lib/display/time";
+import { addDays, calendarDay, daysInRange, monthOf } from "@/lib/display/time";
 import type {
   DisplayMetrics,
   DisplayState,
@@ -17,6 +17,7 @@ import type {
   MrrMovementKind,
   SeriesPoint,
 } from "@/lib/display/types";
+import { DAY_MS } from "@/lib/durations";
 import {
   ACCENTS,
   CHART_RANGES,
@@ -169,7 +170,7 @@ const TRAJECTORY: readonly (readonly [number, number])[] = [
 ];
 const HISTORY_DAYS = TRAJECTORY[0][0];
 /** Subscriptions renew every 30 days: close enough to monthly for a demo. */
-const RENEWAL_PERIOD = 30 * DAY;
+const RENEWAL_PERIOD = 30 * DAY_MS;
 const FEED_SIZE = 30;
 const CHURN_MEMORY = 100;
 
@@ -395,7 +396,7 @@ function simulateDay(draft: Draft, random: Random, start: number, end: number, n
   const customers = draft.customers.length;
   // New signups close most of the gap to the trajectory, which keeps the curve on course.
   const expectedChurn = customers * DAILY_RATES.cancel * AVERAGE_PRICE;
-  const gap = targetMrr((now - end) / DAY) - draft.mrr + expectedChurn;
+  const gap = targetMrr((now - end) / DAY_MS) - draft.mrr + expectedChurn;
   const counts = {
     signUp: poisson(random, Math.min(8, Math.max(0.15, (gap / AVERAGE_PRICE) * 0.7))),
     upgrade: poisson(random, customers * DAILY_RATES.upgrade),
@@ -425,7 +426,7 @@ function simulateDay(draft: Draft, random: Random, start: number, end: number, n
 export function createDemoWorld(options: DemoOptions, now: Date, seed = DEMO_SEED): DemoWorld {
   const random = createRandom(seed);
   const end = now.getTime();
-  const start = end - HISTORY_DAYS * DAY;
+  const start = end - HISTORY_DAYS * DAY_MS;
   const draft: Draft = {
     options,
     sequence: 0,
@@ -447,8 +448,8 @@ export function createDemoWorld(options: DemoOptions, now: Date, seed = DEMO_SEE
   }
   draft.mrrByDay[dayOf(draft, start)] = draft.mrr;
 
-  for (let day = start; day < end; day += DAY) {
-    simulateDay(draft, random, day, Math.min(end, day + DAY), end);
+  for (let day = start; day < end; day += DAY_MS) {
+    simulateDay(draft, random, day, Math.min(end, day + DAY_MS), end);
   }
   forgetOldDays(draft, dayOf(draft, end));
   return { ...draft, seed: random.state, liveEvents: 0 };

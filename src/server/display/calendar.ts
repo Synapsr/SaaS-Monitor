@@ -1,12 +1,11 @@
 import "server-only";
+import { DAY_MS } from "@/lib/durations";
 import type { ChartRange } from "@/lib/screens/settings";
 
 /*
  * Calendar days as `YYYY-MM-DD` strings. Once "today" is known in the screen's time zone, day
  * arithmetic is time-zone free: it runs on UTC dates, which have no daylight saving shifts.
  */
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The calendar day of `instant` in `timeZone`. */
 export function localDate(instant: Date, timeZone: string): string {

@@ -2,6 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { mrrMovements } from "@/db/schema";
+import { HOUR_SECONDS } from "@/lib/durations";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
 import {
@@ -16,7 +17,6 @@ import { syncAccount } from "./run";
 
 const IMPORTED_AT = new Date("2026-03-15T12:00:00Z");
 const T0 = IMPORTED_AT.getTime() / 1000;
-const HOUR = 3600;
 const time = (seconds: number) => new Date((T0 + seconds) * 1000);
 
 describe("reconcile", () => {
@@ -54,7 +54,7 @@ describe("reconcile", () => {
       stripe.putSubscription(
         stripeSubscription({
           id,
-          start_date: T0 - 40 * 24 * HOUR,
+          start_date: T0 - 40 * 24 * HOUR_SECONDS,
           items: [stripeItem({ price: monthlyPrice(amount) })],
         }),
       );
@@ -62,8 +62,8 @@ describe("reconcile", () => {
     stripe.putSubscription(
       stripeSubscription({
         id: "sub_launch_offer",
-        start_date: T0 - 40 * 24 * HOUR,
-        discounts: [stripeDiscount(halfOff, { end: T0 + 3 * HOUR })],
+        start_date: T0 - 40 * 24 * HOUR_SECONDS,
+        discounts: [stripeDiscount(halfOff, { end: T0 + 3 * HOUR_SECONDS })],
         items: [stripeItem({ price: monthlyPrice(10_000) })],
       }),
     );
@@ -79,38 +79,48 @@ describe("reconcile", () => {
     stripe.updateSubscription("sub_canceled", (subscription) => ({
       ...subscription,
       status: "canceled",
-      canceled_at: T0 + 2 * HOUR,
-      ended_at: T0 + 2 * HOUR,
+      canceled_at: T0 + 2 * HOUR_SECONDS,
+      ended_at: T0 + 2 * HOUR_SECONDS,
     }));
     stripe.putSubscription(
       stripeSubscription({
         id: "sub_unannounced",
-        start_date: T0 + HOUR,
+        start_date: T0 + HOUR_SECONDS,
         items: [stripeItem({ price: monthlyPrice(2900) })],
       }),
     );
 
-    const report = await syncAt(25 * HOUR);
+    const report = await syncAt(25 * HOUR_SECONDS);
 
     expect(report).toMatchObject({ ok: true, mode: "reconcile" });
     expect(await reconciled()).toEqual([
-      { subscription: "sub_canceled", kind: "churn", amount: -4900, occurredAt: time(2 * HOUR) },
+      {
+        subscription: "sub_canceled",
+        kind: "churn",
+        amount: -4900,
+        occurredAt: time(2 * HOUR_SECONDS),
+      },
       {
         subscription: "sub_launch_offer",
         kind: "expansion",
         amount: 5000,
-        occurredAt: time(25 * HOUR),
+        occurredAt: time(25 * HOUR_SECONDS),
       },
-      { subscription: "sub_unannounced", kind: "new", amount: 2900, occurredAt: time(HOUR) },
+      {
+        subscription: "sub_unannounced",
+        kind: "new",
+        amount: 2900,
+        occurredAt: time(HOUR_SECONDS),
+      },
       {
         subscription: "sub_upgraded",
         kind: "expansion",
         amount: 2000,
-        occurredAt: time(25 * HOUR),
+        occurredAt: time(25 * HOUR_SECONDS),
       },
     ]);
     const account = await getStripeAccount(accountId);
-    expect(account).toMatchObject({ reconcile: null, lastReconciledAt: time(25 * HOUR) });
+    expect(account).toMatchObject({ reconcile: null, lastReconciledAt: time(25 * HOUR_SECONDS) });
     const totals = await mrrTotals(accountId);
     expect(totals.ledger).toEqual(totals.mirror);
   });
@@ -121,19 +131,19 @@ describe("reconcile", () => {
       status: "canceled",
     }));
 
-    expect(await syncAt(23 * HOUR)).toMatchObject({ mode: "incremental" });
+    expect(await syncAt(23 * HOUR_SECONDS)).toMatchObject({ mode: "incremental" });
     expect(await reconciled()).toEqual([]);
   });
 
   it("changes nothing once the mirror is right", async () => {
-    await syncAt(2 * HOUR);
+    await syncAt(2 * HOUR_SECONDS);
     stripe.updateSubscription("sub_launch_offer", (subscription) => ({
       ...subscription,
       discounts: [],
     }));
 
-    await syncAt(25 * HOUR);
-    await syncAt(50 * HOUR);
+    await syncAt(25 * HOUR_SECONDS);
+    await syncAt(50 * HOUR_SECONDS);
 
     expect((await reconciled()).map(({ subscription }) => subscription)).toEqual([
       "sub_launch_offer",
@@ -145,12 +155,12 @@ describe("reconcile", () => {
     stripe.updateSubscription("sub_canceled", (subscription) => ({
       ...subscription,
       status: "canceled",
-      ended_at: T0 + 2 * HOUR,
+      ended_at: T0 + 2 * HOUR_SECONDS,
     }));
 
     let runs = 0;
     do {
-      await syncAt(25 * HOUR, { scanBudgetMs: 0 });
+      await syncAt(25 * HOUR_SECONDS, { scanBudgetMs: 0 });
       runs += 1;
     } while ((await getStripeAccount(accountId)).reconcile && runs < 10);
 

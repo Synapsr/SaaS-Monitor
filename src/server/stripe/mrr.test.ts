@@ -1,8 +1,8 @@
 import Stripe from "stripe";
 import { describe, expect, it } from "vitest";
+import { DAY_SECONDS } from "@/lib/durations";
 import {
   couponMap,
-  DAY,
   JANUARY_1,
   monthlyPrice,
   stripeCoupon,
@@ -201,7 +201,7 @@ describe("MRR of a subscription", () => {
     it("keeps counting a subscription scheduled to cancel at a date", () => {
       const subscription = subscriptionSchema.parse({
         ...stripeSubscription(withPrice(monthlyPrice(4900))),
-        cancel_at: JANUARY_1 + 30 * DAY,
+        cancel_at: JANUARY_1 + 30 * DAY_SECONDS,
       });
       expect(subscriptionMrr(subscription, { coupons: new Map(), at: JANUARY_1 })).toBe(4900);
     });
@@ -222,11 +222,11 @@ describe("MRR of a subscription", () => {
     it("subtracts repeating discounts until they end", () => {
       const coupon = percent(50, { duration: "repeating" });
       const fixture = {
-        discounts: [stripeDiscount(coupon, { end: JANUARY_1 + 90 * DAY })],
+        discounts: [stripeDiscount(coupon, { end: JANUARY_1 + 90 * DAY_SECONDS })],
         ...withPrice(monthlyPrice(5000)),
       };
       expect(mrrOf(fixture, [coupon], JANUARY_1)).toBe(2500);
-      expect(mrrOf(fixture, [coupon], JANUARY_1 + 90 * DAY)).toBe(5000);
+      expect(mrrOf(fixture, [coupon], JANUARY_1 + 90 * DAY_SECONDS)).toBe(5000);
     });
 
     it("ignores one-time discounts", () => {

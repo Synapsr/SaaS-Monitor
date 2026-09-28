@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { exchangeRates } from "@/db/schema";
 import { env } from "@/env";
+import { HOUR_MS, MINUTE_MS } from "@/lib/durations";
 import { convertAmount } from "@/lib/money";
 
 /**
@@ -17,9 +18,9 @@ export interface ExchangeRateOptions {
   now?: Date;
 }
 
-const MAX_AGE_MS = 12 * 60 * 60 * 1000;
+const MAX_AGE_MS = 12 * HOUR_MS;
 /** After a failure, rates are not fetched again for a while: displays poll every few seconds. */
-const RETRY_AFTER_MS = 5 * 60 * 1000;
+const RETRY_AFTER_MS = 5 * MINUTE_MS;
 
 const frankfurterResponse = z.object({ rates: z.record(z.string(), z.number().positive()) });
 

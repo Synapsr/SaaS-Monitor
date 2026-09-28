@@ -3,9 +3,10 @@ import { eq } from "drizzle-orm";
 import type { Transaction } from "@/db";
 import { db } from "@/db";
 import { stripeAccounts, type ScanProgress } from "@/db/schema";
+import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
 import { applyCharges, applySubscriptionUpdates } from "./apply";
-import { DAY_SECONDS, toUnixTime, type SyncContext } from "./context";
+import { toUnixTime, type SyncContext } from "./context";
 import { valueSubscription } from "./movements";
 
 /*

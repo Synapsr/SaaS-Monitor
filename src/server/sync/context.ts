@@ -14,8 +14,6 @@ export interface SyncContext {
   deadline: number;
 }
 
-export const DAY_SECONDS = 24 * 60 * 60;
-
 export function toUnixTime(date: Date): UnixTime {
   return Math.floor(date.getTime() / 1000);
 }

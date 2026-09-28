@@ -23,7 +23,6 @@ export function stripeId(prefix: string): string {
 
 /** 2026-01-01T00:00:00Z, a convenient origin for Stripe timestamps in tests. */
 export const JANUARY_1 = Date.UTC(2026, 0, 1) / 1000;
-export const DAY = 24 * 60 * 60;
 
 export function stripePrice(overrides: Partial<PriceInput> = {}): PriceInput {
   return {

@@ -1,14 +1,12 @@
 import "server-only";
-
-const MINUTE = 60;
-const DAY = 24 * 60 * MINUTE;
+import { DAY_SECONDS, MINUTE_MS, MINUTE_SECONDS } from "@/lib/durations";
 
 /** With a healthy webhook, polling is only a safety net. Also the slowest polling pace. */
-export const SAFETY_NET_INTERVAL_SECONDS = 30 * MINUTE;
-const FASTEST_POLL_INTERVAL_SECONDS = MINUTE;
-const RECONCILE_INTERVAL_SECONDS = DAY;
+export const SAFETY_NET_INTERVAL_SECONDS = 30 * MINUTE_SECONDS;
+const FASTEST_POLL_INTERVAL_SECONDS = MINUTE_SECONDS;
+const RECONCILE_INTERVAL_SECONDS = DAY_SECONDS;
 /** Webhooks may arrive shortly after a sync has already seen their event. */
-const WEBHOOK_DELIVERY_GRACE_MS = 5 * MINUTE * 1000;
+const WEBHOOK_DELIVERY_GRACE_MS = 5 * MINUTE_MS;
 
 /**
  * How often to ask Stripe for new events when no webhook tells us.
@@ -22,7 +20,7 @@ const WEBHOOK_DELIVERY_GRACE_MS = 5 * MINUTE * 1000;
 export function pollIntervalSeconds(paymentsLast30Days: number): number {
   const monthlyReadAllowance = Math.max(10_000, 500 * paymentsLast30Days);
   const pollsPerMonth = 0.25 * monthlyReadAllowance;
-  const interval = Math.ceil((30 * DAY) / pollsPerMonth);
+  const interval = Math.ceil((30 * DAY_SECONDS) / pollsPerMonth);
   return Math.min(SAFETY_NET_INTERVAL_SECONDS, Math.max(FASTEST_POLL_INTERVAL_SECONDS, interval));
 }
 
@@ -87,6 +85,6 @@ export function isReconcileDue(lastReconciledAt: Date | null, now: Date): boolea
 
 /** Waits 1, 2, 4… minutes after consecutive failures, up to the safety-net interval. */
 export function retryDelaySeconds(consecutiveFailures: number): number {
-  const delay = MINUTE * 2 ** Math.max(0, consecutiveFailures - 1);
+  const delay = MINUTE_SECONDS * 2 ** Math.max(0, consecutiveFailures - 1);
   return Math.min(SAFETY_NET_INTERVAL_SECONDS, delay);
 }
