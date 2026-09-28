@@ -65,8 +65,8 @@ export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTil
         value={<NumberFlow {...moneyFlow(net, currency, { signed: true })} />}
         characters={formatMoney(net, currency, { signed: true }).length}
       >
-        {formatAmount(gained, currency, { signed: true })} gained ·{" "}
-        {formatAmount(lost, currency, { signed: true })} lost
+        {/* The words carry the signs: amounts twelve times larger in ARR still fit the tile. */}
+        {formatAmount(gained, currency)} gained · {formatAmount(Math.abs(lost), currency)} lost
       </Tile>
     </dl>
   );
