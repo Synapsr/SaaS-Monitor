@@ -53,12 +53,6 @@ describe("display calendar", () => {
       previousMonthCutoff: "2025-12-05",
     });
   });
-
-  it("covers the last 30 days for revenue", () => {
-    const { revenueDays } = displayCalendar("2026-03-15");
-    expect(revenueDays).toHaveLength(30);
-    expect(revenueDays[0]).toBe("2026-02-14");
-  });
 });
 
 describe("chart days", () => {

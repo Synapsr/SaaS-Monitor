@@ -46,7 +46,7 @@ export function mrrHistory(
 export function revenueMetrics(
   daily: readonly DayAmount[],
   calendar: DisplayCalendar,
-): { revenue: DisplayMetrics["revenue"]; series: SeriesPoint[] } {
+): DisplayMetrics["revenue"] {
   const byDay = totalsByDay(daily);
   const between = (from: string, to: string) =>
     [...byDay].reduce(
@@ -54,21 +54,17 @@ export function revenueMetrics(
       0,
     );
   return {
-    revenue: {
-      today: byDay.get(calendar.today) ?? 0,
-      yesterday: byDay.get(calendar.yesterday) ?? 0,
-      monthToDate: between(calendar.monthStart, calendar.today),
-      previousMonthToDate: between(calendar.previousMonthStart, calendar.previousMonthCutoff),
-      last30Days: between(calendar.revenueDays[0], calendar.today),
-    },
-    series: calendar.revenueDays.map((date) => ({ date, value: byDay.get(date) ?? 0 })),
+    today: byDay.get(calendar.today) ?? 0,
+    yesterday: byDay.get(calendar.yesterday) ?? 0,
+    monthToDate: between(calendar.monthStart, calendar.today),
+    previousMonthToDate: between(calendar.previousMonthStart, calendar.previousMonthCutoff),
   };
 }
 
 export function movementTotals(
   movements: readonly MovementAmount[],
   since: string,
-): Omit<DisplayMetrics["thisMonth"], "newCustomers" | "churnedCustomers"> {
+): Omit<DisplayMetrics["thisMonth"], "newCustomers"> {
   const totals: Record<MrrMovementKind, number> = {
     new: 0,
     expansion: 0,

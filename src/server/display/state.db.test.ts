@@ -144,7 +144,6 @@ describe("display state", () => {
     });
     expect(state.metrics.mrr).toBe(0);
     expect(state.series.mrr).toHaveLength(91);
-    expect(state.series.revenue).toHaveLength(30);
   });
 
   it("sums MRR, paying customers and trials from the mirror", async () => {
@@ -160,14 +159,12 @@ describe("display state", () => {
     expect(metrics).toMatchObject({
       mrr: 8800,
       arr: 8800 * 12,
-      activeSubscriptions: 3,
       activeCustomers: 2,
       trialingSubscriptions: 1,
       arpu: 4400,
     });
-    expect(accounts).toEqual([
-      { id: accountId, name: "Acme", status: "ready", livemode: false, mrr: 8800 },
-    ]);
+    // Anyone with the link reads this state: it tells each account's name, never its MRR.
+    expect(accounts).toEqual([{ id: accountId, name: "Acme", status: "ready", livemode: false }]);
   });
 
   it("rebuilds daily MRR from the ledger, ending on today's MRR", async () => {
@@ -226,11 +223,10 @@ describe("display state", () => {
       churn: -2000,
       net: 1000,
       newCustomers: 1,
-      churnedCustomers: 1,
     });
   });
 
-  it("only counts customers who started or stopped paying altogether", async () => {
+  it("only counts customers who paid nothing before as new", async () => {
     const accountId = await readyAccount();
     await addSubscription(accountId, { id: "sub_1", mrr: 1000, customer: "cus_loyal" });
     await addSubscription(accountId, { id: "sub_2", mrr: 0, customer: "cus_loyal" });
@@ -267,12 +263,7 @@ describe("display state", () => {
 
     const { metrics } = await displayOf([accountId]);
 
-    expect(metrics.thisMonth).toMatchObject({
-      new: 1000,
-      churn: -500,
-      newCustomers: 0,
-      churnedCustomers: 0,
-    });
+    expect(metrics.thisMonth).toMatchObject({ new: 1000, churn: -500, newCustomers: 0 });
   });
 
   it("counts days and months in the screen's time zone", async () => {
@@ -323,17 +314,14 @@ describe("display state", () => {
     await addPayment(accountId, { amount: 1000, refunded: 400, at: "2026-03-10T12:00:00Z" });
     await addPayment(accountId, { amount: 250, at: "2026-03-15T08:00:00Z" });
 
-    const { metrics, series } = await displayOf([accountId]);
+    const { metrics } = await displayOf([accountId]);
 
     expect(metrics.revenue).toEqual({
       today: 250,
       yesterday: 0,
       monthToDate: 500 + 600 + 250,
       previousMonthToDate: 1000 + 2000,
-      last30Days: 2000 + 4000 + 500 + 600 + 250,
     });
-    expect(series.revenue).toHaveLength(30);
-    expect(series.revenue.find((point) => point.date === "2026-03-10")?.value).toBe(600);
   });
 
   it("converts other currencies at today's rate and says which ones it cannot", async () => {
@@ -361,10 +349,6 @@ describe("display state", () => {
     const state = await displayOf([euros, yen], { currency: "usd" }, { rateSource });
 
     expect(state.metrics.mrr).toBe(1250);
-    expect(state.accounts.map(({ name, mrr }) => ({ name, mrr }))).toEqual([
-      { name: "Euro shop", mrr: 1250 },
-      { name: "Tokyo shop", mrr: 0 },
-    ]);
     expect(state.metrics.revenue.today).toBe(0);
     expect(state.metrics.revenue.yesterday).toBe(625);
     expect(state.feed[0]).toMatchObject({
@@ -494,7 +478,6 @@ describe("display state", () => {
     const { token } = await createScreen(workspaceId, { testEventAt: recent });
     expect((await getDisplayStateByToken(token, { now: NOW }))?.testEvent).toEqual({
       id: recent.toISOString(),
-      at: recent.toISOString(),
     });
 
     const old = await createScreen(workspaceId, {

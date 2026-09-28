@@ -28,7 +28,6 @@ function simulate(world: DemoWorld, events: number): { world: DemoWorld; states:
 
 function expectConsistent(state: DisplayState) {
   const { metrics, series } = state;
-  const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
   const today = series.mrr.at(-1)!.date;
 
   expect(series.mrr.at(-1)?.value).toBe(metrics.mrr);
@@ -37,12 +36,7 @@ function expectConsistent(state: DisplayState) {
   );
   expect(metrics.arr).toBe(metrics.mrr * 12);
   expect(metrics.arpu).toBe(Math.round(metrics.mrr / metrics.activeCustomers));
-  expect(state.accounts[0].mrr).toBe(metrics.mrr);
-
-  expect(series.revenue).toHaveLength(30);
-  expect(series.revenue.at(-1)?.value).toBe(metrics.revenue.today);
-  expect(series.revenue.at(-2)?.value).toBe(metrics.revenue.yesterday);
-  expect(sum(series.revenue.map((point) => point.value))).toBe(metrics.revenue.last30Days);
+  expect(metrics.revenue.monthToDate).toBeGreaterThanOrEqual(metrics.revenue.today);
 
   const { thisMonth } = metrics;
   expect(thisMonth.net).toBe(

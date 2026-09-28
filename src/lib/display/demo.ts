@@ -241,7 +241,6 @@ const emptyMonth: MonthMovements = {
   churn: 0,
   net: 0,
   newCustomers: 0,
-  churnedCustomers: 0,
 };
 
 function dayOf(draft: Draft, at: number): string {
@@ -295,7 +294,6 @@ function recordMovement(
     [kind]: movements[kind] + amount,
     net: movements.net + amount,
     newCustomers: movements.newCustomers + (kind === "new" ? 1 : 0),
-    churnedCustomers: movements.churnedCustomers + (kind === "churn" ? 1 : 0),
   };
   draft.mrr += amount;
   draft.mrrByDay[day] = draft.mrr;
@@ -584,12 +582,11 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
     },
     currency: "usd",
     status: "ready",
-    accounts: [{ id: "demo", name: SCREEN_NAME, status: "ready", livemode: true, mrr: world.mrr }],
+    accounts: [{ id: "demo", name: SCREEN_NAME, status: "ready", livemode: true }],
     metrics: {
       mrr: world.mrr,
       mrr30DaysAgo: mrrAt(world.mrrByDay, calendar.thirtyDaysAgo),
       arr: world.mrr * 12,
-      activeSubscriptions: customers,
       activeCustomers: customers,
       trialingSubscriptions: world.trials,
       arpu: customers > 0 ? Math.round(world.mrr / customers) : 0,
@@ -601,14 +598,10 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
           calendar.previousMonthStart,
           calendar.previousMonthCutoff,
         ),
-        last30Days: revenueBetween(calendar.revenueDays[0], today),
       },
       thisMonth: world.movementsByMonth[monthOf(today)] ?? emptyMonth,
     },
-    series: {
-      mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange)),
-      revenue: calendar.revenueDays.map((date) => ({ date, value: revenueOn(date) })),
-    },
+    series: { mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange)) },
     feed: world.feed.map((item) =>
       options.showCustomerNames ? item : { ...item, customerName: null },
     ),

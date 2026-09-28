@@ -29,12 +29,11 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
     screen: { name: "Office", settings: defaultScreenSettings },
     currency: "usd",
     status: "ready",
-    accounts: [{ id: "a1", name: "Acme", status: "ready", livemode: true, mrr: 1_000_000 }],
+    accounts: [{ id: "a1", name: "Acme", status: "ready", livemode: true }],
     metrics: {
       mrr: 1_000_000,
       mrr30DaysAgo: 900_000,
       arr: 12_000_000,
-      activeSubscriptions: 100,
       activeCustomers: 95,
       trialingSubscriptions: 4,
       arpu: 10_526,
@@ -43,7 +42,6 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
         yesterday: 40_000,
         monthToDate: 800_000,
         previousMonthToDate: 700_000,
-        last30Days: 950_000,
       },
       thisMonth: {
         new: 120_000,
@@ -53,7 +51,6 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
         churn: -35_000,
         net: 100_000,
         newCustomers: 12,
-        churnedCustomers: 3,
       },
     },
     series: {
@@ -61,7 +58,6 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
         { date: "2026-09-27", value: 990_000 },
         { date: "2026-09-28", value: 1_000_000 },
       ],
-      revenue: [{ date: "2026-09-28", value: 50_000 }],
     },
     feed: [],
     testEvent: null,

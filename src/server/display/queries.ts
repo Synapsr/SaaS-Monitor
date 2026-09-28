@@ -68,20 +68,19 @@ export function linkedAccounts(screenId: string) {
     .orderBy(asc(stripeAccounts.createdAt));
 }
 
-/** Current MRR and subscription counts per account and currency. */
+/** Current MRR and trials per currency. */
 export function subscriptionTotals(accountIds: string[]) {
-  const { mrr, status } = subscriptions;
   return db()
     .select({
-      accountId: subscriptions.accountId,
       currency: subscriptions.currency,
-      mrr: sum(mrr).mapWith(Number),
-      paying: sql<number>`count(*) filter (where ${mrr} > 0)`.mapWith(Number),
-      trialing: sql<number>`count(*) filter (where ${status} = 'trialing')`.mapWith(Number),
+      mrr: sum(subscriptions.mrr).mapWith(Number),
+      trialing: sql<number>`count(*) filter (where ${subscriptions.status} = 'trialing')`.mapWith(
+        Number,
+      ),
     })
     .from(subscriptions)
     .where(inArray(subscriptions.accountId, accountIds))
-    .groupBy(subscriptions.accountId, subscriptions.currency);
+    .groupBy(subscriptions.currency);
 }
 
 /** Customers with at least one paying subscription. */
@@ -165,10 +164,14 @@ export function revenueByDay(accountIds: string[], timeZone: string, from: strin
 }
 
 /**
- * Customers who started paying this month (paying nothing when it began) and customers who
- * stopped paying altogether: a customer dropping one of two subscriptions has not churned.
+ * Customers who started paying this month: a new subscription, while they paid nothing when the
+ * month began. A customer adding a second subscription is not a new customer.
  */
-export async function customerChanges(accountIds: string[], timeZone: string, monthStart: string) {
+export async function newCustomerCount(
+  accountIds: string[],
+  timeZone: string,
+  monthStart: string,
+): Promise<number> {
   const { accountId, stripeCustomerId, amount, kind, occurredAt } = mrrMovements;
   const thisMonth = sql`${localDay(occurredAt, timeZone)} >= ${monthStart}::date`;
 
@@ -190,7 +193,7 @@ export async function customerChanges(accountIds: string[], timeZone: string, mo
           ),
         ),
     );
-  // Their MRR when the month began and now, and whether they started or stopped a subscription.
+  // Their MRR when the month began, and whether they started a subscription since.
   const customers = db()
     .$with("customers")
     .as(
@@ -199,9 +202,7 @@ export async function customerChanges(accountIds: string[], timeZone: string, mo
           mrrBefore: sql<number>`
             coalesce(sum(${amount}) filter (where not ${thisMonth}), 0)
           `.as("mrr_before"),
-          mrrNow: sql<number>`sum(${amount})`.as("mrr_now"),
           started: sql<boolean>`bool_or(${kind} = 'new' and ${thisMonth})`.as("started"),
-          churned: sql<boolean>`bool_or(${kind} = 'churn' and ${thisMonth})`.as("churned"),
         })
         .from(mrrMovements)
         .innerJoin(
@@ -214,15 +215,12 @@ export async function customerChanges(accountIds: string[], timeZone: string, mo
   const [row] = await db()
     .with(touched, customers)
     .select({
-      newCustomers: sql<number>`
+      count: sql<number>`
         count(*) filter (where ${customers.started} and ${customers.mrrBefore} = 0)
-      `.mapWith(Number),
-      churnedCustomers: sql<number>`
-        count(*) filter (where ${customers.churned} and ${customers.mrrNow} = 0)
       `.mapWith(Number),
     })
     .from(customers);
-  return row ?? { newCustomers: 0, churnedCustomers: 0 };
+  return row?.count ?? 0;
 }
 
 export interface FeedRow {

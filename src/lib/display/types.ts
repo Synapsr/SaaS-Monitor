@@ -5,7 +5,8 @@ import type { ScreenSettings } from "@/lib/screens/settings";
  * and used for the first render of `/d/:token`.
  *
  * Every amount is an integer in the minor unit (e.g. cents) of `DisplayState.currency`, already
- * converted from the Stripe accounts' currencies.
+ * converted from the Stripe accounts' currencies. Anyone with the screen's link can read it: it
+ * only holds what the screen shows.
  */
 export interface DisplayState {
   /** Server build identifier: an open display reloads itself when it changes. */
@@ -25,13 +26,11 @@ export interface DisplayState {
   series: {
     /** Daily MRR at the end of each day, over `settings.chartRange`, oldest first. */
     mrr: SeriesPoint[];
-    /** Daily net revenue (payments minus refunds) over the last 30 days, oldest first. */
-    revenue: SeriesPoint[];
   };
   /** Most recent activity first. */
   feed: FeedItem[];
   /** Present after "Send a test celebration" was clicked in the settings. */
-  testEvent: { id: string; at: string } | null;
+  testEvent: { id: string } | null;
   /** Human-readable issues worth surfacing discreetly, e.g. a currency that could not be converted. */
   warnings: string[];
 }
@@ -41,7 +40,6 @@ export interface DisplayAccount {
   name: string;
   status: "importing" | "ready" | "error";
   livemode: boolean;
-  mrr: number;
 }
 
 export interface DisplayMetrics {
@@ -49,7 +47,6 @@ export interface DisplayMetrics {
   /** MRR 30 days ago, for the growth badge. */
   mrr30DaysAgo: number;
   arr: number;
-  activeSubscriptions: number;
   /** Customers with at least one paying subscription. */
   activeCustomers: number;
   trialingSubscriptions: number;
@@ -61,7 +58,6 @@ export interface DisplayMetrics {
     monthToDate: number;
     /** Same number of days at the start of the previous month, for a fair comparison. */
     previousMonthToDate: number;
-    last30Days: number;
   };
   /**
    * MRR movements since the first day of the current month (screen time zone).
@@ -74,8 +70,8 @@ export interface DisplayMetrics {
     contraction: number;
     churn: number;
     net: number;
+    /** Customers who started paying this month. */
     newCustomers: number;
-    churnedCustomers: number;
   };
 }
 

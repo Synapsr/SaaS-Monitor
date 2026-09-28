@@ -26,7 +26,7 @@ describe("MRR history", () => {
 describe("revenue", () => {
   it("adds daily revenue into today, this month and the comparable days of last month", () => {
     const calendar = displayCalendar("2026-03-15");
-    const { revenue, series } = revenueMetrics(
+    const revenue = revenueMetrics(
       [
         { day: "2026-02-15", amount: 100 },
         { day: "2026-02-16", amount: 1000 },
@@ -40,9 +40,7 @@ describe("revenue", () => {
       yesterday: 20,
       monthToDate: 23,
       previousMonthToDate: 100,
-      last30Days: 1123,
     });
-    expect(series.at(-1)).toEqual({ date: "2026-03-15", value: 3 });
   });
 });
 

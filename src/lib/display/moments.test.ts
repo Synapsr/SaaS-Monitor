@@ -67,7 +67,7 @@ describe("moment planning", () => {
 
 describe("moment tracking", () => {
   it("starts from a baseline: nothing on the first state", () => {
-    const state = displayState({ feed: [feedItem()], testEvent: { id: "t1", at: "" } });
+    const state = displayState({ feed: [feedItem()], testEvent: { id: "t1" } });
     expect(track([state])).toEqual([[]]);
   });
 
@@ -108,11 +108,11 @@ describe("moment tracking", () => {
   });
 
   it("plays a test celebration when a new test event arrives", () => {
-    const state = displayState({ testEvent: { id: "t1", at: "" } });
+    const state = displayState({ testEvent: { id: "t1" } });
     const moments = track([
       state,
-      { ...state, testEvent: { id: "t1", at: "" } },
-      { ...state, testEvent: { id: "t2", at: "" } },
+      { ...state, testEvent: { id: "t1" } },
+      { ...state, testEvent: { id: "t2" } },
     ]);
     expect(moments).toEqual([[], [], [{ id: "test:t2", kind: "test" }]]);
   });

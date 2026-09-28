@@ -76,8 +76,6 @@ export interface DisplayCalendar {
   previousMonthCutoff: string;
   /** For the growth badge: 30 days before today. */
   thirtyDaysAgo: string;
-  /** The last 30 days, for revenue. */
-  revenueDays: string[];
 }
 
 export function displayCalendar(today: string): DisplayCalendar {
@@ -91,7 +89,6 @@ export function displayCalendar(today: string): DisplayCalendar {
     previousMonthStart,
     previousMonthCutoff: addDays(previousMonthStart, comparedDays - 1),
     thirtyDaysAgo: addDays(today, -30),
-    revenueDays: daysInRange(addDays(today, -29), today),
   };
 }
 
