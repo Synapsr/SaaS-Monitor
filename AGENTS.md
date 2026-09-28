@@ -29,17 +29,25 @@ Node 24 (`.nvmrc`), pnpm 10.
 
 ## Architecture
 
-- `src/app` — routes only, kept thin. `/app/*` is the authenticated dashboard, `/d/[token]` the
-  public wall display, `/api/screens/[token]/state` the display polling endpoint.
+- `src/app` — routes only, kept thin: components live in `src/components`, logic in `src/server`.
+  Notable routes:
+  - `/app/*`: the authenticated dashboard; `/sign-in`, `/sign-up`, and `/invite/[id]` for
+    invitation links.
+  - `/d/[token]`: a public wall display, polling `/api/screens/[token]/state`. `/d/demo` is a
+    screen fed by a simulation (landing page, trying the product without Stripe).
+  - `/api/webhooks/stripe/[accountId]`: Stripe webhooks, which only trigger a sync.
+  - `/api/health`: liveness probe for containers (checks the database).
 - `src/components/ui` — shadcn/ui primitives (Radix). Feature components live next to them in
   `src/components/<feature>`.
 - `src/hooks` — React hooks, whichever feature uses them (the `hooks` alias of
   `components.json`).
 - `src/lib` — isomorphic code safe for the browser: contracts (`display/types.ts`,
-  `screens/settings.ts`), money formatting, utilities.
+  `screens/settings.ts`), validation rules shared by forms and actions, formatting (`money.ts`,
+  `format.ts` for the dashboard, `display/format.ts` and `display/time.ts` for screens).
 - `src/server` — server-only code (`import "server-only"`): auth, tenant guard, Stripe access,
   sync engine, metrics.
 - `src/db` — Drizzle schema (`schema/app.ts`, generated `schema/auth.ts`) and client.
+- `src/test` — test helpers and fixtures (database, Stripe fakes, display states).
 
 Data flow: Stripe → sync engine (backfill once, then incremental from the Events API) → local
 tables (`subscriptions`, `mrr_movements`, `payments`) → metrics → `DisplayState` → display.
