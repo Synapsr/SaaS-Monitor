@@ -1,10 +1,11 @@
 import "server-only";
 import { z } from "zod";
 
-const booleanFlag = z
-  .enum(["true", "false", "1", "0"])
-  .default("false")
-  .transform((value) => value === "true" || value === "1");
+const booleanFlag = (defaultValue: boolean) =>
+  z
+    .enum(["true", "false", "1", "0"])
+    .transform((value) => value === "true" || value === "1")
+    .default(defaultValue);
 
 const schema = z
   .object({
@@ -18,7 +19,9 @@ const schema = z
     ENCRYPTION_KEY: z
       .string()
       .regex(/^[0-9a-fA-F]{64}$/, "must be 64 hexadecimal characters (openssl rand -hex 32)"),
-    DISABLE_SIGNUPS: booleanFlag,
+    DISABLE_SIGNUPS: booleanFlag(false),
+    /** Apply pending database migrations when the server starts. */
+    MIGRATE_ON_START: booleanFlag(true),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
