@@ -9,6 +9,7 @@ import {
   type DemoWorld,
 } from "@/lib/display/demo/simulation";
 import { demoState } from "@/lib/display/demo/state";
+import { initialMomentTracker, trackMoments } from "@/lib/display/moments";
 import type { DisplayState } from "@/lib/display/types";
 import { toMinorUnits } from "@/lib/money";
 
@@ -134,6 +135,24 @@ describe("demo simulation", () => {
     const crossing = states.findIndex((state) => state.metrics.mrr >= GOAL);
     expect(crossing).toBeGreaterThanOrEqual(1);
     expect(crossing).toBeLessThan(8);
+  });
+
+  it("shows ARR when asked, reaching its goal of $180K ARR at the same moment", () => {
+    const inArr = createDemoWorld({ ...options, metric: "arr" }, now);
+    const first = demoState(inArr, now);
+    expect(first.screen.settings).toMatchObject({ metric: "arr", goal: 180_000 });
+    // The state stays in MRR: the screen presents it in ARR.
+    expect(first.metrics).toEqual(demoState(world, now).metrics);
+
+    let tracker = initialMomentTracker;
+    const milestones = [first, ...simulate(inArr, 8).states].flatMap((state) => {
+      const tracked = trackMoments(tracker, state);
+      tracker = tracked.tracker;
+      return tracked.moments.filter((moment) => moment.kind === "milestone");
+    });
+    expect(milestones).toEqual([
+      expect.objectContaining({ amount: 18_000_000, metric: "arr", isGoal: true }),
+    ]);
   });
 
   it("keeps every metric consistent while it runs", () => {

@@ -9,6 +9,7 @@ describe("demo options", () => {
         sound: "arcade",
         names: "1",
         range: "12m",
+        metric: "arr",
         tz: "Europe/Paris",
         preview: "1",
       }),
@@ -18,16 +19,20 @@ describe("demo options", () => {
         soundPack: "arcade",
         showCustomerNames: true,
         chartRange: "12m",
+        metric: "arr",
         timeZone: "Europe/Paris",
       },
       preview: true,
     });
-    expect(parseDemoOptions({ accent: "pink", range: "5y", tz: "Mars/Olympus" })).toEqual({
+    expect(
+      parseDemoOptions({ accent: "pink", range: "5y", metric: "qrr", tz: "Mars/Olympus" }),
+    ).toEqual({
       options: {
         accent: "emerald",
         soundPack: "register",
         showCustomerNames: false,
         chartRange: "90d",
+        metric: "mrr",
         timeZone: "America/New_York",
       },
       preview: false,

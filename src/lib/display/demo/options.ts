@@ -2,9 +2,11 @@ import {
   ACCENTS,
   CHART_RANGES,
   isTimeZone,
+  METRICS,
   SOUND_PACKS,
   type Accent,
   type ChartRange,
+  type Metric,
   type SoundPack,
 } from "@/lib/screens/settings";
 
@@ -15,12 +17,15 @@ export interface DemoOptions {
   soundPack: SoundPack | null;
   showCustomerNames: boolean;
   chartRange: ChartRange;
+  metric: Metric;
   timeZone: string;
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-/** Reads `/d/demo?accent=violet&sound=arcade&names=1&range=12m&tz=Europe/Paris&preview=1`. */
+/**
+ * Reads `/d/demo?accent=violet&sound=arcade&names=1&range=12m&metric=arr&tz=Europe/Paris&preview=1`.
+ */
 export function parseDemoOptions(params: SearchParams): { options: DemoOptions; preview: boolean } {
   const read = (key: string) => {
     const value = params[key];
@@ -37,6 +42,7 @@ export function parseDemoOptions(params: SearchParams): { options: DemoOptions; 
       soundPack: sound === "off" ? null : (oneOf(SOUND_PACKS, sound) ?? "register"),
       showCustomerNames: read("names") === "1",
       chartRange: oneOf(CHART_RANGES, read("range")) ?? "90d",
+      metric: oneOf(METRICS, read("metric")) ?? "mrr",
       timeZone: timeZone && isTimeZone(timeZone) ? timeZone : "America/New_York",
     },
     preview: read("preview") === "1",

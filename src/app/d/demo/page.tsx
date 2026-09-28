@@ -17,7 +17,7 @@ function renderTime(): string {
 /**
  * The display fed by a simulation, never by the database: for the landing page (a muted iframe
  * with `?preview=1`), screenshots and trying the product. Variants through the query string,
- * e.g. `?accent=violet&sound=arcade&names=1&range=12m`.
+ * e.g. `?accent=violet&sound=arcade&names=1&range=12m&metric=arr`.
  */
 export default async function DemoPage({ searchParams }: PageProps<"/d/demo">) {
   const { options, preview } = parseDemoOptions(await searchParams);

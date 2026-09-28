@@ -8,6 +8,7 @@ import {
 } from "@/lib/display/calendar";
 import { BUSINESS_NAME, DEMO_CURRENCY, DEMO_GOAL } from "@/lib/display/demo/business";
 import { EMPTY_MONTH, mrrAt, type DemoWorld } from "@/lib/display/demo/simulation";
+import { recurringMetric } from "@/lib/display/metric";
 import type { DisplayState, SeriesPoint } from "@/lib/display/types";
 import { defaultScreenSettings } from "@/lib/screens/settings";
 
@@ -44,7 +45,9 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
         ...defaultScreenSettings,
         currency: DEMO_CURRENCY,
         timeZone: options.timeZone,
-        goal: DEMO_GOAL,
+        metric: options.metric,
+        // The same goal in the metric shown: $15K of MRR is $180K of ARR.
+        goal: recurringMetric(options.metric).fromMrr(DEMO_GOAL),
         sound: {
           ...defaultScreenSettings.sound,
           enabled: options.soundPack !== null,
