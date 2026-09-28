@@ -57,7 +57,7 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
 - Validate all user input with Zod at the boundary (server actions, route handlers).
 - Tests sit next to the code. Pure logic gets unit tests (`*.test.ts`); code that needs
   PostgreSQL gets integration tests named `*.db.test.ts`, run serially against the test database
-  (`TEST_DATABASE_URL`, migrated automatically; see `src/test/db.ts` for helpers).
+  (`TEST_DATABASE_URL`, created and migrated automatically; see `src/test/db.ts` for helpers).
 
 ## Style
 

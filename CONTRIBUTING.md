@@ -24,8 +24,8 @@ pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build
 ```
 
 `pnpm test` runs two Vitest projects: `unit` (pure logic, `*.test.ts`) and `db` (integration
-tests against PostgreSQL, `*.db.test.ts`, using the `saas_monitor_test` database which is migrated
-automatically). Set `TEST_DATABASE_URL` to use another database.
+tests against PostgreSQL, `*.db.test.ts`, using the `saas_monitor_test` database, which is created
+and migrated automatically). Set `TEST_DATABASE_URL` to use another database.
 
 ## Guidelines
 
