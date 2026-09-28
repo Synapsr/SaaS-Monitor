@@ -13,3 +13,6 @@ export const BRAND_COLORS = {
   /** The logo's tile, as drawn by `src/app/icon.svg`. */
   tile: "#0a0a0a",
 } as const;
+
+/** The logo's pulse line, in a 64×64 view box (`src/app/icon.svg` draws it too). */
+export const LOGO_PULSE_PATH = "M12 40h9l6-16 8 24 6-14h11";

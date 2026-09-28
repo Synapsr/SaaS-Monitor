@@ -1,8 +1,21 @@
-import { BRAND_COLORS } from "@/lib/brand";
+import { BRAND_COLORS, LOGO_PULSE_PATH } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-/** The app icon (`src/app/icon.svg`): a pulse line on a dark tile, in both themes. */
+function Pulse({ color }: { color: string }) {
+  return (
+    <path
+      d={LOGO_PULSE_PATH}
+      fill="none"
+      stroke={color}
+      strokeWidth="5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  );
+}
+
+/** The app icon (`src/app/icon.svg`): the pulse on a dark tile, in both themes. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
@@ -11,14 +24,16 @@ export function LogoMark({ className }: { className?: string }) {
       className={cn("size-7 shrink-0 rounded-[25%] dark:ring-1 dark:ring-white/15", className)}
     >
       <rect width="64" height="64" rx="16" fill={BRAND_COLORS.tile} />
-      <path
-        d="M12 40h9l6-16 8 24 6-14h11"
-        fill="none"
-        stroke={BRAND_COLORS.glow}
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <Pulse color={BRAND_COLORS.glow} />
+    </svg>
+  );
+}
+
+/** The pulse alone, in the text color: wall displays draw it in their accent. */
+export function LogoPulse({ className }: { className?: string }) {
+  return (
+    <svg viewBox="8 18 48 34" aria-hidden="true" className={cn("shrink-0", className)}>
+      <Pulse color="currentColor" />
     </svg>
   );
 }

@@ -1,7 +1,7 @@
 import { CircleAlert, Plug } from "lucide-react";
 import { useSyncExternalStore } from "react";
-import { BrandMark } from "@/components/display/brand-mark";
 import { ScreenMessage } from "@/components/display/screen-message";
+import { LogoPulse } from "@/components/logo";
 import type { DisplayAccount, DisplayState } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
 
@@ -87,8 +87,8 @@ export function StatusScreen({ state }: { state: DisplayState }) {
 function ImportingIcon() {
   return (
     <span className="relative grid place-items-center">
-      <BrandMark className="h-9 text-(--ink-3) opacity-40" />
-      <BrandMark className="absolute h-9 [mask-image:linear-gradient(90deg,transparent,black_40%,black_60%,transparent)] [mask-size:200%_100%] motion-safe:animate-[display-shimmer_2.4s_linear_infinite]" />
+      <LogoPulse className="h-9 text-(--ink-3) opacity-40" />
+      <LogoPulse className="absolute h-9 [mask-image:linear-gradient(90deg,transparent,black_40%,black_60%,transparent)] [mask-size:200%_100%] motion-safe:animate-[display-shimmer_2.4s_linear_infinite]" />
     </span>
   );
 }

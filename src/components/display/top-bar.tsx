@@ -1,6 +1,6 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import { AudioPrompt } from "@/components/display/audio-prompt";
-import { BrandMark } from "@/components/display/brand-mark";
+import { LogoPulse } from "@/components/logo";
 import { useNow } from "@/lib/display/hooks/use-now";
 import { formatClock } from "@/lib/display/time";
 import type { DisplayAccount } from "@/lib/display/types";
@@ -36,7 +36,7 @@ export function TopBar({
   return (
     <header className="flex items-center justify-between gap-10">
       <div className="flex min-w-0 items-center gap-4">
-        <BrandMark className="h-6 text-(--glow)" />
+        <LogoPulse className="h-6 text-(--glow)" />
         <h1 className="truncate text-2xl font-medium tracking-tight">{name}</h1>
         {showAccounts && accounts.length > 1 && (
           <ul aria-label="Stripe accounts" className="flex min-w-0 gap-2 overflow-hidden">

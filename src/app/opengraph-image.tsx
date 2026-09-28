@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { BRAND_COLORS } from "@/lib/brand";
+import { BRAND_COLORS, LOGO_PULSE_PATH } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
 export const alt = `${siteConfig.name}: ${siteConfig.tagline}`;
@@ -43,7 +43,7 @@ export default async function OpenGraphImage() {
         <svg width="52" height="52" viewBox="0 0 64 64">
           <rect width="64" height="64" rx="16" fill={TILE} stroke="#2a2d33" strokeWidth="2" />
           <path
-            d="M12 40h9l6-16 8 24 6-14h11"
+            d={LOGO_PULSE_PATH}
             fill="none"
             stroke={GLOW}
             strokeWidth="5"
