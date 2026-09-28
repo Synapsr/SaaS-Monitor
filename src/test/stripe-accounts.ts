@@ -5,7 +5,7 @@ import { encryptSecret } from "@/server/crypto";
 import { toUnixTime } from "@/server/sync/context";
 import { newBackfill } from "@/server/sync/scan";
 
-export const TEST_SECRET_KEY = "rk_test_51TestKeyOfSaaSMonitor4f2a";
+const TEST_SECRET_KEY = "rk_test_51TestKeyOfSaaSMonitor4f2a";
 
 /** A connected Stripe account waiting for its import, as `connectStripeAccount` leaves it. */
 export async function createStripeAccount(

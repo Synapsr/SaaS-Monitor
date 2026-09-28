@@ -1,5 +1,5 @@
 /** Social sign-in providers the app supports. The server enables those it has credentials for. */
-export const SOCIAL_PROVIDERS = ["github", "google"] as const;
+const SOCIAL_PROVIDERS = ["github", "google"] as const;
 
 export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
 

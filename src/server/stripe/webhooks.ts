@@ -19,7 +19,7 @@ import { createStripeGateway, type StripeAccessOptions, type StripeGateway } fro
  * the sync reads the Events API as usual. Without a webhook, the account is polled instead.
  */
 
-export function webhookEndpointUrl(accountId: string): string {
+function webhookEndpointUrl(accountId: string): string {
   return `${env().APP_URL}/api/webhooks/stripe/${accountId}`;
 }
 
