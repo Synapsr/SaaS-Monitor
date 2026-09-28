@@ -2,7 +2,6 @@
 
 import { LaptopIcon, LogOutIcon, MoonIcon, PlusIcon, SettingsIcon, SunIcon } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { authClient } from "@/lib/auth-client";
+import { useSignOut } from "@/hooks/use-sign-out";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { UserAvatar } from "./user-avatar";
 
@@ -35,15 +34,9 @@ export function UserMenu({
   /** People with a single workspace create more from here (the switcher is hidden for them). */
   showCreateWorkspace: boolean;
 }) {
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [creating, setCreating] = useState(false);
-
-  async function signOut() {
-    await authClient.signOut();
-    router.replace("/sign-in");
-    router.refresh();
-  }
+  const { signOut } = useSignOut();
 
   return (
     <>

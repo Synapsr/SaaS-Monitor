@@ -1,12 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { acceptInvitationAction } from "@/app/invite/[id]/actions";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import { authClient } from "@/lib/auth-client";
+import { useSignOut } from "@/hooks/use-sign-out";
 import { withRedirect } from "@/lib/safe-redirect";
 
 export function AcceptInvitationButton({ invitationId }: { invitationId: string }) {
@@ -34,20 +33,10 @@ export function AcceptInvitationButton({ invitationId }: { invitationId: string 
 
 /** Signed in with another address: sign out, then come back to the invitation. */
 export function SwitchAccountButton({ invitationPath }: { invitationPath: string }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-
-  function switchAccount() {
-    startTransition(async () => {
-      await authClient.signOut();
-      router.replace(withRedirect("/sign-in", invitationPath));
-      router.refresh();
-    });
-  }
-
+  const { signOut, signingOut } = useSignOut(withRedirect("/sign-in", invitationPath));
   return (
-    <Button size="lg" className="w-full" onClick={switchAccount} disabled={pending}>
-      {pending && <Spinner />}
+    <Button size="lg" className="w-full" onClick={signOut} disabled={signingOut}>
+      {signingOut && <Spinner />}
       Sign out and switch account
     </Button>
   );

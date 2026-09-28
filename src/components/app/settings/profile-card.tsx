@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { authClient } from "@/lib/auth-client";
+import { useSignOut } from "@/hooks/use-sign-out";
 import { SettingsCard } from "./settings-card";
 
 export function ProfileCard({ name, email }: { name: string; email: string }) {
@@ -18,7 +18,7 @@ export function ProfileCard({ name, email }: { name: string; email: string }) {
   const [value, setValue] = useState(name);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
-  const [signingOut, startSigningOut] = useTransition();
+  const { signOut, signingOut } = useSignOut();
 
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,14 +31,6 @@ export function ProfileCard({ name, email }: { name: string; email: string }) {
       }
       toast.success("Profile saved.");
       // The session cookie holding the name was just refreshed: render the header with it.
-      router.refresh();
-    });
-  }
-
-  function signOut() {
-    startSigningOut(async () => {
-      await authClient.signOut();
-      router.replace("/sign-in");
       router.refresh();
     });
   }
