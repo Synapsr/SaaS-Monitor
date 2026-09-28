@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 import { BUILD_ID } from "@/lib/build-id";
 import { calendarDay, chartDays, daysInRange, displayCalendar } from "@/lib/display/calendar";
 import type { DisplayState, FeedItem } from "@/lib/display/types";
@@ -24,17 +25,24 @@ export interface DisplayStateOptions {
   rateSource?: RateSource;
 }
 
+/** Screen links carry a 32-character token (`generatePublicToken`): longer is not worth a query. */
+const tokenSchema = z.string().min(1).max(256);
+
 const FEED_LENGTH = 20;
 /** How long a "Send a test celebration" request stays visible to displays that poll. */
 const TEST_EVENT_TTL_MS = 10 * MINUTE_MS;
 
 const earliest = (a: string, b: string) => (a < b ? a : b);
 
-/** Everything a wall display shows, or `null` when no screen uses this token. */
+/**
+ * Everything a wall display shows, or `null` when no screen uses this token. The token comes
+ * straight from a public URL: it is validated here, for the page and the polling endpoint alike.
+ */
 export async function getDisplayStateByToken(
   token: string,
   { now = new Date(), rateSource }: DisplayStateOptions = {},
 ): Promise<DisplayState | null> {
+  if (!tokenSchema.safeParse(token).success) return null;
   const screen = await findScreen(token);
   if (!screen) return null;
 

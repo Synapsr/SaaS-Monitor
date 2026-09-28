@@ -125,8 +125,10 @@ describe("display state", () => {
     ({ workspaceId } = await createUserWithWorkspace());
   });
 
-  it("is null for an unknown token", async () => {
+  it("is null for an unknown or malformed token", async () => {
     expect(await getDisplayStateByToken("unknown", { now: NOW })).toBeNull();
+    expect(await getDisplayStateByToken("", { now: NOW })).toBeNull();
+    expect(await getDisplayStateByToken("x".repeat(300), { now: NOW })).toBeNull();
   });
 
   it("describes a screen without accounts", async () => {
