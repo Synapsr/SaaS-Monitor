@@ -17,7 +17,7 @@ shows MRR, revenue and a live feed, with sounds and celebrations.
 ## Commands
 
 ```bash
-pnpm db:up          # Postgres 18 + stripe-mock in Docker (compose.dev.yaml)
+pnpm db:up          # MySQL 8.4 + stripe-mock in Docker (compose.dev.yaml)
 pnpm db:migrate     # apply migrations in ./drizzle
 pnpm db:generate    # create a migration after editing src/db/schema
 pnpm dev            # http://localhost:3000 (use -p to pick another port)
@@ -46,7 +46,8 @@ Node 24 (`.nvmrc`), pnpm 10.
   `format.ts` for the dashboard, `display/format.ts` and `display/time.ts` for screens).
 - `src/server` — server-only code (`import "server-only"`): auth, tenant guard, Stripe access,
   sync engine, metrics.
-- `src/db` — Drizzle schema (`schema/app.ts`, generated `schema/auth.ts`) and client.
+- `src/db` — Drizzle schema (`schema/app.ts`, generated `schema/auth.ts`, column types in
+  `schema/columns.ts`) and client.
 - `src/test` — test helpers and fixtures (database, Stripe fakes, display states).
 
 Data flow: Stripe → sync engine (backfill once, then incremental from the Events API) → local
@@ -80,9 +81,13 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   Display components present recurring amounts with `recurringMetric`
   (`src/lib/display/metric.ts`); nothing else multiplies by twelve.
 - **Screen settings** are JSON: every new field needs a default in `screenSettingsSchema`.
+- **MySQL**: instants are UTC `datetime(6)` columns (`instant`). UUIDs, tokens and Stripe ids are
+  `identifier` columns, compared byte for byte: MySQL's default collation ignores case. There is no
+  `RETURNING`: the app creates its UUIDs (`$returningId()`), and an update's `affectedRows` counts
+  the rows it matched. Connections run in READ COMMITTED (`src/db/index.ts`).
 - Validate all user input with Zod at the boundary (server actions, route handlers).
 - Tests sit next to the code. Pure logic gets unit tests (`*.test.ts`); code that needs
-  PostgreSQL gets integration tests named `*.db.test.ts`, run serially against the test database
+  MySQL gets integration tests named `*.db.test.ts`, run serially against the test database
   (`TEST_DATABASE_URL`, created and migrated automatically; see `src/test/db.ts` for helpers).
 
 ## Style

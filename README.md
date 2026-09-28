@@ -61,7 +61,7 @@ seconds. Add `?accent=violet&sound=arcade&range=all&metric=arr` to try other set
 
 ## Self-hosting
 
-SaaS Monitor is a Next.js app and a PostgreSQL database. With Docker:
+SaaS Monitor is a Next.js app and a MySQL database. With Docker:
 
 ```bash
 git clone https://github.com/Synapsr/SaaS-Monitor.git
@@ -82,7 +82,7 @@ TV or Raspberry Pi. The [self-hosting guide](docs/self-hosting.md) covers config
 flowchart LR
   Stripe -- "webhook (instant)" --> App
   App -- "Events API (catch-up, within the read budget)" --> Stripe
-  App --> DB[(PostgreSQL<br/>subscriptions · MRR ledger · payments)]
+  App --> DB[(MySQL<br/>subscriptions · MRR ledger · payments)]
   DB --> Screen["/d/token<br/>polls every 10 s"]
 ```
 
@@ -102,7 +102,7 @@ Requirements: Node 24, pnpm 10 and Docker.
 ```bash
 pnpm install
 node scripts/setup.mjs   # .env with fresh secrets
-pnpm db:up               # PostgreSQL + stripe-mock
+pnpm db:up               # MySQL + stripe-mock
 pnpm dev                 # http://localhost:3000
 ```
 
@@ -110,7 +110,7 @@ pnpm dev                 # http://localhost:3000
 pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build   # what CI runs
 ```
 
-Built with Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Drizzle ORM, PostgreSQL, Better Auth
+Built with Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Drizzle ORM, MySQL, Better Auth
 and the Stripe SDK. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) for the
 architecture and conventions.
 

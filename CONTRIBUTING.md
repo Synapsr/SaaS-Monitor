@@ -9,7 +9,7 @@ Requirements: Node 24 (`.nvmrc`), pnpm 10 and Docker.
 ```bash
 pnpm install
 node scripts/setup.mjs   # creates .env with fresh secrets
-pnpm db:up               # PostgreSQL + stripe-mock in Docker
+pnpm db:up               # MySQL + stripe-mock in Docker
 pnpm dev                 # http://localhost:3000, migrations run on startup
 ```
 
@@ -24,11 +24,11 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
 `pnpm test` runs two Vitest projects: `unit` (pure logic, `*.test.ts`) and `db` (integration
-tests against PostgreSQL, `*.db.test.ts`, using the `saas_monitor_test` database, which is created
-and migrated automatically). The tests empty that database between cases: give each checkout of
-the repository (another clone, a worktree) its own with `TEST_DATABASE_URL`, e.g.
-`postgres://saas_monitor:saas_monitor@127.0.0.1:5433/saas_monitor_test_2`, so that test runs
-never collide. When stripe-mock listens on another port, set `STRIPE_MOCK_PORT` too.
+tests against MySQL, `*.db.test.ts`, using the `saas_monitor_test` database, which is created and
+migrated automatically: the tests connect as root). The tests empty that database between cases:
+give each checkout of the repository (another clone, a worktree) its own with `TEST_DATABASE_URL`,
+e.g. `mysql://root:saas_monitor@127.0.0.1:3307/saas_monitor_test_2`, so that test runs never
+collide. When stripe-mock listens on another port, set `STRIPE_MOCK_PORT` too.
 
 ## Guidelines
 

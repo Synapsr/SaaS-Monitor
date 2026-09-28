@@ -1,7 +1,7 @@
 # Self-hosting
 
-SaaS Monitor is a single Next.js server and a PostgreSQL database. The provided Docker Compose
-file runs both.
+SaaS Monitor is a single Next.js server and a MySQL database. The provided Docker Compose file
+runs both.
 
 ## Quick start with Docker
 
@@ -12,15 +12,15 @@ alternative below).
 git clone https://github.com/Synapsr/SaaS-Monitor.git
 cd SaaS-Monitor
 node scripts/setup.mjs      # writes .env with fresh secrets
-docker compose up -d        # builds the image, starts PostgreSQL and the app
+docker compose up -d        # builds the image, starts MySQL and the app
 ```
 
 Open <http://localhost:3000>, create your account and connect Stripe. Database migrations run
 automatically when the app starts.
 
 Without Node.js, create the `.env` by hand: `cp .env.example .env`, then fill `AUTH_SECRET`,
-`ENCRYPTION_KEY` and `POSTGRES_PASSWORD` with the output of `openssl rand -hex 32` (a different
-value for each).
+`ENCRYPTION_KEY`, `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` with the output of
+`openssl rand -hex 32` (a different value for each).
 
 > Keep `ENCRYPTION_KEY` safe and never change it: it encrypts the Stripe keys stored in the
 > database. If it is lost, every Stripe account has to be connected again.
@@ -34,8 +34,9 @@ All settings are environment variables, documented in [`.env.example`](../.env.e
 | `APP_URL`                                  | yes      | Public URL of the app, e.g. `https://monitor.example.com`. Used for sign-in, screen links, webhooks. |
 | `AUTH_SECRET`                              | yes      | Signs sessions (≥ 32 characters).                                                                    |
 | `ENCRYPTION_KEY`                           | yes      | 64 hex characters, encrypts Stripe keys at rest.                                                     |
-| `DATABASE_URL`                             | yes      | PostgreSQL URL. Set by `compose.yaml`; needed when you run the app yourself.                         |
-| `POSTGRES_PASSWORD`                        | compose  | Password of the bundled database.                                                                    |
+| `DATABASE_URL`                             | yes      | MySQL URL (`mysql://…`). Set by `compose.yaml`; needed when you run the app yourself.                |
+| `MYSQL_PASSWORD`                           | compose  | Password of the bundled database's user.                                                             |
+| `MYSQL_ROOT_PASSWORD`                      | compose  | Password of its root user, for administration and backups.                                           |
 | `APP_PORT`                                 | no       | Host port published by `compose.yaml` (default `3000`).                                              |
 | `DISABLE_SIGNUPS`                          | no       | `true` to close registrations; invited people can still join.                                        |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | no       | Enables "Continue with GitHub".                                                                      |
@@ -106,23 +107,36 @@ Open screens notice the new version and reload themselves.
 
 ## Backups
 
-Everything lives in PostgreSQL. Stripe data can always be imported again, but accounts, screens
-and settings cannot:
+Everything lives in MySQL. Stripe data can always be imported again, but accounts, screens and
+settings cannot:
 
 ```bash
-docker compose exec db pg_dump -U saas_monitor saas_monitor > saas-monitor.sql
+docker compose exec -T db sh -c 'exec mysqldump --single-transaction -u root -p"$MYSQL_ROOT_PASSWORD" saas_monitor' > saas-monitor.sql
+```
+
+To restore a backup into the database:
+
+```bash
+docker compose exec -T db sh -c 'exec mysql -u root -p"$MYSQL_ROOT_PASSWORD" saas_monitor' < saas-monitor.sql
 ```
 
 ## Running without Docker
 
 Build and start the app with Node.js 24 (22.13 at least, as `engines` in `package.json` says)
-against any PostgreSQL 15+ database:
+against a MySQL 8.4 database (8.0.14 or later works too):
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm build
-DATABASE_URL=postgres://… AUTH_SECRET=… ENCRYPTION_KEY=… APP_URL=… pnpm start
+DATABASE_URL=mysql://… AUTH_SECRET=… ENCRYPTION_KEY=… APP_URL=… pnpm start
 ```
+
+The database needs its time zone tables, which screens use to count days in their own time zone.
+The official Docker image loads them; elsewhere, load them on the database server with
+`mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -p mysql` (the app refuses to start
+without them). Keep MySQL's defaults for the character set (utf8mb4) and for binary logging
+(row-based, which the app's READ COMMITTED transactions need), and give the app's user all
+privileges on its database: it applies the migrations when it starts.
 
 The app also runs on platforms such as Vercel or Railway: syncs are triggered by open screens
 and dashboards, so no background worker is needed.
