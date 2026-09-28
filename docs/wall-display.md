@@ -32,7 +32,8 @@ Any Raspberry Pi 4 or 5 connected to a TV over HDMI does the job. With Raspberry
 1. In Raspberry Pi Imager, enable auto-login, Wi-Fi and SSH before flashing the card.
 2. Disable screen blanking: `sudo raspi-config` → **Display Options** → **Screen Blanking** →
    **No**.
-3. Pick the HDMI audio output from the volume icon in the taskbar if you want sound on the TV.
+3. Pick the HDMI audio output from the volume icon in the taskbar if you want sound on the TV,
+   and install the emoji font used for country flags: `sudo apt install fonts-noto-color-emoji`.
 4. Start the screen automatically at login. Raspberry Pi OS uses the labwc compositor: add this
    line to `~/.config/labwc/autostart` (create the file if needed), replacing the URL:
 
