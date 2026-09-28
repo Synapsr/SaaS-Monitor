@@ -22,10 +22,7 @@ export function LandingHeader() {
           <Link href="/d/demo" className={`${linkClass} hidden sm:block`}>
             Live demo
           </Link>
-          <a
-            href={`${siteConfig.repositoryUrl}/tree/main/docs`}
-            className={`${linkClass} hidden md:block`}
-          >
+          <a href={siteConfig.docsUrl} className={`${linkClass} hidden md:block`}>
             Docs
           </a>
           <a
