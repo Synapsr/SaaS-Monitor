@@ -65,7 +65,9 @@ monitor.example.com {
 }
 ```
 
-Then set `APP_URL=https://monitor.example.com` in `.env` and run `docker compose up -d` again.
+Then set `APP_URL=https://monitor.example.com` in `.env` and run `docker compose up -d --build`:
+the image is rebuilt too, since links in social previews (a screen shared in a chat, the landing
+page) are written into the pages when the app is built.
 
 ## Updating
 

@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  // Social previews need absolute URLs. APP_URL is read at build time when it is set there.
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  // Social previews need absolute URLs, set at build time: Docker builds receive APP_URL as a
+  // build argument (compose.yaml), which may be empty.
+  metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
   title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
   description: siteConfig.description,
   openGraph: { type: "website", siteName: siteConfig.name },

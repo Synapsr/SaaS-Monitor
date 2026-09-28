@@ -12,9 +12,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 
 FROM dependencies AS builder
 COPY . .
-# Identifies the build: open wall displays reload themselves when it changes.
-ARG BUILD_ID
-ENV BUILD_ID=${BUILD_ID} STANDALONE_BUILD=true
+# APP_URL: base of the absolute URLs of social previews, written into the pages at build time.
+# BUILD_ID: identifies the build; open wall displays reload themselves when it changes.
+ARG APP_URL BUILD_ID
+ENV APP_URL=${APP_URL} BUILD_ID=${BUILD_ID} STANDALONE_BUILD=true
 RUN mkdir -p public && pnpm build
 
 FROM node:24-bookworm-slim AS runner

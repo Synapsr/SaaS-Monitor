@@ -22,6 +22,8 @@ services:
     build:
       context: .
       args:
+        # Social previews (og:image…) need absolute URLs, written into the pages at build time.
+        APP_URL: ${APP_URL:-http://localhost:3000}
         BUILD_ID: ${BUILD_ID:-}
     restart: unless-stopped
     init: true
