@@ -7,6 +7,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Node's types follow the Node version the app runs on: see the docker entry.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -15,3 +19,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # A new Node major is adopted by hand, everywhere at once: .nvmrc (which CI reads), the
+      # Dockerfile, @types/node and the docs.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
