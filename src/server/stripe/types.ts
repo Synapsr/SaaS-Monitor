@@ -93,6 +93,11 @@ export interface PriceTier {
 export interface Discount {
   id: string;
   couponId: string | null;
+  /**
+   * The coupon, when Stripe embeds it in the discount (see the gateway's expansions): without its
+   * product restriction and amounts in other currencies, which Stripe only returns on request.
+   */
+  embeddedCoupon: Coupon | null;
   /** When a `repeating` discount stops applying. */
   end: UnixTime | null;
 }
@@ -110,6 +115,9 @@ export interface Coupon {
   /** Products the coupon is restricted to; `null` when it applies to every product. */
   appliesToProducts: string[] | null;
 }
+
+/** What a coupon does, as kept in the database for coupons Stripe no longer returns. */
+export type CouponTerms = Omit<Coupon, "id">;
 
 export interface Charge {
   id: string;

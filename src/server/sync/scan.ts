@@ -7,6 +7,7 @@ import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
 import { applyCharges, applySubscriptionUpdates } from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
+import { couponArchive } from "./coupons";
 import { valueSubscription } from "./movements";
 
 /*
@@ -51,7 +52,7 @@ export async function runScan(
 ): Promise<number> {
   const { account, gateway, now } = context;
   const nowSeconds = toUnixTime(now);
-  const catalog = createCatalog(gateway, { bulk: true });
+  const catalog = createCatalog(gateway, { bulk: true, archive: couponArchive(account.id) });
   let progress = initial;
   let changes = 0;
 

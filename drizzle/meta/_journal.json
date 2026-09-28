@@ -15,6 +15,13 @@
       "when": 1790588142971,
       "tag": "0001_sync_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790603310924,
+      "tag": "0002_stripe_coupons",
+      "breakpoints": true
     }
   ]
 }

@@ -65,6 +65,28 @@ describe("subscription normalization", () => {
     });
   });
 
+  it("reads the coupon a discount embeds, and only the id of a deleted one", () => {
+    const coupon = stripeCoupon({ id: "coupon_1", percent_off: 20 });
+    const discounts = [
+      { id: "di_1", source: { coupon: "coupon_1" } },
+      { id: "di_2", source: { coupon } },
+      { id: "di_3", source: { coupon: { id: "coupon_2", object: "coupon", deleted: true } } },
+      { id: "di_4", source: { coupon: null } },
+    ];
+    const subscription = subscriptionSchema.parse(stripeSubscription({ discounts }));
+    expect(subscription.discounts).toEqual([
+      { id: "di_1", couponId: "coupon_1", embeddedCoupon: null, end: null },
+      {
+        id: "di_2",
+        couponId: "coupon_1",
+        embeddedCoupon: expect.objectContaining({ id: "coupon_1", percentOff: 20 }),
+        end: null,
+      },
+      { id: "di_3", couponId: "coupon_2", embeddedCoupon: null, end: null },
+      { id: "di_4", couponId: null, embeddedCoupon: null, end: null },
+    ]);
+  });
+
   it("counts metered items without quantity as one", () => {
     const item = stripeItem();
     delete item.quantity;

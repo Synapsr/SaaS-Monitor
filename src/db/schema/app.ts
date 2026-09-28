@@ -14,6 +14,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import type { ScreenSettings } from "@/lib/screens/settings";
+import type { CouponTerms } from "@/server/stripe/types";
 import { organizations } from "./auth";
 
 // Column names are derived from keys (snake_case), see `casing` in drizzle.config.ts.
@@ -179,6 +180,25 @@ export const mrrMovements = pgTable(
     // New and churned customers of the month are derived from each customer's movements.
     index().on(table.accountId, table.stripeCustomerId),
   ],
+);
+
+/**
+ * The coupons of each Stripe account read so far. Deleting a coupon only stops new redemptions:
+ * existing discounts keep applying, but Stripe no longer returns the coupon, so its terms are read
+ * here (see `loadCoupons` in src/server/stripe/catalog.ts).
+ */
+export const stripeCoupons = pgTable(
+  "stripe_coupons",
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => stripeAccounts.id, { onDelete: "cascade" }),
+    couponId: text().notNull(),
+    /** The app's own shape (`Coupon`): a field added to it needs a fallback for older rows. */
+    terms: jsonb().$type<CouponTerms>().notNull(),
+    updatedAt: timestamptz().defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.couponId] })],
 );
 
 /** Successful charges, used for revenue metrics and the "payment received" moments. */

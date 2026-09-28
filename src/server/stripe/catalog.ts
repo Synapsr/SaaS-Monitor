@@ -1,7 +1,7 @@
 import "server-only";
 import { listAll, type StripeGateway } from "./gateway";
 import { isLicensedRecurring } from "./mrr";
-import type { Coupon, Price, Subscription, SubscriptionItem } from "./types";
+import type { Coupon, Discount, Price, Subscription, SubscriptionItem } from "./types";
 
 /**
  * What subscriptions reference but Stripe does not embed: items beyond the first page, price tiers
@@ -16,33 +16,97 @@ export interface StripeCatalog {
 }
 
 /**
- * `bulk` suits full scans: every coupon and product is listed with a few requests. Otherwise the
- * catalog fetches only what a handful of live updates need (retrieved subscriptions already come
- * with their product names).
+ * The coupons of a Stripe account read so far. Deleting a coupon only stops new redemptions:
+ * existing discounts keep applying, but Stripe no longer returns the coupon (404).
  */
-export function createCatalog(gateway: StripeGateway, { bulk }: { bulk: boolean }): StripeCatalog {
+export interface CouponArchive {
+  /** The account whose coupons these are, named in logs. */
+  accountId: string;
+  recall(ids: readonly string[]): Promise<Map<string, Coupon>>;
+  /** Replaces what was known of these coupons. */
+  remember(coupons: readonly Coupon[]): Promise<void>;
+}
+
+export interface CatalogOptions {
+  /**
+   * Suits full scans: every coupon and product is listed with a few requests. Otherwise the
+   * catalog fetches only what a handful of live updates need (retrieved subscriptions already come
+   * with their product names).
+   */
+  bulk: boolean;
+  archive: CouponArchive;
+}
+
+export function createCatalog(
+  gateway: StripeGateway,
+  { bulk, archive }: CatalogOptions,
+): StripeCatalog {
   const coupons = new Map<string, Coupon>();
-  const deletedCoupons = new Set<string>();
+  /** Coupons whose terms no source knows: their discounts are left out of MRR. */
+  const unknownCoupons = new Set<string>();
   let couponsListed = false;
   const productNames = new Map<string, string>();
   let productsListed = false;
   const prices = new Map<string, Promise<Price>>();
 
-  async function loadCoupons(ids: readonly string[]) {
-    const missing = [...new Set(ids)].filter((id) => !coupons.has(id) && !deletedCoupons.has(id));
+  /**
+   * Finds the terms of the discounts' coupons, from the most to the least complete source:
+   * 1. Stripe's coupons, with their product restrictions and amounts in every currency.
+   * 2. The archive, for the coupons Stripe no longer returns: every coupon read is archived.
+   * 3. The coupon a discount embeds, for a coupon deleted before it could be archived. Whether
+   *    Stripe still embeds deleted coupons is unverified: the archive does not depend on it.
+   *    Stripe leaves out product restrictions and other currencies there: such a coupon is
+   *    assumed to apply to the whole subscription, and an amount off only in the coupon's
+   *    currency, as most coupons do.
+   * Only a discount whose coupon is unknown to all three is left out.
+   */
+  async function loadCoupons(discounts: readonly Discount[]) {
+    const ids = new Set(discounts.flatMap((discount) => discount.couponId ?? []));
+    const missing = [...ids].filter((id) => !coupons.has(id));
     if (!missing.length) return;
+
     if (bulk && !couponsListed) {
       couponsListed = true;
-      for (const coupon of await listAll((after) => gateway.listCoupons(after))) {
-        coupons.set(coupon.id, coupon);
+      const listed = await listAll((after) => gateway.listCoupons(after));
+      for (const coupon of listed) coupons.set(coupon.id, coupon);
+      await archive.remember(listed);
+    }
+    // All of them for live updates; for scans, only the deleted ones.
+    const unlisted = missing.filter((id) => !coupons.has(id));
+    if (!unlisted.length) return;
+
+    const embedded = new Map(
+      discounts.flatMap(({ embeddedCoupon }) =>
+        embeddedCoupon ? [[embeddedCoupon.id, embeddedCoupon] as const] : [],
+      ),
+    );
+    const remembered = await archive.recall(unlisted);
+    const learned: Coupon[] = [];
+    for (const id of unlisted) {
+      // A scan lists every coupon Stripe has: an archived one it did not list was deleted.
+      let coupon = bulk ? remembered.get(id) : undefined;
+      if (!coupon && !unknownCoupons.has(id)) {
+        const retrieved = await gateway.retrieveCoupon(id);
+        if (retrieved) learned.push(retrieved);
+        coupon = retrieved ?? remembered.get(id);
+      }
+      if (!coupon) {
+        coupon = embedded.get(id);
+        // Listings cannot embed the coupons of item and customer discounts: archive it for them.
+        if (coupon) learned.push(coupon);
+      }
+
+      if (coupon) {
+        coupons.set(id, coupon);
+        unknownCoupons.delete(id);
+      } else if (!unknownCoupons.has(id)) {
+        unknownCoupons.add(id);
+        console.warn(
+          `[sync] account=${archive.accountId}: coupon ${id} was deleted before its terms could be read. Its discounts are left out of MRR.`,
+        );
       }
     }
-    // Deleted coupons are not listed, although existing discounts may still use them.
-    for (const id of missing.filter((candidate) => !coupons.has(candidate))) {
-      const coupon = await gateway.retrieveCoupon(id);
-      if (coupon) coupons.set(id, coupon);
-      else deletedCoupons.add(id);
-    }
+    await archive.remember(learned);
   }
 
   async function loadProductNames(items: readonly SubscriptionItem[]) {
@@ -104,7 +168,7 @@ export function createCatalog(gateway: StripeGateway, { bulk }: { bulk: boolean 
         completed.push(await completeSubscription(subscription));
       }
       await loadProductNames(completed.flatMap((subscription) => subscription.items));
-      await loadCoupons(completed.flatMap(couponIds));
+      await loadCoupons(completed.flatMap(discountsOf));
       return completed.map(withProductNames);
     },
   };
@@ -119,11 +183,10 @@ function lacksAmounts(price: Price, currency: string): boolean {
   return tiered && amounts !== undefined && !amounts.tiers;
 }
 
-function couponIds(subscription: Subscription): string[] {
-  const discounts = [
+function discountsOf(subscription: Subscription): Discount[] {
+  return [
     ...subscription.discounts,
     ...subscription.items.flatMap((item) => item.discounts),
     ...(subscription.customer.discount ? [subscription.customer.discount] : []),
   ];
-  return discounts.flatMap((discount) => (discount.couponId ? [discount.couponId] : []));
 }

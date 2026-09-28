@@ -45,9 +45,15 @@ export type SyncEventType = (typeof SYNC_EVENT_TYPES)[number];
 export interface StripeGateway {
   /** HTTP requests sent so far, retries included: Stripe caps how much an account may read. */
   readonly requestCount: number;
-  /** Every subscription, including canceled ones, with customers and discounts expanded. */
+  /**
+   * Every subscription, including canceled ones, with customers and discounts expanded. Only the
+   * subscription's own discounts embed their coupon (see the expansions below).
+   */
   listSubscriptions(startingAfter?: string): Promise<Page<Subscription>>;
-  /** `null` when the subscription does not exist (anymore). */
+  /**
+   * `null` when the subscription does not exist (anymore). Its own discounts and its customer's
+   * embed their coupon.
+   */
   retrieveSubscription(id: string): Promise<Subscription | null>;
   listSubscriptionItems(
     subscriptionId: string,
@@ -102,15 +108,20 @@ export async function listAll<T extends { id: string }>(
 
 const PAGE_SIZE = 100;
 
-// Expansions are limited to four levels, hence no product names in listings (see the catalog).
+/*
+ * Expansions are limited to four levels. Discounts embed their coupon where the path allows it, so
+ * that a deleted coupon, which Stripe no longer returns on its own, may still be read there. The
+ * catalog loads what is out of reach: product names in listings, the coupons of item discounts,
+ * and those of customer discounts in listings (`data.customer.discount.source.coupon` is five).
+ */
 const LISTED_SUBSCRIPTION_EXPANSIONS = [
   "data.customer",
-  "data.discounts",
+  "data.discounts.source.coupon",
   "data.items.data.discounts",
 ];
 const RETRIEVED_SUBSCRIPTION_EXPANSIONS = [
-  "customer",
-  "discounts",
+  "customer.discount.source.coupon",
+  "discounts.source.coupon",
   "items.data.discounts",
   "items.data.price.product",
 ];
@@ -190,7 +201,7 @@ export function createStripeGateway(
           subscription: subscriptionId,
           limit: PAGE_SIZE,
           starting_after: startingAfter,
-          expand: ["data.discounts", "data.price.product"],
+          expand: ["data.discounts.source.coupon", "data.price.product"],
         }),
       );
       return {

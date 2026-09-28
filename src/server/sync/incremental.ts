@@ -8,6 +8,7 @@ import { SYNC_EVENT_TYPES } from "@/server/stripe/event-types";
 import type { Subscription } from "@/server/stripe/types";
 import { applyCharges, applySubscriptionUpdates, type SubscriptionUpdate } from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
+import { couponArchive } from "./coupons";
 import { digestEvents, emptyDigest, type EventDigest, type EventRef } from "./events";
 import { valueSubscription } from "./movements";
 import { newScan } from "./scan";
@@ -70,7 +71,10 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
     const subscription = await context.gateway.retrieveSubscription(id);
     if (subscription) fetched.push(subscription);
   }
-  const catalog = createCatalog(context.gateway, { bulk: false });
+  const catalog = createCatalog(context.gateway, {
+    bulk: false,
+    archive: couponArchive(account.id),
+  });
   const updates = (await catalog.complete(fetched)).map((subscription) => ({
     ...valueSubscription(subscription, catalog.coupons, nowSeconds),
     event: changed.get(subscription.id),

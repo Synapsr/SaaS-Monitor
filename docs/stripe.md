@@ -60,6 +60,7 @@ so the number on the wall matches your Stripe Dashboard:
   counts as is).
 - `forever` discounts, and `repeating` ones until they end, are subtracted; `once` discounts are
   not. A customer's discount applies to the subscriptions without a discount of their own.
+  Deleting a coupon only stops new redemptions: the discounts already using it keep counting.
 
 Every change of a subscription's MRR is recorded as a movement: **new** (it starts paying),
 **expansion** and **contraction** (its amount changes), **churn** (it stops counting) and
@@ -72,6 +73,11 @@ Some limits to keep in mind:
 - **History before the import** is rebuilt, as explained above: each subscription counts at its
   current amount from its start, so upgrades and downgrades that happened before the import don't
   show on the chart.
+- **Coupons deleted before the import** can no longer be read from Stripe (SaaS Monitor keeps
+  the terms of every coupon it reads, for when they are deleted later). Their terms then come
+  from the discounts using them, when Stripe shows them there, but without the products a coupon
+  is restricted to: it counts on the whole subscription. A discount whose coupon can't be read at
+  all is left out of MRR, and the server log names the coupon.
 - **Freshness** depends on how updates reach SaaS Monitor: within seconds with a webhook,
   otherwise at the pace described in [Instant updates](#instant-updates). A daily check also
   compares every subscription with Stripe, for changes Stripe makes without an event, such as a

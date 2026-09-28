@@ -49,15 +49,52 @@ const currencyCode = z.string().transform((code) => code.toLowerCase());
 const reference = z.union([z.string(), z.object({ id: z.string() })]);
 const idOf = (value: z.infer<typeof reference>) => (typeof value === "string" ? value : value.id);
 
+export const couponSchema = z
+  .object({
+    id: z.string(),
+    percent_off: z.number().nullish(),
+    amount_off: z.number().nullish(),
+    currency: currencyCode.nullish(),
+    currency_options: z.record(z.string(), z.object({ amount_off: z.number() })).optional(),
+    duration: z.string(),
+    applies_to: z.object({ products: z.array(z.string()) }).nullish(),
+  })
+  .transform((coupon): Coupon => ({
+    id: coupon.id,
+    percentOff: coupon.percent_off ?? null,
+    amountOff: coupon.amount_off ?? null,
+    currency: coupon.currency ?? null,
+    amountOffByCurrency: Object.fromEntries(
+      Object.entries(coupon.currency_options ?? {}).map(([currency, option]) => [
+        currency.toLowerCase(),
+        option.amount_off,
+      ]),
+    ),
+    duration: coupon.duration,
+    // An empty list restricts nothing: it is what Stripe renders for unrestricted coupons.
+    appliesToProducts: coupon.applies_to?.products.length ? coupon.applies_to.products : null,
+  }));
+
+/**
+ * The coupon of a discount: its id, or the coupon when expanded. A deleted coupon may expand to
+ * `{ id, deleted: true }`, without its terms: anything unreadable only keeps the id.
+ */
+const discountCoupon = z.union([
+  z.string().transform((id) => ({ id, coupon: null })),
+  couponSchema.transform((coupon) => ({ id: coupon.id, coupon })),
+  z.object({ id: z.string() }).transform(({ id }) => ({ id, coupon: null })),
+]);
+
 const discountSchema = z
   .object({
     id: z.string(),
     end: z.number().nullish(),
-    source: z.object({ coupon: reference.nullish() }).nullish(),
+    source: z.object({ coupon: discountCoupon.nullish() }).nullish(),
   })
   .transform((discount): Discount => ({
     id: discount.id,
-    couponId: discount.source?.coupon ? idOf(discount.source.coupon) : null,
+    couponId: discount.source?.coupon?.id ?? null,
+    embeddedCoupon: discount.source?.coupon?.coupon ?? null,
     end: discount.end ?? null,
   }));
 
@@ -207,32 +244,6 @@ export const subscriptionSchema = z
     discounts: subscription.discounts,
     items: subscription.items.data,
     hasMoreItems: subscription.items.has_more,
-  }));
-
-export const couponSchema = z
-  .object({
-    id: z.string(),
-    percent_off: z.number().nullish(),
-    amount_off: z.number().nullish(),
-    currency: currencyCode.nullish(),
-    currency_options: z.record(z.string(), z.object({ amount_off: z.number() })).optional(),
-    duration: z.string(),
-    applies_to: z.object({ products: z.array(z.string()) }).nullish(),
-  })
-  .transform((coupon): Coupon => ({
-    id: coupon.id,
-    percentOff: coupon.percent_off ?? null,
-    amountOff: coupon.amount_off ?? null,
-    currency: coupon.currency ?? null,
-    amountOffByCurrency: Object.fromEntries(
-      Object.entries(coupon.currency_options ?? {}).map(([currency, option]) => [
-        currency.toLowerCase(),
-        option.amount_off,
-      ]),
-    ),
-    duration: coupon.duration,
-    // An empty list restricts nothing: it is what Stripe renders for unrestricted coupons.
-    appliesToProducts: coupon.applies_to?.products.length ? coupon.applies_to.products : null,
   }));
 
 /**

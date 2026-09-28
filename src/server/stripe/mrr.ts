@@ -30,7 +30,10 @@ import type {
 export type BillingInterval = "day" | "week" | "month" | "year";
 
 export interface MrrContext {
-  /** Coupons of the discounts, with `applies_to` loaded. Unknown coupons are ignored. */
+  /**
+   * Coupons of the discounts, as the catalog found them (see `loadCoupons`). A discount whose
+   * coupon is unknown is ignored.
+   */
   coupons: ReadonlyMap<string, Coupon>;
   /** When discounts are evaluated: a `repeating` discount only counts until it ends. */
   at: UnixTime;

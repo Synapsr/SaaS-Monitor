@@ -20,6 +20,7 @@ import type { StripeEvent, UnixTime } from "@/server/stripe/types";
 import { stripeId } from "./stripe-fixtures";
 
 type FakeResource = ProbedResource | "account" | "webhook_endpoints";
+type DiscountInput = NonNullable<SubscriptionInput["discounts"]>[number];
 
 /** The permission Stripe names when a restricted key may not use a resource. */
 const PERMISSIONS: Record<FakeResource, string> = {
@@ -51,6 +52,11 @@ export class FakeStripe implements StripeGateway {
     settings: { dashboard: { display_name: "Fake Inc" } },
     default_currency: "usd",
   };
+  /**
+   * Whether discounts still embed their coupon once it is deleted, or only `{ id, deleted: true }`.
+   * Stripe's behavior is unverified: the sync engine must work either way.
+   */
+  embedsDeletedCoupons = false;
   /** Every request fails with this error while it is set, e.g. a revoked key. */
   failure: StripeAccessError | null = null;
   /** Resources the key may not read, to test permission checks. */
@@ -61,6 +67,7 @@ export class FakeStripe implements StripeGateway {
   private readonly prices = new Map<string, PriceInput>();
   private readonly products = new Map<string, ProductInput>();
   private readonly coupons = new Map<string, CouponInput>();
+  private readonly deletedCoupons = new Map<string, CouponInput>();
   private readonly charges = new Map<string, ChargeInput>();
   private readonly events: StripeEvent[] = [];
 
@@ -92,7 +99,10 @@ export class FakeStripe implements StripeGateway {
     this.coupons.set(coupon.id, coupon);
   }
 
+  /** Stops new redemptions: existing discounts keep applying, like in Stripe. */
   deleteCoupon(id: string) {
+    const coupon = this.coupons.get(id);
+    if (coupon) this.deletedCoupons.set(id, coupon);
     this.coupons.delete(id);
   }
 
@@ -116,7 +126,7 @@ export class FakeStripe implements StripeGateway {
       this.pageSize,
     );
     return mapPage(page, (subscription) =>
-      subscriptionSchema.parse(this.render(subscription, { expandProducts: false })),
+      subscriptionSchema.parse(this.render(subscription, { retrieved: false })),
     );
   }
 
@@ -124,7 +134,7 @@ export class FakeStripe implements StripeGateway {
     this.request("subscriptions");
     const subscription = this.subscriptions.get(id);
     return subscription
-      ? subscriptionSchema.parse(this.render(subscription, { expandProducts: true }))
+      ? subscriptionSchema.parse(this.render(subscription, { retrieved: true }))
       : null;
   }
 
@@ -132,7 +142,7 @@ export class FakeStripe implements StripeGateway {
     this.request("subscriptions");
     const items = this.subscriptions.get(subscriptionId)?.items.data ?? [];
     return mapPage(paginate(items, startingAfter, this.pageSize), (item) =>
-      subscriptionItemSchema.parse(this.renderItem(item, { expandProducts: true })),
+      subscriptionItemSchema.parse(this.renderItem(item, { retrieved: true, embedCoupons: true })),
     );
   }
 
@@ -222,30 +232,63 @@ export class FakeStripe implements StripeGateway {
     }
   }
 
-  /** Like Stripe: items are truncated, tiers and currency options left out, products expandable. */
-  private render(subscription: SubscriptionInput, options: { expandProducts: boolean }) {
+  /**
+   * Like Stripe: items are truncated, tiers and currency options left out, and products and the
+   * coupons of discounts expanded as deep as the gateway's expansions reach (four levels).
+   */
+  private render(subscription: SubscriptionInput, { retrieved }: { retrieved: boolean }) {
+    const { customer } = subscription;
     const items = subscription.items.data;
     return {
       ...subscription,
+      // `data.customer.discount.source.coupon` is one level too deep for a listing.
+      customer:
+        retrieved && typeof customer === "object" && customer.discount
+          ? { ...customer, discount: this.embedCoupon(customer.discount) }
+          : customer,
+      discounts: subscription.discounts?.map((discount) => this.embedCoupon(discount)),
       items: {
-        data: items.slice(0, this.embeddedItems).map((item) => this.renderItem(item, options)),
+        data: items
+          .slice(0, this.embeddedItems)
+          .map((item) => this.renderItem(item, { retrieved, embedCoupons: false })),
         has_more: items.length > this.embeddedItems,
       },
     };
   }
 
-  private renderItem(item: SubscriptionItemInput, { expandProducts }: { expandProducts: boolean }) {
+  private renderItem(
+    item: SubscriptionItemInput,
+    { retrieved, embedCoupons }: { retrieved: boolean; embedCoupons: boolean },
+  ) {
     const { product } = item.price;
     const productId = typeof product === "string" ? product : product.id;
     return {
       ...item,
+      discounts: embedCoupons
+        ? item.discounts?.map((discount) => this.embedCoupon(discount))
+        : item.discounts,
       price: {
         ...item.price,
         tiers: undefined,
         currency_options: undefined,
-        product: expandProducts ? (this.products.get(productId) ?? product) : productId,
+        product: retrieved ? (this.products.get(productId) ?? product) : productId,
       },
     };
+  }
+
+  /** A discount with its coupon expanded, as far as Stripe can. */
+  private embedCoupon<T extends DiscountInput>(discount: T): T {
+    const id = discount.source?.coupon;
+    if (typeof id !== "string") return discount;
+    const coupon =
+      this.coupons.get(id) ?? (this.embedsDeletedCoupons ? this.deletedCoupons.get(id) : undefined);
+    const embedded = coupon
+      ? // What Stripe only returns on request is left out, as in any expansion.
+        { ...coupon, applies_to: undefined, currency_options: undefined }
+      : this.deletedCoupons.has(id)
+        ? { id, object: "coupon", deleted: true }
+        : id;
+    return { ...discount, source: { ...discount.source, coupon: embedded } };
   }
 }
 
