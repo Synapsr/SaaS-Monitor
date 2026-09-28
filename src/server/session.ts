@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { members, organizations } from "@/db/schema";
+import { parseRole, type WorkspaceRole } from "@/lib/roles";
 import { auth } from "@/server/auth";
-import { ensureWorkspace, type WorkspaceRole } from "@/server/workspaces";
+import { ensureWorkspace } from "@/server/workspaces";
 
 export const getSession = cache(async () => {
   // Read the request first: during `next build` this marks the page as dynamic before `auth()`
@@ -39,14 +40,6 @@ async function findMembership(userId: string, workspaceId: string): Promise<Memb
   return row ?? null;
 }
 
-function toRole(role: string): WorkspaceRole {
-  // Better Auth stores multiple roles comma-separated; the highest one wins.
-  const roles = role.split(",").map((value) => value.trim());
-  if (roles.includes("owner")) return "owner";
-  if (roles.includes("admin")) return "admin";
-  return "member";
-}
-
 /**
  * Resolves the workspace of the current request and verifies membership. Every tenant-scoped
  * query must filter on the `workspace.id` returned here, never on an id sent by the client.
@@ -65,6 +58,6 @@ export const requireWorkspace = cache(async (): Promise<WorkspaceContext> => {
   return {
     user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
     workspace: { id: membership.id, name: membership.name },
-    role: toRole(membership.role),
+    role: parseRole(membership.role),
   };
 });

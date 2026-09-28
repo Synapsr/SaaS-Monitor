@@ -1,9 +1,9 @@
 import { UserAvatar } from "@/components/app/user-avatar";
 import { Badge } from "@/components/ui/badge";
+import { canManageMembers, ROLE_DETAILS } from "@/lib/roles";
 import type { WorkspaceMember } from "@/server/members";
 import type { WorkspaceContext } from "@/server/session";
 import { LeaveWorkspaceButton, RemoveMemberButton } from "./member-actions";
-import { ROLES } from "./roles";
 import { SettingsCard } from "./settings-card";
 
 export function MembersCard({
@@ -13,7 +13,7 @@ export function MembersCard({
   members: WorkspaceMember[];
   context: WorkspaceContext;
 }) {
-  const canManage = context.role !== "member";
+  const canManage = canManageMembers(context.role);
   const ownerCount = members.filter((member) => member.role === "owner").length;
   const rows = members.map((member) => {
     const isSelf = member.userId === context.user.id;
@@ -44,7 +44,7 @@ export function MembersCard({
               <p className="truncate text-sm text-muted-foreground">{member.email}</p>
             </div>
             <Badge variant={member.role === "member" ? "outline" : "secondary"}>
-              {ROLES[member.role].label}
+              {ROLE_DETAILS[member.role].label}
             </Badge>
             {hasActions && (
               <div className="flex w-20 justify-end">

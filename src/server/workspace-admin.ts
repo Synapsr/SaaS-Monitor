@@ -4,11 +4,12 @@ import { z } from "zod";
 import { db } from "@/db";
 import { members, organizations, stripeAccounts } from "@/db/schema";
 import { invalidInput, type ActionResult } from "@/lib/action-result";
+import { canManageMembers, parseRole, type WorkspaceRole } from "@/lib/roles";
 import { auth } from "@/server/auth";
-import { authFailure, parseRole } from "@/server/members";
+import { authFailure } from "@/server/members";
 import type { WorkspaceContext } from "@/server/session";
 import { disconnectStripeAccount } from "@/server/stripe/accounts";
-import { ensureWorkspace, type WorkspaceRole } from "@/server/workspaces";
+import { ensureWorkspace } from "@/server/workspaces";
 
 export const workspaceNameSchema = z
   .string()
@@ -82,7 +83,7 @@ export async function renameWorkspace(
   requestHeaders: Headers,
   name: string,
 ): Promise<ActionResult> {
-  if (context.role === "member") {
+  if (!canManageMembers(context.role)) {
     return { ok: false, error: "Only owners and admins can rename the workspace." };
   }
   const parsed = workspaceNameSchema.safeParse(name);

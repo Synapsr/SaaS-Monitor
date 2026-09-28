@@ -8,7 +8,8 @@ import { ProfileCard } from "@/components/app/settings/profile-card";
 import { WorkspaceNameCard } from "@/components/app/settings/workspace-name-card";
 import { env } from "@/env";
 import { formatRelativeTime } from "@/lib/format";
-import { canManageMembers, listMembers, listPendingInvitations } from "@/server/members";
+import { canManageMembers } from "@/lib/roles";
+import { listMembers, listPendingInvitations } from "@/server/members";
 import { requireWorkspace } from "@/server/session";
 import { listUserWorkspaces } from "@/server/workspace-admin";
 

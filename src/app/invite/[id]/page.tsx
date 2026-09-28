@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthCard, AuthHeader, AuthShell } from "@/components/auth/auth-shell";
 import { AcceptInvitationButton, SwitchAccountButton } from "@/components/auth/invitation-actions";
-import { ROLES } from "@/components/app/settings/roles";
 import { WorkspaceAvatar } from "@/components/app/workspace-avatar";
 import { Button } from "@/components/ui/button";
 import { invitationPath } from "@/lib/invitations";
+import { ROLE_DETAILS } from "@/lib/roles";
 import { withRedirect } from "@/lib/safe-redirect";
 import { getInvitationPreview, type InvitationPreview } from "@/server/members";
 import { getSession } from "@/server/session";
@@ -86,8 +86,10 @@ function PendingInvitation({
       <dl className="mb-6 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-lg bg-muted/60 px-3 py-2.5 text-sm dark:bg-input/20">
         <dt className="text-muted-foreground">Role</dt>
         <dd>
-          {ROLES[invitation.role].label}{" "}
-          <span className="text-muted-foreground">· {ROLES[invitation.role].description}</span>
+          {ROLE_DETAILS[invitation.role].label}{" "}
+          <span className="text-muted-foreground">
+            · {ROLE_DETAILS[invitation.role].description}
+          </span>
         </dd>
         <dt className="text-muted-foreground">For</dt>
         <dd className="truncate font-medium">{invitation.email}</dd>

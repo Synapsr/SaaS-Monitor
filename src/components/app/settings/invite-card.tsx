@@ -17,8 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { invitationPath } from "@/lib/invitations";
-import type { WorkspaceRole } from "@/server/workspaces";
-import { ROLES } from "./roles";
+import { ROLE_DETAILS, type WorkspaceRole } from "@/lib/roles";
 import { SettingsCard } from "./settings-card";
 
 export interface InvitationRow {
@@ -103,9 +102,9 @@ export function InviteCard({
                 {roles.map((value) => (
                   <SelectItem key={value} value={value} className="items-start py-1.5">
                     <span className="flex flex-col gap-0.5">
-                      <span>{ROLES[value].label}</span>
+                      <span>{ROLE_DETAILS[value].label}</span>
                       <span className="text-xs text-muted-foreground in-data-[slot=select-value]:hidden">
-                        {ROLES[value].description}
+                        {ROLE_DETAILS[value].description}
                       </span>
                     </span>
                   </SelectItem>
@@ -172,7 +171,7 @@ function PendingInvitation({ invitation, url }: { invitation: InvitationRow; url
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="truncate text-sm">{invitation.email}</p>
         <p className="text-xs text-muted-foreground">
-          {ROLES[invitation.role].label} · expires {invitation.expiresLabel}
+          {ROLE_DETAILS[invitation.role].label} · expires {invitation.expiresLabel}
         </p>
       </div>
       <CopyButton value={url} label="Copy link" variant="ghost" />

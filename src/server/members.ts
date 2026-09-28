@@ -5,16 +5,14 @@ import { z } from "zod";
 import { db } from "@/db";
 import { invitations, members, organizations, users } from "@/db/schema";
 import type { ActionResult } from "@/lib/action-result";
+import { canManageMembers, parseRole, WORKSPACE_ROLES, type WorkspaceRole } from "@/lib/roles";
 import { auth } from "@/server/auth";
 import type { WorkspaceContext } from "@/server/session";
-import type { WorkspaceRole } from "@/server/workspaces";
 
 // Membership changes go through Better Auth's organization API, which enforces its own access
 // control. The checks below come first to explain refusals clearly, and every call passes the
 // workspace resolved by `requireWorkspace()` explicitly instead of trusting the session's
 // "active organization", which can lag behind (see `requireWorkspace`).
-
-export const WORKSPACE_ROLES = ["owner", "admin", "member"] as const;
 
 export interface WorkspaceMember {
   id: string;
@@ -51,19 +49,6 @@ export const inviteSchema = z.object({
 
 const NOT_ALLOWED = { ok: false, error: "Only owners and admins can manage members." } as const;
 
-/** Owners and admins manage people; members use the workspace. */
-export function canManageMembers(role: WorkspaceRole): boolean {
-  return role === "owner" || role === "admin";
-}
-
-/** Better Auth stores multiple roles comma-separated: the highest one wins. */
-export function parseRole(role: string | null): WorkspaceRole {
-  const roles = (role ?? "").split(",").map((value) => value.trim());
-  return WORKSPACE_ROLES.find((candidate) => roles.includes(candidate)) ?? "member";
-}
-
-const ROLE_ORDER: Record<WorkspaceRole, number> = { owner: 0, admin: 1, member: 2 };
-
 const AUTH_ERRORS: Record<string, string> = {
   USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
     "This person is already a member of the workspace.",
@@ -90,6 +75,9 @@ export function authFailure(error: unknown): { ok: false; error: string } {
   };
 }
 
+/** Owners first, then admins, then members. */
+const rank = (role: WorkspaceRole) => WORKSPACE_ROLES.indexOf(role);
+
 export async function listMembers(
   context: WorkspaceContext,
   requestHeaders: Headers,
@@ -108,7 +96,7 @@ export async function listMembers(
       role: parseRole(member.role),
       joinedAt: new Date(member.createdAt),
     }))
-    .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || +a.joinedAt - +b.joinedAt);
+    .sort((a, b) => rank(a.role) - rank(b.role) || +a.joinedAt - +b.joinedAt);
 }
 
 export async function listPendingInvitations(

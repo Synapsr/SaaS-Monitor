@@ -3,8 +3,6 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { members, organizations, users } from "@/db/schema";
 
-export type WorkspaceRole = "owner" | "admin" | "member";
-
 async function createPersonalWorkspace(userId: string): Promise<string> {
   const [user] = await db().select({ name: users.name }).from(users).where(eq(users.id, userId));
   const firstName = user?.name.trim().split(/\s+/)[0];

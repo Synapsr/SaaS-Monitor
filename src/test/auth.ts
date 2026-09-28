@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { members, organizations, users } from "@/db/schema";
+import { parseRole } from "@/lib/roles";
 import { auth } from "@/server/auth";
 import type { WorkspaceContext } from "@/server/session";
 import { ensureWorkspace } from "@/server/workspaces";
@@ -48,6 +49,6 @@ export async function workspaceContext(
   return {
     user: { id: userId, name: row.name, email: row.email, image: null },
     workspace: { id: workspaceId, name: row.workspaceName },
-    role: row.role === "owner" || row.role === "admin" ? row.role : "member",
+    role: parseRole(row.role),
   };
 }
