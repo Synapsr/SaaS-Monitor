@@ -16,6 +16,7 @@ import { CurrencySelect } from "./currency-select";
 import { DeleteScreen } from "./delete-screen";
 import { GoalSettings } from "./goal-settings";
 import { LookSettings } from "./look-settings";
+import { MetricSettings } from "./metric-settings";
 import { SaveStatus } from "./save-status";
 import { SettingsSection } from "./settings-section";
 import { SharePanel } from "./share-panel";
@@ -146,9 +147,17 @@ export function ScreenEditor({
             </Field>
           </SettingsSection>
 
+          <SettingsSection title="Main metric">
+            <MetricSettings
+              metric={draft.settings.metric}
+              onChange={(metric) => setSettings({ metric })}
+            />
+          </SettingsSection>
+
           <SettingsSection title="Goal">
             <GoalSettings
               goal={draft.settings.goal}
+              metric={draft.settings.metric}
               currency={draft.settings.currency}
               onChange={(goal) => setSettings({ goal })}
             />
@@ -167,7 +176,11 @@ export function ScreenEditor({
           </SettingsSection>
 
           <SettingsSection title="Look">
-            <LookSettings settings={draft.settings} onChange={setSettings} />
+            <LookSettings
+              settings={draft.settings}
+              metric={draft.settings.metric}
+              onChange={setSettings}
+            />
           </SettingsSection>
 
           <SettingsSection title="Delete screen">

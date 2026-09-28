@@ -6,11 +6,13 @@ import { useId } from "react";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ACCENT_PALETTES } from "@/lib/display/accents";
+import { recurringMetric } from "@/lib/display/metric";
 import {
   ACCENTS,
   CHART_RANGES,
   type Accent,
   type ChartRange,
+  type Metric,
   type ScreenSettings,
 } from "@/lib/screens/settings";
 import { SettingRow } from "./settings-section";
@@ -28,9 +30,12 @@ type LookSettingsValue = Pick<
 
 export function LookSettings({
   settings,
+  metric,
   onChange,
 }: {
   settings: LookSettingsValue;
+  /** The chart shows it: the "MRR chart" or the "ARR chart". */
+  metric: Metric;
   onChange: (patch: Partial<LookSettingsValue>) => void;
 }) {
   const id = useId();
@@ -67,7 +72,7 @@ export function LookSettings({
 
       <div className="flex flex-col gap-2.5">
         <p id={`${id}-range`} className="text-sm font-medium">
-          MRR chart
+          {recurringMetric(metric).label} chart
         </p>
         <ToggleGroup
           type="single"

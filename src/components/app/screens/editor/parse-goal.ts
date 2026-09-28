@@ -3,8 +3,8 @@ import { MAX_GOAL } from "@/lib/screens/settings";
 const SUFFIXES: Record<string, number> = { k: 1_000, m: 1_000_000 };
 
 /**
- * Reads an MRR target typed by hand: "12500", "12,500" or "12.5k" → 12500, because founders
- * think in "10k MRR". `null` when it isn't a whole, positive amount.
+ * Reads a goal typed by hand: "12500", "12,500" or "12.5k" → 12500, because founders think in
+ * "10k MRR" or "1M ARR". `null` when it isn't a whole, positive amount.
  */
 export function parseGoal(input: string): number | null {
   const match = /^(\d+(?:\.\d+)?)([km])?$/i.exec(input.replace(/[\s,_']/g, ""));
