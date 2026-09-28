@@ -118,7 +118,7 @@ function RenameAccountDialog({
     }
     return result;
   }, null);
-  const errorId = useId();
+  const id = useId();
   const error = state && !state.ok ? state.error : null;
 
   return (
@@ -136,18 +136,18 @@ function RenameAccountDialog({
             <DialogTitle>Rename account</DialogTitle>
           </DialogHeader>
           <Field>
-            <FieldLabel htmlFor={`${errorId}-name`}>Name</FieldLabel>
+            <FieldLabel htmlFor={`${id}-name`}>Name</FieldLabel>
             <Input
-              id={`${errorId}-name`}
+              id={`${id}-name`}
               name="name"
               defaultValue={account.name}
               required
               maxLength={NAME_MAX_LENGTH}
               autoComplete="off"
               aria-invalid={Boolean(error)}
-              aria-describedby={error ? errorId : undefined}
+              aria-describedby={error ? `${id}-error` : undefined}
             />
-            {error && <FieldError id={errorId}>{error}</FieldError>}
+            {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

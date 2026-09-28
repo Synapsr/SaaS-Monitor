@@ -21,11 +21,11 @@ const MESSAGES: Record<string, string> = {
 
 export function authErrorMessage(
   error: AuthClientError,
-  { signupsClosed = false }: { signupsClosed?: boolean } = {},
+  { signupsDisabled = false }: { signupsDisabled?: boolean } = {},
 ): string {
   if (error.status === 429) return "Too many attempts. Wait a minute, then try again.";
   // With DISABLE_SIGNUPS, the server refuses to create accounts without a pending invitation.
-  if (error.code === "FAILED_TO_CREATE_USER" && signupsClosed) return SIGNUPS_CLOSED_MESSAGE;
+  if (error.code === "FAILED_TO_CREATE_USER" && signupsDisabled) return SIGNUPS_CLOSED_MESSAGE;
   return (
     (error.code && MESSAGES[error.code]) ||
     error.message ||

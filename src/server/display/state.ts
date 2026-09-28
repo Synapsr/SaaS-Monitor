@@ -16,7 +16,7 @@ import {
   payingCustomerCount,
   revenueByDay,
   subscriptionTotals,
-  type FeedRow,
+  type ActivityRow,
 } from "./queries";
 
 export interface DisplayStateOptions {
@@ -153,7 +153,7 @@ function displayWarnings(
 }
 
 function toFeedItem(
-  row: FeedRow,
+  row: ActivityRow,
   converter: CurrencyConverter,
   settings: ScreenSettings,
   accountName: string,

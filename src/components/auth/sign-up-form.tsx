@@ -18,13 +18,14 @@ export function SignUpForm({
   next,
   providers,
   invitedEmail,
-  signupsClosed,
+  signupsDisabled,
 }: {
   next: string;
   providers: SocialProvider[];
   /** Set when signing up to accept an invitation: only this address can accept it. */
   invitedEmail: string | null;
-  signupsClosed: boolean;
+  /** The server only accepts invited people: a refused sign-up means this address was not. */
+  signupsDisabled: boolean;
 }) {
   const router = useRouter();
   const [error, signUp, pending] = useActionState(async (_: string | null, form: FormData) => {
@@ -33,7 +34,7 @@ export function SignUpForm({
       email: invitedEmail ?? String(form.get("email")),
       password: String(form.get("password")),
     });
-    if (error) return authErrorMessage(error, { signupsClosed });
+    if (error) return authErrorMessage(error, { signupsDisabled });
     router.replace(next);
     router.refresh();
     return null;

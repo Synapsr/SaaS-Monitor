@@ -1,14 +1,9 @@
 import { Info } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import {
-  isGoodNews,
-  itemAmount,
-  itemContext,
-  KIND_LABELS,
-  KindIcon,
-} from "@/components/display/feed-item";
+import { KindIcon } from "@/components/display/feed-kind-icon";
 import { useNow } from "@/hooks/use-now";
+import { isGoodNews, itemAmount, itemContext, KIND_LABELS } from "@/lib/display/feed";
 import { formatPayment } from "@/lib/display/format";
 import { formatFeedTime } from "@/lib/display/time";
 import type { FeedItem } from "@/lib/display/types";

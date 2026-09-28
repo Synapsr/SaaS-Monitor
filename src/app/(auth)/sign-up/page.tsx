@@ -27,11 +27,11 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
   if (await getSession()) redirect(next);
 
   const invitation = await pendingInvitation(next);
-  // Invited people can always sign up: the server lets pending invitations through.
-  const signupsClosed = env().DISABLE_SIGNUPS && !invitation;
+  const { DISABLE_SIGNUPS: signupsDisabled } = env();
   const signInHref = withRedirect("/sign-in", next);
 
-  if (signupsClosed) {
+  // Invited people can always sign up: the server lets pending invitations through.
+  if (signupsDisabled && !invitation) {
     return (
       <AuthCard>
         <div className="mb-5 flex size-10 items-center justify-center rounded-xl bg-muted">
@@ -66,7 +66,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
           next={next}
           providers={enabledSocialProviders()}
           invitedEmail={invitation?.email ?? null}
-          signupsClosed={env().DISABLE_SIGNUPS}
+          signupsDisabled={signupsDisabled}
         />
       </AuthCard>
       <p className="mt-6 text-center text-sm text-muted-foreground">

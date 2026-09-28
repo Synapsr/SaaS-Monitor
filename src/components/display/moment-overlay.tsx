@@ -1,8 +1,9 @@
 import { CircleDollarSign, PartyPopper } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { itemContext, KIND_ICONS } from "@/components/display/feed-item";
+import { KIND_ICONS } from "@/components/display/feed-kind-icon";
 import { MilestoneCelebration } from "@/components/display/milestone-celebration";
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
+import { itemContext } from "@/lib/display/feed";
 import { formatAmount, formatPayment } from "@/lib/display/format";
 import { isMrrIncrease, type Moment } from "@/lib/display/moments";
 import type { DisplayState, FeedItemKind } from "@/lib/display/types";

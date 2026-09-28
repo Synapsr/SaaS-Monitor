@@ -1,15 +1,7 @@
-import {
-  CircleDollarSign,
-  RotateCcw,
-  TrendingDown,
-  TrendingUp,
-  UserMinus,
-  UserPlus,
-  type LucideIcon,
-} from "lucide-react";
 import { countryFlag, countryName, formatAmount, formatPayment } from "@/lib/display/format";
 import type { FeedItem, FeedItemKind } from "@/lib/display/types";
-import { cn } from "@/lib/utils";
+
+/* How a screen describes feed items, in the feed and in the moments that announce them. */
 
 export const KIND_LABELS: Record<FeedItemKind, string> = {
   payment: "Payment",
@@ -20,33 +12,9 @@ export const KIND_LABELS: Record<FeedItemKind, string> = {
   churn: "Cancellation",
 };
 
-/** One icon per kind of activity, in the feed and in the moments that announce it. */
-export const KIND_ICONS: Record<FeedItemKind, LucideIcon> = {
-  payment: CircleDollarSign,
-  new: UserPlus,
-  expansion: TrendingUp,
-  reactivation: RotateCcw,
-  contraction: TrendingDown,
-  churn: UserMinus,
-};
-
+/** Money in and customers won are good news; downgrades and cancellations are not. */
 export function isGoodNews(kind: FeedItemKind): boolean {
   return kind !== "contraction" && kind !== "churn";
-}
-
-export function KindIcon({ kind, className }: { kind: FeedItemKind; className?: string }) {
-  const Icon = KIND_ICONS[kind];
-  return (
-    <span
-      className={cn(
-        "grid shrink-0 place-items-center rounded-full",
-        isGoodNews(kind) ? "bg-(--glow-wash) text-(--glow-bright)" : "bg-white/6 text-(--ink-2)",
-        className,
-      )}
-    >
-      <Icon aria-hidden className="size-[46%]" strokeWidth={2.2} />
-    </span>
-  );
 }
 
 /** "$49" for a payment, "+$99" or "-$29" for a change of MRR. */

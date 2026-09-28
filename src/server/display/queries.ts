@@ -223,7 +223,8 @@ export async function newCustomerCount(
   return row?.count ?? 0;
 }
 
-export interface FeedRow {
+/** A movement or payment of the feed, before conversion to the screen's currency. */
+export interface ActivityRow {
   source: "movement" | "payment";
   id: string;
   kind: MrrMovementKind | "payment";
@@ -238,7 +239,7 @@ export interface FeedRow {
 }
 
 /** The latest movements and payments, newest first. */
-export async function latestActivity(accountIds: string[], limit: number): Promise<FeedRow[]> {
+export async function latestActivity(accountIds: string[], limit: number): Promise<ActivityRow[]> {
   const [movementRows, paymentRows] = await Promise.all([
     db()
       .select({
@@ -282,7 +283,7 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
     accountIds,
     paymentRows.flatMap((row) => (row.customerId ? [row.customerId] : [])),
   );
-  const rows: FeedRow[] = [
+  const rows: ActivityRow[] = [
     ...movementRows.map((row) => ({ ...row, source: "movement" as const })),
     ...paymentRows.map(({ customerId, ...row }) => ({
       ...row,
