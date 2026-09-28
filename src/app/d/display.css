@@ -1,0 +1,114 @@
+/*
+ * Wall display. Everything inside `.display` is sized from `--u`, 1% of the short side of the
+ * largest 16:9 frame (9:16 on vertical screens) that fits the viewport. Tailwind's spacing, type
+ * and radius scales are redefined from it: `p-4` or `text-xl` look the same on a 720p monitor, a
+ * 4K TV or a Raspberry Pi, like a picture scaled to the screen.
+ */
+.display {
+  --u: min(1dvh, 0.5625dvw);
+  /* 1rem of a 1080p design. */
+  --rem: calc(var(--u) * 16 / 10.8);
+  --spacing: calc(var(--rem) * 0.25);
+  --radius: calc(var(--rem) * 0.625);
+  --text-xs: calc(var(--rem) * 0.75);
+  --text-sm: calc(var(--rem) * 0.875);
+  --text-base: var(--rem);
+  --text-lg: calc(var(--rem) * 1.125);
+  --text-xl: calc(var(--rem) * 1.25);
+  --text-2xl: calc(var(--rem) * 1.5);
+  --text-3xl: calc(var(--rem) * 1.875);
+  --text-4xl: calc(var(--rem) * 2.25);
+  --text-5xl: calc(var(--rem) * 3);
+  --text-6xl: calc(var(--rem) * 3.75);
+  --text-7xl: calc(var(--rem) * 4.5);
+  --text-8xl: calc(var(--rem) * 6);
+  --text-9xl: calc(var(--rem) * 8);
+
+  /* The accent, set from the screen settings; emerald until then (e.g. on error pages). */
+  --glow: #34d399;
+  --glow-bright: #6ee7b7;
+  --glow-deep: #059669;
+
+  /* Inks on the near-black background: all pass WCAG AA for their smallest use. */
+  --screen: #08090b;
+  --surface: rgb(255 255 255 / 0.028);
+  --hairline: rgb(255 255 255 / 0.075);
+  --ink: #f4f5f7;
+  --ink-2: #a8adb5;
+  --ink-3: #80858e;
+  --glow-wash: color-mix(in oklab, var(--glow) 14%, transparent);
+  --moment-shadow: 0 calc(var(--rem) * 2) calc(var(--rem) * 6) calc(var(--rem) * -1)
+    rgb(0 0 0 / 0.6);
+  --moment-glow:
+    0 0 calc(var(--rem) * 10) calc(var(--rem) * -2)
+      color-mix(in oklab, var(--glow) 36%, transparent),
+    var(--moment-shadow);
+
+  font-size: var(--text-base);
+  background: var(--screen);
+  color: var(--ink);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (orientation: portrait) {
+  .display {
+    --u: min(1dvw, 0.5625dvh);
+  }
+}
+
+/* No white flash around a display (overscroll, resizing), without touching the rest of the app. */
+html:has(.display) {
+  background: #08090b;
+  color-scheme: dark;
+}
+
+/* Film grain: dithers the soft gradients, which band badly on large TVs. */
+.display-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+
+/* The currency symbol of the hero number sits smaller and quieter than its digits. */
+.display .hero-number::part(currency) {
+  font-size: 0.56em;
+  font-weight: 500;
+  color: var(--ink-2);
+  vertical-align: 0.62em;
+  margin-right: 0.03em;
+}
+
+@keyframes display-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  80%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* A new row of the feed glows for a moment, then settles like the others. */
+@keyframes display-arrival {
+  0%,
+  35% {
+    background-color: var(--glow-wash);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* A highlight sweeping across a masked element, left to right. */
+@keyframes display-shimmer {
+  from {
+    mask-position: 150% 0;
+  }
+  to {
+    mask-position: -50% 0;
+  }
+}
