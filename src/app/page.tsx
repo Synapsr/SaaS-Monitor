@@ -86,7 +86,7 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[64rem] bg-[radial-gradient(50%_40%_at_50%_45%,rgb(52_211_153/0.15),transparent_75%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[64rem] bg-[radial-gradient(50%_40%_at_50%_45%,color-mix(in_oklab,var(--glow)_15%,transparent),transparent_75%)]"
       />
       <div className="relative mx-auto max-w-6xl px-5 pt-16 text-center sm:px-6 sm:pt-24">
         <p className="inline-flex animate-in items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1 text-xs text-(--ink-2) ring-1 ring-white/10 duration-700 fill-mode-both fade-in motion-reduce:animate-none">
@@ -95,8 +95,10 @@ function Hero() {
         </p>
         <h1 className="mx-auto mt-6 max-w-4xl animate-in text-5xl font-semibold tracking-[-0.045em] text-balance delay-100 duration-700 fill-mode-both fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:text-7xl">
           Your MRR,{" "}
-          <span className="text-(--glow) [text-shadow:0_0_36px_rgb(52_211_153/0.45)]">live</span> on
-          the wall.
+          <span className="text-(--glow) [text-shadow:0_0_36px_color-mix(in_oklab,var(--glow)_45%,transparent)]">
+            live
+          </span>{" "}
+          on the wall.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl animate-in text-lg text-balance text-(--ink-2) delay-200 duration-700 fill-mode-both fade-in slide-in-from-bottom-3 motion-reduce:animate-none">
           {siteConfig.name} turns your Stripe account into a beautiful screen for the office. Hear
@@ -195,7 +197,7 @@ function FinalCallToAction() {
     <section className="relative mx-auto max-w-6xl px-5 py-32 text-center sm:px-6">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(40%_50%_at_50%_60%,rgb(52_211_153/0.12),transparent_75%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(40%_50%_at_50%_60%,color-mix(in_oklab,var(--glow)_12%,transparent),transparent_75%)]"
       />
       <h2 className="relative mx-auto max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
         Keep going. Your next milestone is closer than you think.

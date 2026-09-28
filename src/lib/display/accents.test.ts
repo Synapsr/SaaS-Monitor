@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BRAND_COLORS } from "@/lib/brand";
 import { ACCENT_PALETTES, accentVariables } from "@/lib/display/accents";
 import { ACCENTS } from "@/lib/screens/settings";
 
@@ -28,7 +29,7 @@ describe("accent palettes", () => {
   });
 
   it.each(ACCENTS)("keeps %s readable on the display background", (accent) => {
-    const background = luminance("#08090b");
+    const background = luminance(BRAND_COLORS.screen);
     const contrast = (luminance(ACCENT_PALETTES[accent].base) + 0.05) / (background + 0.05);
     expect(contrast).toBeGreaterThan(7);
   });

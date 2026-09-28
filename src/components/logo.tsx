@@ -1,3 +1,4 @@
+import { BRAND_COLORS } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -9,11 +10,11 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("size-7 shrink-0 rounded-[25%] dark:ring-1 dark:ring-white/15", className)}
     >
-      <rect width="64" height="64" rx="16" fill="#0a0a0a" />
+      <rect width="64" height="64" rx="16" fill={BRAND_COLORS.tile} />
       <path
         d="M12 40h9l6-16 8 24 6-14h11"
         fill="none"
-        stroke="#34d399"
+        stroke={BRAND_COLORS.glow}
         strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"

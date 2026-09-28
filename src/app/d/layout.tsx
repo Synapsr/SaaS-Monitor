@@ -1,8 +1,9 @@
 import type { Viewport } from "next";
+import { BRAND_COLORS } from "@/lib/brand";
 import "./display.css";
 
 export const viewport: Viewport = {
-  themeColor: "#08090b",
+  themeColor: BRAND_COLORS.screen,
   colorScheme: "dark",
 };
 

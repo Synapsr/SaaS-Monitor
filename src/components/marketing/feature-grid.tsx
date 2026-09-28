@@ -34,7 +34,7 @@ export function FeatureGrid() {
         title="Every sale is a moment"
         description="A satisfying sound, a card with the amount and the plan, confetti in your color. The whole office knows."
       >
-        <div className="relative rounded-xl bg-[#101216] px-5 py-4 text-center shadow-[0_0_60px_-10px_rgb(52_211_153/0.35)] ring-1 ring-white/10">
+        <div className="relative rounded-xl bg-[#101216] px-5 py-4 text-center shadow-[0_0_60px_-10px_color-mix(in_oklab,var(--glow)_35%,transparent)] ring-1 ring-white/10">
           <p className="flex items-center justify-center gap-1.5 text-xs text-(--glow)">
             <UserPlusIcon aria-hidden className="size-3.5" />
             New customer
@@ -58,7 +58,7 @@ export function FeatureGrid() {
         title="Milestones worth celebrating"
         description="$1K, $10K, $100K MRR… or your own goal, with the date you will reach it at your current pace. Crossing one fills the screen."
       >
-        <div className="flex h-full flex-col items-center justify-center rounded-xl bg-[radial-gradient(70%_80%_at_50%_50%,rgb(52_211_153/0.22),transparent_75%)] py-5 text-center">
+        <div className="flex h-full flex-col items-center justify-center rounded-xl bg-[radial-gradient(70%_80%_at_50%_50%,color-mix(in_oklab,var(--glow)_22%,transparent),transparent_75%)] py-5 text-center">
           <p className="text-xs text-(--glow-bright)">🎉 Goal reached</p>
           <p className="mt-1 text-4xl font-semibold tracking-tight">
             $10K <span className="text-xl text-(--ink-2)">MRR</span>

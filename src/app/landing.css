@@ -1,19 +1,8 @@
-/* The landing page shares the wall display's palette: it is the stage for its live demo. */
-.landing {
-  --glow: #34d399;
-  --glow-bright: #6ee7b7;
-  --screen: #08090b;
-  --ink: #f4f5f7;
-  --ink-2: #a8adb5;
-  --ink-3: #80858e;
+@import "./wall-palette.css";
 
+/* The landing page uses the wall display's palette: it is the stage for its live demo. */
+.landing {
   background: var(--screen);
   color: var(--ink);
-  color-scheme: dark;
-}
-
-/* No white flash when scrolling past the edges, whatever the dashboard theme. */
-html:has(.landing) {
-  background: #08090b;
   color-scheme: dark;
 }

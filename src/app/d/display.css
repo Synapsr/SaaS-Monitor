@@ -1,3 +1,5 @@
+@import "../wall-palette.css";
+
 /*
  * Wall display. Everything inside `.display` is sized from `--u`, 1% of the short side of the
  * largest 16:9 frame (9:16 on vertical screens) that fits the viewport. Tailwind's spacing, type
@@ -24,18 +26,9 @@
   --text-8xl: calc(var(--rem) * 6);
   --text-9xl: calc(var(--rem) * 8);
 
-  /* The accent, set from the screen settings; emerald until then (e.g. on error pages). */
-  --glow: #34d399;
-  --glow-bright: #6ee7b7;
-  --glow-deep: #059669;
-
-  /* Inks on the near-black background: all pass WCAG AA for their smallest use. */
-  --screen: #08090b;
+  /* Surfaces and shadows on the wall palette (see wall-palette.css; the screen sets the accent). */
   --surface: rgb(255 255 255 / 0.028);
   --hairline: rgb(255 255 255 / 0.075);
-  --ink: #f4f5f7;
-  --ink-2: #a8adb5;
-  --ink-3: #80858e;
   --glow-wash: color-mix(in oklab, var(--glow) 14%, transparent);
   --moment-shadow: 0 calc(var(--rem) * 2) calc(var(--rem) * 6) calc(var(--rem) * -1)
     rgb(0 0 0 / 0.6);
@@ -56,12 +49,6 @@
   .display {
     --u: min(1dvw, 0.5625dvh);
   }
-}
-
-/* No white flash around a display (overscroll, resizing), without touching the rest of the app. */
-html:has(.display) {
-  background: #08090b;
-  color-scheme: dark;
 }
 
 /* Film grain: dithers the soft gradients, which band badly on large TVs. */

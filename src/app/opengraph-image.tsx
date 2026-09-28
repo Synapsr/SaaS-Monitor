@@ -1,14 +1,22 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { BRAND_COLORS } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
 export const alt = `${siteConfig.name}: ${siteConfig.tagline}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const GLOW = "#34d399";
+const { glow: GLOW, screen: SCREEN, ink: INK, tile: TILE } = BRAND_COLORS;
 const SPARKLINE = "M0 150 C60 146 90 132 140 128 S220 110 270 100 S350 90 390 70 S470 40 560 22";
+
+/** `#rrggbb` with an opacity, as `#rrggbbaa`. */
+function withOpacity(color: string, opacity: number): string {
+  return `${color}${Math.round(opacity * 255)
+    .toString(16)
+    .padStart(2, "0")}`;
+}
 
 export default async function OpenGraphImage() {
   const fontsDirectory = join(process.cwd(), "node_modules/geist/dist/fonts/geist-sans");
@@ -26,14 +34,14 @@ export default async function OpenGraphImage() {
         flexDirection: "column",
         justifyContent: "space-between",
         padding: 72,
-        background: "radial-gradient(60% 70% at 85% 100%, rgba(52,211,153,0.28), #08090b 70%)",
-        color: "#f4f5f7",
+        background: `radial-gradient(60% 70% at 85% 100%, ${withOpacity(GLOW, 0.28)}, ${SCREEN} 70%)`,
+        color: INK,
         fontFamily: "Geist",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 34 }}>
         <svg width="52" height="52" viewBox="0 0 64 64">
-          <rect width="64" height="64" rx="16" fill="#0a0a0a" stroke="#2a2d33" strokeWidth="2" />
+          <rect width="64" height="64" rx="16" fill={TILE} stroke="#2a2d33" strokeWidth="2" />
           <path
             d="M12 40h9l6-16 8 24 6-14h11"
             fill="none"

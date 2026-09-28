@@ -44,7 +44,7 @@ export function DemoTv({ className }: { className?: string }) {
     >
       <div
         ref={containerRef}
-        className="relative aspect-video overflow-hidden rounded-[clamp(0.375rem,0.8vw,0.625rem)] bg-[#08090b]"
+        className="relative aspect-video overflow-hidden rounded-[clamp(0.375rem,0.8vw,0.625rem)] bg-(--screen)"
       >
         <iframe
           ref={frameRef}
