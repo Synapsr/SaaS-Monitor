@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { SOUND_PACKS, type ScreenSettings, type SoundPack } from "@/lib/screens/settings";
 import { playSound, SOUND_PACK_NAMES, unlockAudio, type SoundEvent } from "@/lib/sounds";
-import { cn } from "@/lib/utils";
+import { ChoiceCard } from "./choice-card";
 import { SettingRow } from "./settings-section";
 
 type Sound = ScreenSettings["sound"];
@@ -117,17 +117,12 @@ export function SoundSettings({
           >
             {SOUND_PACKS.map((pack) => (
               <div key={pack} className="relative">
-                <RadioGroupPrimitive.Item
+                <ChoiceCard
                   value={pack}
-                  className={cn(
-                    "flex w-full flex-col items-start gap-0.5 rounded-lg p-3 pr-10 text-left ring-1 ring-border transition-[box-shadow,background-color] outline-none",
-                    "hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none",
-                    "data-[state=checked]:bg-muted/40 data-[state=checked]:ring-2 data-[state=checked]:ring-foreground",
-                  )}
-                >
-                  <span className="text-sm font-medium">{SOUND_PACK_NAMES[pack]}</span>
-                  <span className="text-xs text-muted-foreground">{PACK_HINTS[pack]}</span>
-                </RadioGroupPrimitive.Item>
+                  title={SOUND_PACK_NAMES[pack]}
+                  hint={PACK_HINTS[pack]}
+                  className="pr-10"
+                />
                 <div className="absolute top-2 right-2">
                   <PreviewButton
                     label={SOUND_PACK_NAMES[pack]}
