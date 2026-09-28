@@ -10,4 +10,6 @@ export async function register() {
     const { runMigrations } = await import("@/db/migrations");
     await runMigrations(config.DATABASE_URL);
   }
+  const { checkTimeZoneTables } = await import("@/db/time-zones");
+  await checkTimeZoneTables(config.DATABASE_URL);
 }
