@@ -33,6 +33,8 @@ Node 24 (`.nvmrc`), pnpm 10.
   public wall display, `/api/screens/[token]/state` the display polling endpoint.
 - `src/components/ui` — shadcn/ui primitives (Radix). Feature components live next to them in
   `src/components/<feature>`.
+- `src/hooks` — React hooks, whichever feature uses them (the `hooks` alias of
+  `components.json`).
 - `src/lib` — isomorphic code safe for the browser: contracts (`display/types.ts`,
   `screens/settings.ts`), money formatting, utilities.
 - `src/server` — server-only code (`import "server-only"`): auth, tenant guard, Stripe access,

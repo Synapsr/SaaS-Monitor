@@ -1,9 +1,9 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useMemo, useState, type PointerEvent } from "react";
+import { useElementSize } from "@/hooks/use-element-size";
 import { layoutMrrChart } from "@/lib/display/chart";
 import { formatAmount, formatPercent, percentChange } from "@/lib/display/format";
-import { useElementSize } from "@/lib/display/hooks/use-element-size";
 import { formatChartDay } from "@/lib/display/time";
 import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";

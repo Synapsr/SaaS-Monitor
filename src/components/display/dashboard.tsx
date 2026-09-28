@@ -3,7 +3,7 @@ import { Hero } from "@/components/display/hero";
 import { KpiTiles } from "@/components/display/kpi-tiles";
 import { LiveFeed } from "@/components/display/live-feed";
 import { MrrChart } from "@/components/display/mrr-chart";
-import { useNow } from "@/lib/display/hooks/use-now";
+import { useNow } from "@/hooks/use-now";
 import { goalProgress } from "@/lib/display/milestones";
 import { isMrrIncrease, type Moment } from "@/lib/display/moments";
 import type { DisplayState } from "@/lib/display/types";

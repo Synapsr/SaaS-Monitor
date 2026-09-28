@@ -1,7 +1,7 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import { AudioPrompt } from "@/components/display/audio-prompt";
 import { LogoPulse } from "@/components/logo";
-import { useNow } from "@/lib/display/hooks/use-now";
+import { useNow } from "@/hooks/use-now";
 import { formatClock } from "@/lib/display/time";
 import type { DisplayAccount } from "@/lib/display/types";
 import { cn } from "@/lib/utils";

@@ -8,8 +8,8 @@ import {
   KIND_LABELS,
   KindIcon,
 } from "@/components/display/feed-item";
+import { useNow } from "@/hooks/use-now";
 import { formatPayment } from "@/lib/display/format";
-import { useNow } from "@/lib/display/hooks/use-now";
 import { formatFeedTime } from "@/lib/display/time";
 import type { FeedItem } from "@/lib/display/types";
 import { cn } from "@/lib/utils";

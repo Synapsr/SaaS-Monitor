@@ -4,8 +4,8 @@ import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import type { SaveStatus as Status } from "@/hooks/use-auto-save";
 import { cn } from "@/lib/utils";
-import type { SaveStatus as Status } from "./use-auto-save";
 
 const CONTENT = {
   saved: { Icon: CircleCheckIcon, label: "Saved", className: "text-muted-foreground" },

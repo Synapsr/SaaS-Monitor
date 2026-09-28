@@ -2,7 +2,7 @@
 
 import { Display } from "@/components/display/display";
 import { ScreenGone } from "@/components/display/screen-gone";
-import { usePolledState } from "@/lib/display/hooks/use-polled-state";
+import { usePolledState } from "@/hooks/use-polled-state";
 import type { DisplayState } from "@/lib/display/types";
 
 interface LiveDisplayProps {

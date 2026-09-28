@@ -1,8 +1,8 @@
 "use client";
 
 import { Display } from "@/components/display/display";
+import { useDemoSimulation } from "@/hooks/use-demo-simulation";
 import type { DemoOptions } from "@/lib/display/demo";
-import { useDemoSimulation } from "@/lib/display/hooks/use-demo-simulation";
 
 interface DemoDisplayProps {
   options: DemoOptions;

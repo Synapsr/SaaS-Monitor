@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode, type RefObject } from "react";
-import { useElementSize } from "@/lib/display/hooks/use-element-size";
+import { useElementSize } from "@/hooks/use-element-size";
 import { cn } from "@/lib/utils";
 
 /** Displays are designed for a 1080p TV: they render at that size, then scale down to fit. */
