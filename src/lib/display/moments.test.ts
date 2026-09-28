@@ -31,6 +31,21 @@ describe("moment planning", () => {
     ]);
   });
 
+  it("merges them however differently the charge names the customer", () => {
+    // Charges carry the billing name and the card's country; movements, the Stripe customer's.
+    const movement = feedItem({ kind: "new", customerName: "Acme Inc", country: "FR" });
+    const payment = feedItem({ kind: "payment", customerName: "Ada Lovelace", country: "GB" });
+    expect(planMoments([movement, payment])).toEqual([
+      { id: payment.id, kind: "payment", payment, movement },
+    ]);
+  });
+
+  it("keeps apart the payment of another customer, however alike", () => {
+    const movement = feedItem({ kind: "new", customerKey: "customer_1" });
+    const payment = feedItem({ kind: "payment", customerKey: "customer_2" });
+    expect(planMoments([movement, payment])).toHaveLength(2);
+  });
+
   it("keeps unrelated payments and movements apart", () => {
     const payment = feedItem({ kind: "payment", country: "DE" });
     const churn = feedItem({ kind: "churn", amount: -7_900 });

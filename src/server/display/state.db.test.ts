@@ -415,6 +415,7 @@ describe("display state", () => {
         original: null,
         occurredAt: "2026-03-15T10:00:00.000Z",
         live: true,
+        customerKey: null,
         customerName: null,
         country: "US",
         planName: null,
@@ -446,6 +447,26 @@ describe("display state", () => {
     const { feed } = await displayOf([accountId]);
 
     expect(feed.map((item) => item.planName)).toEqual(["Pro", null]);
+  });
+
+  it("tells which items are the same customer's, without revealing who", async () => {
+    const accountId = await readyAccount();
+    await addMovement(accountId, {
+      subscription: "sub_1",
+      customer: "cus_ada",
+      kind: "new",
+      amount: 4900,
+      at: "2026-03-15T10:00:00Z",
+    });
+    await addPayment(accountId, { amount: 4900, at: "2026-03-15T10:01:00Z", customer: "cus_ada" });
+    await addPayment(accountId, { amount: 900, at: "2026-03-15T10:02:00Z", customer: "cus_bob" });
+
+    const { feed } = await displayOf([accountId]);
+
+    const [bob, adaPaid, adaSubscribed] = feed.map((item) => item.customerKey);
+    expect(adaPaid).toBe(adaSubscribed);
+    expect(bob).not.toBe(adaPaid);
+    expect(JSON.stringify(feed)).not.toContain("cus_");
   });
 
   it("only shows customer names when the screen allows it", async () => {

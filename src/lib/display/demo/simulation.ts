@@ -138,6 +138,7 @@ function record(
     original: null,
     occurredAt: new Date(at).toISOString(),
     live,
+    customerKey: `demo-${customer.id}`,
     customerName: customer.name,
     country: customer.country,
     planName: PLANS[customer.plan].name,

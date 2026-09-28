@@ -233,6 +233,8 @@ export interface ActivityRow {
   occurredAt: Date;
   origin: "backfill" | "live" | "reconcile";
   accountId: string;
+  /** Stripe's id: it never leaves the server (see `toFeedItem`). */
+  customerId: string | null;
   customerName: string | null;
   country: string | null;
   planName: string | null;
@@ -250,6 +252,7 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
         occurredAt: mrrMovements.occurredAt,
         origin: mrrMovements.origin,
         accountId: mrrMovements.accountId,
+        customerId: mrrMovements.stripeCustomerId,
         customerName: mrrMovements.customerName,
         country: mrrMovements.customerCountry,
         planName: mrrMovements.planName,
@@ -285,11 +288,11 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
   );
   const rows: ActivityRow[] = [
     ...movementRows.map((row) => ({ ...row, source: "movement" as const })),
-    ...paymentRows.map(({ customerId, ...row }) => ({
+    ...paymentRows.map((row) => ({
       ...row,
       source: "payment" as const,
       kind: "payment" as const,
-      planName: (customerId && plans.get(`${row.accountId}:${customerId}`)) || null,
+      planName: (row.customerId && plans.get(`${row.accountId}:${row.customerId}`)) || null,
     })),
   ];
   return rows

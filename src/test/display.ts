@@ -14,6 +14,7 @@ export function feedItem(overrides: Partial<FeedItem> = {}): FeedItem {
     original: null,
     occurredAt: "2026-09-28T12:00:00.000Z",
     live: true,
+    customerKey: "customer_1",
     customerName: null,
     country: "FR",
     planName: "Pro",

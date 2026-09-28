@@ -95,6 +95,11 @@ export interface FeedItem {
   occurredAt: string;
   /** Detected by the live sync rather than imported from history: may play sounds and confetti. */
   live: boolean;
+  /**
+   * The same for every item of a customer, and opaque: it cannot be traced back to them. `null`
+   * for payments without a customer.
+   */
+  customerKey: string | null;
   /** Only filled when the screen shows customer names. */
   customerName: string | null;
   /** ISO 3166-1 alpha-2 code, e.g. `FR`. */

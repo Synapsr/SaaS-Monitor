@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { BUILD_ID } from "@/lib/build-id";
 import { calendarDay, chartDays, daysInRange, displayCalendar } from "@/lib/display/calendar";
@@ -173,10 +174,19 @@ function toFeedItem(
       row.currency === settings.currency ? null : { amount: row.amount, currency: row.currency },
     occurredAt: row.occurredAt.toISOString(),
     live: row.origin === "live",
+    customerKey: row.customerId && customerKey(row.accountId, row.customerId),
     // The screen URL may be seen by visitors: names only appear when the founder allows it.
     customerName: settings.showCustomerNames ? row.customerName : null,
     country: row.country,
     planName: row.planName,
     accountName,
   };
+}
+
+/**
+ * Tells a display which items belong to the same customer, e.g. a new subscription and its first
+ * payment, without handing out their Stripe id: anyone with a screen's link reads its state.
+ */
+function customerKey(accountId: string, customerId: string): string {
+  return createHash("sha256").update(`${accountId}:${customerId}`).digest("base64url").slice(0, 16);
 }

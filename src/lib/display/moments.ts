@@ -37,12 +37,14 @@ export function isMrrIncrease(item: FeedItem): boolean {
   return item.kind === "new" || item.kind === "expansion" || item.kind === "reactivation";
 }
 
+/**
+ * Matches on the customer's key: a payment takes its name and country from the charge (billing
+ * details, card), which may differ from the Stripe customer's, and its plan from their main one.
+ */
 function sameCheckout(payment: FeedItem, movement: FeedItem): boolean {
   return (
-    payment.accountName === movement.accountName &&
-    payment.planName === movement.planName &&
-    payment.country === movement.country &&
-    payment.customerName === movement.customerName &&
+    payment.customerKey !== null &&
+    payment.customerKey === movement.customerKey &&
     Math.abs(Date.parse(payment.occurredAt) - Date.parse(movement.occurredAt)) <= SAME_CHECKOUT_MS
   );
 }
