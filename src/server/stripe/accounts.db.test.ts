@@ -288,6 +288,11 @@ describe("Stripe accounts", () => {
         origin: "live",
       });
 
+      const other = await createUserWithWorkspace("Grace Hopper");
+      await reimportStripeAccount(other.workspaceId, account.id);
+      expect(await db().$count(payments)).toBe(1);
+      expect(after).not.toHaveBeenCalled();
+
       await reimportStripeAccount(workspaceId, account.id);
 
       expect(await getStripeAccount(account.id)).toMatchObject({
@@ -334,6 +339,16 @@ describe("Stripe accounts", () => {
       ).toEqual({ ok: true });
       const stored = (await getStripeAccount(account.id)).encryptedWebhookSecret;
       expect(decryptSecret(stored!)).toBe("whsec_0123456789abcdefghijKLMN");
+
+      const other = await createUserWithWorkspace("Grace Hopper");
+      expect(
+        await setWebhookSigningSecret(
+          other.workspaceId,
+          account.id,
+          "whsec_someoneelse0123456789ab",
+        ),
+      ).toEqual({ ok: false, error: "This Stripe account no longer exists." });
+      expect((await getStripeAccount(account.id)).encryptedWebhookSecret).toBe(stored);
     });
 
     it("explains how to add the webhook by hand", () => {
