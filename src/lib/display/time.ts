@@ -17,10 +17,11 @@ function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
 }
 
 /**
- * Short relative times for a live feed: "just now", "5 min ago", "3 h ago", "yesterday", "Mon",
- * then "Sep 12".
+ * When a feed item happened, short enough for a narrow column: "just now", "5 min ago",
+ * "3 h ago", "yesterday", "Mon", then "Sep 12". The dashboard writes relative times in full
+ * with `formatRelativeTime` (`src/lib/format.ts`).
  */
-export function formatRelativeTime(date: Date, now: Date, timeZone: string): string {
+export function formatFeedTime(date: Date, now: Date, timeZone: string): string {
   const elapsed = Math.max(0, now.getTime() - date.getTime());
   if (elapsed < 45_000) return "just now";
   if (elapsed < HOUR_MS) return `${Math.max(1, Math.round(elapsed / MINUTE_MS))} min ago`;

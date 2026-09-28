@@ -1,6 +1,8 @@
 import type { Format } from "@number-flow/react";
 import { formatMoney, minorUnitDigits, toMajorUnits } from "@/lib/money";
 
+/** How a screen writes amounts, percentages and countries. Dates and times: see `time.ts`. */
+
 const REGIONAL_INDICATOR_A = 0x1f1e6;
 
 /** Flag emoji of an ISO 3166-1 alpha-2 code ("FR" → 🇫🇷), or `null` for anything else. */

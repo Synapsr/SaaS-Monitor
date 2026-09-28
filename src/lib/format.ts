@@ -1,5 +1,11 @@
 import { DAY_SECONDS, HOUR_SECONDS, MINUTE_SECONDS } from "@/lib/durations";
 
+/*
+ * How the dashboard writes counts, durations and relative times. Screens write theirs more
+ * compactly, in their own time zone: see `src/lib/display/format.ts` and `time.ts`. Money is
+ * formatted by `formatMoney` (`src/lib/money.ts`).
+ */
+
 const relativeTimeFormat = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 const countFormat = new Intl.NumberFormat("en-US");
 

@@ -4,15 +4,15 @@ import {
   formatClock,
   formatEta,
   formatMonth,
-  formatRelativeTime,
+  formatFeedTime,
 } from "@/lib/display/time";
 
 const PARIS = "Europe/Paris";
 const now = new Date("2026-09-28T12:00:00Z"); // Monday, 14:00 in Paris
 
-describe("relative time", () => {
+describe("feed times", () => {
   const ago = (milliseconds: number) =>
-    formatRelativeTime(new Date(now.getTime() - milliseconds), now, PARIS);
+    formatFeedTime(new Date(now.getTime() - milliseconds), now, PARIS);
   const minutes = 60_000;
   const hours = 60 * minutes;
 
@@ -33,7 +33,7 @@ describe("relative time", () => {
   it("counts hours, not days, shortly after midnight", () => {
     const earlyMorning = new Date("2026-09-28T23:30:00Z"); // 01:30 in Paris
     const lateEvening = new Date(earlyMorning.getTime() - 3 * hours);
-    expect(formatRelativeTime(lateEvening, earlyMorning, PARIS)).toBe("3 h ago");
+    expect(formatFeedTime(lateEvening, earlyMorning, PARIS)).toBe("3 h ago");
   });
 
   it("never shows a negative time for clocks slightly ahead", () => {

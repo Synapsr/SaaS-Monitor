@@ -10,7 +10,7 @@ import {
 } from "@/components/display/feed-item";
 import { formatPayment } from "@/lib/display/format";
 import { useNow } from "@/lib/display/hooks/use-now";
-import { formatRelativeTime } from "@/lib/display/time";
+import { formatFeedTime } from "@/lib/display/time";
 import type { FeedItem } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
 
@@ -69,11 +69,7 @@ export function LiveFeed({
                   key={item.id}
                   item={item}
                   currency={currency}
-                  relativeTime={formatRelativeTime(
-                    new Date(item.occurredAt),
-                    new Date(now),
-                    timeZone,
-                  )}
+                  relativeTime={formatFeedTime(new Date(item.occurredAt), new Date(now), timeZone)}
                   showAccount={showAccount}
                   arrived={item.live && !initialIds.has(item.id)}
                 />
