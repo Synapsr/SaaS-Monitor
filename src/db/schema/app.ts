@@ -149,6 +149,12 @@ export const subscriptions = pgTable(
     canceledAt: timestamptz(),
     endedAt: timestamptz(),
     cancelAtPeriodEnd: boolean().notNull().default(false),
+    /**
+     * When Stripe last returned the subscription, in a scan or a live update: a complete scan ends
+     * the ones it did not see (deleted test data). Rows that predate the column get the time of
+     * its migration, which no scan under way at that time can end.
+     */
+    lastSeenAt: timestamptz().defaultNow().notNull(),
     ...timestamps,
   },
   (table) => [

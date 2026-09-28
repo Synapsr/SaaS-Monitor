@@ -486,6 +486,62 @@ describe("reconcile", () => {
     ]);
   });
 
+  it("ends the subscriptions Stripe no longer lists, deleted with test data", async () => {
+    stripe.deleteSubscription("sub_stable");
+    // Like any real clock: scans start and see subscriptions within a second.
+    const later = new Date(time(25 * HOUR_SECONDS).getTime() + 500);
+
+    await syncAccount(accountId, { createGateway: () => stripe, now: () => later });
+
+    expect((await reconciled()).filter(({ kind }) => kind === "churn")).toEqual([
+      {
+        subscription: "sub_stable",
+        kind: "churn",
+        amount: -1000,
+        occurredAt: time(25 * HOUR_SECONDS),
+      },
+    ]);
+    const totals = await mrrTotals(accountId);
+    expect(totals.mirror).toEqual({ usd: 2000 + 4900 + 10_000 });
+    expect(totals.ledger).toEqual(totals.mirror);
+  });
+
+  it("ends nothing when Stripe cuts a listing short", async () => {
+    stripe.listSubscriptions = async () => ({ data: [], hasMore: true });
+
+    await syncAt(25 * HOUR_SECONDS);
+
+    expect(await reconciled()).toEqual([]);
+    expect((await mrrTotals(accountId)).mirror).toEqual({ usd: 1000 + 2000 + 4900 + 5000 });
+  });
+
+  it("does not end the subscriptions live updates found while it ran", async () => {
+    stripe.pageSize = 1;
+    await syncAt(25 * HOUR_SECONDS, { scanBudgetMs: 0 });
+    // Newer than the page scanned first: this scan never lists it.
+    const created = stripe.putSubscription(
+      stripeSubscription({
+        id: "sub_meanwhile",
+        start_date: T0 + 25 * HOUR_SECONDS,
+        items: [stripeItem({ price: monthlyPrice(2900) })],
+      }),
+    );
+    stripe.emit("customer.subscription.created", created, T0 + 25 * HOUR_SECONDS + 60);
+
+    let runs = 0;
+    do {
+      runs += 1;
+      await syncAt(25 * HOUR_SECONDS + 60 * (runs + 1), { scanBudgetMs: 0 });
+    } while ((await getStripeAccount(accountId)).reconcile && runs < 10);
+
+    expect((await reconciled()).map(({ subscription }) => subscription)).not.toContain(
+      "sub_meanwhile",
+    );
+    const totals = await mrrTotals(accountId);
+    expect(totals.mirror).toEqual({ usd: 1000 + 2000 + 4900 + 10_000 + 2900 });
+    expect(totals.ledger).toEqual(totals.mirror);
+  });
+
   it("resumes across runs until every page is checked", async () => {
     stripe.pageSize = 1;
     stripe.updateSubscription("sub_canceled", (subscription) => ({

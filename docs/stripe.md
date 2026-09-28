@@ -81,7 +81,7 @@ Some limits to keep in mind:
 - **Freshness** depends on how updates reach SaaS Monitor: within seconds with a webhook,
   otherwise at the pace described in [Instant updates](#instant-updates). A daily check also
   compares every subscription with Stripe, for changes Stripe makes without an event, such as a
-  repeating coupon that ends.
+  repeating coupon that ends or test data you delete.
 - **Several currencies**: a screen converts every amount to its currency at today's exchange rate
   (European Central Bank rates, refreshed every 12 hours), past values included. The chart then
   shows the business growing rather than exchange rates moving, but a past value can differ from

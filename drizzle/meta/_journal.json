@@ -29,6 +29,13 @@
       "when": 1790603583581,
       "tag": "0003_recent_event_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790603862541,
+      "tag": "0004_subscription_last_seen_at",
+      "breakpoints": true
     }
   ]
 }

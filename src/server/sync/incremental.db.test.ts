@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { mrrMovements, payments, stripeAccounts } from "@/db/schema";
+import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import { DAY_SECONDS, HOUR_SECONDS, MINUTE_SECONDS } from "@/lib/durations";
 import { chargeSchema, type SubscriptionInput } from "@/server/stripe/normalize";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
@@ -138,6 +138,29 @@ describe("live updates", () => {
     await syncAt(2 * MINUTE_SECONDS);
 
     expect(await liveMovements()).toMatchObject([{ kind: "churn", amount: -4900 }]);
+    await expectLedgerToMatchMirror();
+  });
+
+  it("ends a subscription deleted from Stripe with its test data, like a cancellation", async () => {
+    stripe.deleteSubscription("sub_ada");
+    const event = stripe.emit("customer.subscription.deleted", { id: "sub_ada" }, T0 + 60);
+
+    await syncAt(2 * MINUTE_SECONDS);
+
+    expect(await liveMovements()).toEqual([
+      {
+        subscription: "sub_ada",
+        kind: "churn",
+        amount: -4900,
+        occurredAt: at(60),
+        eventId: event.id,
+      },
+    ]);
+    const [row] = await db()
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.stripeSubscriptionId, "sub_ada"));
+    expect(row).toMatchObject({ status: "canceled", mrr: 0, endedAt: at(60) });
     await expectLedgerToMatchMirror();
   });
 

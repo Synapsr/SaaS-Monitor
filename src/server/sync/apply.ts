@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import type { Transaction } from "@/db";
 import { mrrMovements, payments, subscriptions, type dataOrigin } from "@/db/schema";
 import { mainInterval, planName } from "@/server/stripe/mrr";
@@ -33,7 +33,7 @@ const toOptionalDate = (time: UnixTime | null) => (time === null ? null : toDate
  * MRR and recorded once, even if syncs of the same account ever overlap.
  *
  * Unknown subscriptions get their whole history when found by a scan, and a single movement when
- * revealed by a live event.
+ * revealed by a live event. Every subscription passed was just returned by Stripe (`lastSeenAt`).
  */
 export async function applySubscriptionUpdates(
   tx: Transaction,
@@ -66,15 +66,22 @@ export async function applySubscriptionUpdates(
       .map((update) => update.subscription.id),
   );
 
+  const seenAt = toDate(now);
   const inserts: SubscriptionValues[] = [];
+  const unchanged: string[] = [];
   const movements: (typeof mrrMovements.$inferInsert)[] = [];
   for (const update of updates) {
     const previous = stored.get(update.subscription.id);
     const values = toSubscriptionValues(accountId, update, previous);
     if (!previous) {
-      inserts.push(values);
+      inserts.push({ ...values, lastSeenAt: seenAt });
     } else if (hasChanged(previous, values)) {
-      await tx.update(subscriptions).set(values).where(eq(subscriptions.id, previous.id));
+      await tx
+        .update(subscriptions)
+        .set({ ...values, lastSeenAt: seenAt })
+        .where(eq(subscriptions.id, previous.id));
+    } else {
+      unchanged.push(previous.id);
     }
 
     const planned =
@@ -99,8 +106,101 @@ export async function applySubscriptionUpdates(
     }
   }
 
+  if (unchanged.length) {
+    await tx
+      .update(subscriptions)
+      .set({ lastSeenAt: seenAt })
+      .where(inArray(subscriptions.id, unchanged));
+  }
   // A concurrent insert of the same subscription fails here, and the sync is retried later.
   if (inserts.length) await tx.insert(subscriptions).values(inserts);
+  if (movements.length) await tx.insert(mrrMovements).values(movements);
+  return movements.length;
+}
+
+/*
+ * Only deleting test data removes subscriptions from Stripe. Those still mirrored end like a
+ * cancellation: no MRR, and a churn movement so that the ledger keeps adding up to the mirror.
+ */
+
+/** Ends the subscriptions a live update could not retrieve, dated by the event naming each. */
+export async function endMissingSubscriptions(
+  tx: Transaction,
+  accountId: string,
+  events: ReadonlyMap<string, EventRef>,
+  now: UnixTime,
+): Promise<number> {
+  if (!events.size) return 0;
+  const rows = await tx
+    .select()
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.accountId, accountId),
+        inArray(subscriptions.stripeSubscriptionId, [...events.keys()]),
+      ),
+    )
+    .for("update");
+  return endSubscriptions(tx, rows, "live", (row) => events.get(row.stripeSubscriptionId), now);
+}
+
+/**
+ * Ends the subscriptions a complete scan did not see: Stripe has not returned them since the scan
+ * started. Its pages ran over several syncs, and live updates may have seen others meanwhile.
+ */
+export async function endUnlistedSubscriptions(
+  tx: Transaction,
+  accountId: string,
+  scanStartedAt: UnixTime,
+  origin: DataOrigin,
+  now: UnixTime,
+): Promise<number> {
+  const rows = await tx
+    .select()
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.accountId, accountId),
+        // Both in whole seconds, like every `lastSeenAt`.
+        lt(subscriptions.lastSeenAt, toDate(scanStartedAt)),
+      ),
+    )
+    .for("update");
+  return endSubscriptions(tx, rows, origin, () => undefined, now);
+}
+
+async function endSubscriptions(
+  tx: Transaction,
+  rows: readonly SubscriptionRow[],
+  origin: DataOrigin,
+  eventOf: (row: SubscriptionRow) => EventRef | undefined,
+  now: UnixTime,
+): Promise<number> {
+  const movements: (typeof mrrMovements.$inferInsert)[] = [];
+  for (const row of rows) {
+    if (row.status === "canceled" && row.mrr === 0) continue;
+    const event = eventOf(row);
+    const endedAt = toDate(event?.created ?? now);
+    await tx
+      .update(subscriptions)
+      .set({ status: "canceled", mrr: 0, endedAt: row.endedAt ?? endedAt })
+      .where(eq(subscriptions.id, row.id));
+    if (row.mrr === 0) continue;
+    movements.push({
+      accountId: row.accountId,
+      stripeSubscriptionId: row.stripeSubscriptionId,
+      stripeCustomerId: row.stripeCustomerId,
+      customerName: row.customerName,
+      customerCountry: row.customerCountry,
+      planName: row.planName,
+      kind: "churn",
+      amount: -row.mrr,
+      currency: row.currency,
+      occurredAt: endedAt,
+      origin,
+      stripeEventId: event?.id ?? null,
+    });
+  }
   if (movements.length) await tx.insert(mrrMovements).values(movements);
   return movements.length;
 }

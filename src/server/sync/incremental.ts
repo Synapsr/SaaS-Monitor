@@ -6,7 +6,12 @@ import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
 import { SYNC_EVENT_TYPES } from "@/server/stripe/event-types";
 import type { Subscription } from "@/server/stripe/types";
-import { applyCharges, applySubscriptionUpdates, type SubscriptionUpdate } from "./apply";
+import {
+  applyCharges,
+  applySubscriptionUpdates,
+  endMissingSubscriptions,
+  type SubscriptionUpdate,
+} from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
 import { couponArchive } from "./coupons";
 import { digestEvents, emptyDigest, type EventDigest, type EventRef } from "./events";
@@ -64,15 +69,16 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
   const changed = await changedSubscriptions(account.id, digest);
   if (changed.size > MAX_REFETCHED_SUBSCRIPTIONS) {
     // Charges were read from the events: the scan only needs to cover subscriptions.
-    const changes = await applyEvents(context, digest, []);
+    const changes = await applyEvents(context, digest, [], new Map());
     return { changes, catchUp: await startCatchUp(context, { paymentsSince: null }) };
   }
 
   const fetched: Subscription[] = [];
-  for (const id of changed.keys()) {
-    // A subscription only vanishes when test data is deleted: nothing left to update then.
+  const missing = new Map<string, EventRef>();
+  for (const [id, event] of changed) {
     const subscription = await context.gateway.retrieveSubscription(id);
     if (subscription) fetched.push(subscription);
+    else missing.set(id, event);
   }
   const catalog = createCatalog(context.gateway, {
     bulk: false,
@@ -83,7 +89,7 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
     event: changed.get(subscription.id),
   }));
 
-  return { changes: await applyEvents(context, digest, updates), catchUp: null };
+  return { changes: await applyEvents(context, digest, updates, missing), catchUp: null };
 }
 
 /**
@@ -135,20 +141,23 @@ async function changedSubscriptions(
 }
 
 /**
- * Writes charges and subscription changes, then moves the cursor, in one transaction. Every event
- * listed counts as handled, including those whose subscription a catch-up scan covers instead.
+ * Writes charges and subscription changes, then moves the cursor, in one transaction. `missing`
+ * are the subscriptions Stripe no longer has, with their latest event. Every event listed counts
+ * as handled, including those whose subscription a catch-up scan covers instead.
  */
 async function applyEvents(
   context: SyncContext,
   digest: EventDigest,
   updates: readonly SubscriptionUpdate[],
+  missing: ReadonlyMap<string, EventRef>,
 ): Promise<number> {
   const { account, now } = context;
   const charges = [...digest.charges.values()].map(({ charge }) => charge);
   return db().transaction(async (tx) => {
     const written =
       (await applyCharges(tx, account.id, charges, "live")) +
-      (await applySubscriptionUpdates(tx, account.id, updates, "live", toUnixTime(now)));
+      (await applySubscriptionUpdates(tx, account.id, updates, "live", toUnixTime(now))) +
+      (await endMissingSubscriptions(tx, account.id, missing, toUnixTime(now)));
     if (digest.newest) {
       const newest = digest.newest.created;
       const newestAt = new Date(newest * 1000).toISOString();

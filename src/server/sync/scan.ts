@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { stripeAccounts, type ScanProgress } from "@/db/schema";
 import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
-import { applyCharges, applySubscriptionUpdates } from "./apply";
+import { applyCharges, applySubscriptionUpdates, endUnlistedSubscriptions } from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
 import { couponArchive } from "./coupons";
 import { valueSubscription } from "./movements";
@@ -15,7 +15,8 @@ import { valueSubscription } from "./movements";
  * It serves two purposes:
  * - the initial import (`backfill`), which rebuilds each subscription's history;
  * - the daily reconcile, which fixes drift: events missed while the app was down for too long, or
- *   changes Stripe announces with no event at all, such as a repeating coupon that ends.
+ *   changes Stripe announces with no event at all, such as a repeating coupon that ends or test
+ *   data deleted.
  *
  * Each page is written together with the scan's cursor, so a scan stopped by its time budget, a
  * restart or a serverless timeout resumes exactly where it was.
@@ -72,7 +73,12 @@ export async function runScan(
           : { ...progress, phase: "payments", cursor: null, subscriptions: scanned };
 
       changes += await db().transaction(async (tx) => {
-        const written = await applySubscriptionUpdates(tx, account.id, updates, kind, nowSeconds);
+        let written = await applySubscriptionUpdates(tx, account.id, updates, kind, nowSeconds);
+        if (!page.hasMore) {
+          // Stripe has listed every subscription it has: the others were deleted.
+          const startedAt = toUnixTime(new Date(progress.startedAt));
+          written += await endUnlistedSubscriptions(tx, account.id, startedAt, kind, nowSeconds);
+        }
         await saveProgress(tx, account.id, kind, next, progress);
         return written;
       });
