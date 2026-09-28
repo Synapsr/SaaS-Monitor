@@ -40,6 +40,7 @@ export function SignUpForm({
     return null;
   }, null);
   const passwordHintId = useId();
+  const errorId = useId();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,6 +80,8 @@ export function SignUpForm({
               required
               className="h-9 read-only:bg-muted read-only:text-muted-foreground"
               {...(invitedEmail ? { value: invitedEmail, readOnly: true } : {})}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? errorId : undefined}
             />
           </Field>
           <Field>
@@ -89,13 +92,14 @@ export function SignUpForm({
               autoComplete="new-password"
               required
               minLength={MIN_PASSWORD_LENGTH}
-              aria-describedby={passwordHintId}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? `${passwordHintId} ${errorId}` : passwordHintId}
             />
             <FieldDescription id={passwordHintId}>
               At least {MIN_PASSWORD_LENGTH} characters.
             </FieldDescription>
           </Field>
-          {error && <FieldError>{error}</FieldError>}
+          {error && <FieldError id={errorId}>{error}</FieldError>}
           <Button type="submit" size="lg" className="mt-1" disabled={pending}>
             {pending && <Spinner />}
             Create account
