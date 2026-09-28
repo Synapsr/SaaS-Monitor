@@ -41,27 +41,26 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
   const { account, now } = context;
   const nowSeconds = toUnixTime(now);
   const cursor = account.eventsCursor;
-  if (cursor === null || nowSeconds - cursor > MAX_CURSOR_AGE_SECONDS) {
-    // Events may have expired: rescan subscriptions and charges since the last known point.
-    const since = cursor ?? nowSeconds - MAX_CURSOR_AGE_SECONDS;
-    return {
-      changes: 0,
-      catchUp: await startCatchUp(context, since - CURSOR_OVERLAP_SECONDS, null),
-    };
-  }
+  const since = (cursor ?? nowSeconds - MAX_CURSOR_AGE_SECONDS) - CURSOR_OVERLAP_SECONDS;
 
-  const digest = await readEvents(context, cursor - CURSOR_OVERLAP_SECONDS);
+  // Events may have expired, or be too many to read: scan subscriptions and charges instead, and
+  // only read the events that come next.
+  const digest =
+    cursor !== null && nowSeconds - cursor <= MAX_CURSOR_AGE_SECONDS
+      ? await readEvents(context, since)
+      : null;
   if (!digest) {
     return {
       changes: 0,
-      catchUp: await startCatchUp(context, cursor - CURSOR_OVERLAP_SECONDS, null),
+      catchUp: await startCatchUp(context, { paymentsSince: since, eventsCursor: nowSeconds }),
     };
   }
 
   const changed = await changedSubscriptions(account.id, digest);
   if (changed.size > MAX_REFETCHED_SUBSCRIPTIONS) {
+    // Charges were read from the events: the scan only needs to cover subscriptions.
     const changes = await applyEvents(context, digest, []);
-    return { changes, catchUp: await startCatchUp(context, null, digest.newest) };
+    return { changes, catchUp: await startCatchUp(context, { paymentsSince: null }) };
   }
 
   const fetched: Subscription[] = [];
@@ -92,7 +91,10 @@ async function readEvents(context: SyncContext, since: number): Promise<EventDig
   }
 }
 
-/** Subscriptions to fetch again: the ones events name, and those of customers whose discount changed. */
+/**
+ * Subscriptions to fetch again: the ones events name, and those of customers whose discount
+ * changed.
+ */
 async function changedSubscriptions(
   accountId: string,
   digest: EventDigest,
@@ -145,13 +147,12 @@ async function applyEvents(
 }
 
 /**
- * Starts (or restarts) a reconcile covering what events could not, and moves the events cursor
- * past it: from now on, new events are applied as usual while the scan runs.
+ * Starts (or restarts) a reconcile covering what events could not. When events are skipped, the
+ * cursor moves to now: new events are applied as usual while the scan runs.
  */
 async function startCatchUp(
   context: SyncContext,
-  paymentsSince: number | null,
-  newest: EventRef | null,
+  { paymentsSince, eventsCursor }: { paymentsSince: number | null; eventsCursor?: number },
 ): Promise<ScanProgress> {
   const { account, now } = context;
   // A reconcile already under way restarts, still covering the payments it was due to import.
@@ -161,7 +162,7 @@ async function startCatchUp(
   const scan = newScan(now, since.length ? Math.min(...since) : null);
   await db()
     .update(stripeAccounts)
-    .set({ reconcile: scan, eventsCursor: newest?.created ?? toUnixTime(now) })
+    .set({ reconcile: scan, ...(eventsCursor !== undefined && { eventsCursor }) })
     .where(eq(stripeAccounts.id, account.id));
   return scan;
 }
