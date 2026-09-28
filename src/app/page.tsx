@@ -1,10 +1,10 @@
 import { ArrowRightIcon, PlayIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GitHubIcon } from "@/components/brand-icons";
 import { LogoMark } from "@/components/logo";
 import { DemoTv } from "@/components/marketing/demo-tv";
 import { FeatureGrid } from "@/components/marketing/feature-grid";
-import { GitHubIcon } from "@/components/marketing/github-icon";
 import { LandingHeader } from "@/components/marketing/landing-header";
 import { SoundBoard } from "@/components/marketing/sound-board";
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { GitHubIcon } from "@/components/brand-icons";
 import { LogoMark } from "@/components/logo";
-import { GitHubIcon } from "@/components/marketing/github-icon";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/site";
 
