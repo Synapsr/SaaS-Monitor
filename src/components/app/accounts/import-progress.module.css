@@ -1,0 +1,21 @@
+/* Indeterminate bar: the import can't know how much history is left to read. */
+.bar {
+  animation: slide 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+}
