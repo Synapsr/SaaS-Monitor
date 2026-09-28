@@ -20,7 +20,7 @@ export async function createStripeAccount(
     .values({
       workspaceId,
       name: "Acme",
-      stripeAccountId: "acct_fake",
+      stripeAccountId: `acct_${crypto.randomUUID().slice(0, 8)}`,
       livemode: false,
       encryptedSecretKey: encryptSecret(TEST_SECRET_KEY),
       secretKeyHint: "rk_test_…4f2a",

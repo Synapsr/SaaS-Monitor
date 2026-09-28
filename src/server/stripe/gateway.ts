@@ -225,13 +225,13 @@ export function createStripeGateway(
     },
 
     async retrievePrice(id, include) {
-      const expand = [
-        ...(include.tiers ? ["tiers"] : []),
-        ...(include.currency ? ["currency_options"] : []),
-        ...(include.tiers && include.currency
-          ? [`currency_options.${include.currency}.tiers`]
-          : []),
-      ];
+      const expand: string[] = [];
+      if (include.tiers) expand.push("tiers");
+      if (include.currency) expand.push("currency_options");
+      // The tiers of a currency option are only returned on request too.
+      if (include.tiers && include.currency) {
+        expand.push(`currency_options.${include.currency}.tiers`);
+      }
       return priceSchema.parse(await send(() => stripe.prices.retrieve(id, { expand })));
     },
 
@@ -281,7 +281,12 @@ export function createStripeGateway(
           metadata,
         }),
       );
-      if (!endpoint.secret) throw new Error("Stripe did not return the webhook signing secret.");
+      if (!endpoint.secret) {
+        throw new StripeAccessError(
+          "invalid_request",
+          "Stripe did not return the webhook signing secret.",
+        );
+      }
       return { id: endpoint.id, secret: endpoint.secret };
     },
 
