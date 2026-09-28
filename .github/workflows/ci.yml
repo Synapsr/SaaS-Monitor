@@ -31,8 +31,14 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
+      # For the smoke test of the Stripe SDK gateway. Same version as in compose.dev.yaml.
+      stripe-mock:
+        image: stripe/stripe-mock:v0.205.0
+        ports:
+          - 12111:12111
     env:
       TEST_DATABASE_URL: postgres://saas_monitor:saas_monitor@localhost:5432/saas_monitor_test
+      STRIPE_MOCK_PORT: 12111
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

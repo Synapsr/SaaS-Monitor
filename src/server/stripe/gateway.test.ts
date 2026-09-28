@@ -6,20 +6,24 @@ import { createStripeGateway } from "./gateway";
  * Smoke test of the SDK gateway against stripe-mock (`pnpm db:up`), which validates request
  * parameters against Stripe's OpenAPI spec and answers with fixtures. It checks that requests and
  * expansions are valid, and that the schemas accept objects shaped like real Stripe responses.
- * Skipped when stripe-mock is not running.
+ * Skipped when stripe-mock is not running, except in CI, which always provides it.
  */
 
-const STRIPE_MOCK = { host: "127.0.0.1", port: 12111, protocol: "http" } as const;
+const STRIPE_MOCK = {
+  host: "127.0.0.1",
+  port: Number(process.env.STRIPE_MOCK_PORT || 12111),
+  protocol: "http",
+} as const;
 
-const isStripeMockRunning = await fetch("http://127.0.0.1:12111/v1/charges", {
-  headers: { Authorization: "Bearer sk_test_123" },
-  signal: AbortSignal.timeout(1000),
-}).then(
+const isStripeMockRunning = await fetch(
+  `${STRIPE_MOCK.protocol}://${STRIPE_MOCK.host}:${STRIPE_MOCK.port}/v1/charges`,
+  { headers: { Authorization: "Bearer sk_test_123" }, signal: AbortSignal.timeout(1000) },
+).then(
   (response) => response.ok,
   () => false,
 );
 
-describe.skipIf(!isStripeMockRunning)("Stripe gateway (stripe-mock)", () => {
+describe.skipIf(!isStripeMockRunning && !process.env.CI)("Stripe gateway (stripe-mock)", () => {
   const gateway = createStripeGateway("sk_test_4eC39HqLyjWDarjtT1zdp7dc", STRIPE_MOCK);
 
   it("lists and retrieves subscriptions with their expansions", async () => {
