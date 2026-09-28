@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
+import { WorkspaceAvatar } from "./workspace-avatar";
 
 interface WorkspaceOption {
   id: string;
@@ -46,7 +47,7 @@ export function WorkspaceSwitcher({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="max-w-56 min-w-0 gap-1.5 px-2 font-medium">
-            <WorkspaceInitial name={current.name} />
+            <WorkspaceAvatar name={current.name} className="size-5 rounded-md text-[0.65rem]" />
             <span className="truncate">{current.name}</span>
             {pending ? (
               <Spinner className="size-3.5 text-muted-foreground" />
@@ -62,7 +63,10 @@ export function WorkspaceSwitcher({
             </DropdownMenuLabel>
             {workspaces.map((workspace) => (
               <DropdownMenuItem key={workspace.id} onSelect={() => select(workspace.id)}>
-                <WorkspaceInitial name={workspace.name} />
+                <WorkspaceAvatar
+                  name={workspace.name}
+                  className="size-5 rounded-md text-[0.65rem]"
+                />
                 <span className="truncate">{workspace.name}</span>
                 {workspace.id === current.id && <CheckIcon className="ml-auto" />}
               </DropdownMenuItem>
@@ -77,16 +81,5 @@ export function WorkspaceSwitcher({
       </DropdownMenu>
       <CreateWorkspaceDialog open={creating} onOpenChange={setCreating} />
     </>
-  );
-}
-
-function WorkspaceInitial({ name }: { name: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="flex size-5 shrink-0 items-center justify-center rounded-md bg-foreground text-[0.65rem] font-semibold text-background uppercase"
-    >
-      {name.trim().charAt(0) || "W"}
-    </span>
   );
 }

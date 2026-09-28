@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AuthCard, AuthHeader, AuthShell } from "@/components/auth/auth-shell";
 import { AcceptInvitationButton, SwitchAccountButton } from "@/components/auth/invitation-actions";
 import { ROLES } from "@/components/app/settings/roles";
+import { WorkspaceAvatar } from "@/components/app/workspace-avatar";
 import { Button } from "@/components/ui/button";
 import { invitationPath } from "@/lib/invitations";
 import { withRedirect } from "@/lib/safe-redirect";
@@ -69,7 +70,10 @@ function PendingInvitation({
   const path = invitationPath(invitation.id);
   const header = (
     <>
-      <WorkspaceMark name={invitation.workspaceName} />
+      <WorkspaceAvatar
+        name={invitation.workspaceName}
+        className="mb-5 size-10 rounded-xl text-base"
+      />
       <AuthHeader
         title={`Join ${invitation.workspaceName}`}
         description={
@@ -154,16 +158,5 @@ function Unavailable({
         </Link>
       </Button>
     </>
-  );
-}
-
-function WorkspaceMark({ name }: { name: string }) {
-  return (
-    <div
-      aria-hidden="true"
-      className="mb-5 flex size-10 items-center justify-center rounded-xl bg-foreground text-base font-semibold text-background uppercase"
-    >
-      {name.trim().charAt(0) || "W"}
-    </div>
   );
 }
