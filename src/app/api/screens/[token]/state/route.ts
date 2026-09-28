@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getDisplayStateByToken } from "@/server/display/state";
+import { getRecentDisplayState } from "@/server/display/recent-state";
 import { scheduleSync } from "@/server/sync";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -11,7 +11,8 @@ const tokenSchema = z.string().min(1).max(256);
  */
 export async function GET(_request: Request, context: RouteContext<"/api/screens/[token]/state">) {
   const token = tokenSchema.safeParse((await context.params).token);
-  const state = token.success ? await getDisplayStateByToken(token.data) : null;
+  const recent = token.success ? getRecentDisplayState(token.data) : null;
+  const state = recent ? await recent.state : null;
   if (!state) {
     return Response.json(
       { error: "This screen does not exist." },
@@ -19,6 +20,7 @@ export async function GET(_request: Request, context: RouteContext<"/api/screens
     );
   }
 
-  scheduleSync(state.accounts.map((account) => account.id));
+  // The poll that computed the state checks the accounts; polls sharing it have nothing to add.
+  if (recent?.computed) scheduleSync(state.accounts.map((account) => account.id));
   return Response.json(state, { headers: NO_STORE });
 }

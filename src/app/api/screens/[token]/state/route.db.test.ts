@@ -33,6 +33,17 @@ describe("display polling endpoint", () => {
     expect(after).toHaveBeenCalledTimes(1);
   });
 
+  it("shares one computation between polls of the same screen a few seconds apart", async () => {
+    const { workspaceId } = await createUserWithWorkspace();
+    const account = await createStripeAccount(workspaceId);
+    const { token } = await createScreen(workspaceId, { accountIds: [account.id] });
+
+    const [first, second] = await Promise.all([poll(token), poll(token)]);
+
+    expect(await second.json()).toEqual(await first.json());
+    expect(after).toHaveBeenCalledTimes(1);
+  });
+
   it("answers 404 for an unknown screen", async () => {
     const response = await poll("unknown-token");
 
