@@ -42,7 +42,8 @@ screens display an "importing" state meanwhile.
 
 Stripe doesn't keep a history of past subscription changes, so the MRR chart before the import is
 reconstructed from each subscription's start, end and current amount. From then on, every change
-is recorded as it happens.
+is recorded as it happens. Re-importing an account (from its menu) starts over: the changes
+recorded since it was connected are lost.
 
 ## How MRR is computed
 
@@ -56,8 +57,8 @@ so the number on the wall matches your Stripe Dashboard:
 - Each item is brought to a month with its own billing interval: a yearly price counts for a
   twelfth, a weekly one 52 times a year divided by 12. Quantities, tiers and volume prices are
   priced as Stripe invoices them.
-- Metered usage and one-time prices are left out, and taxes are not added (a tax-inclusive price
-  counts as is).
+- Metered usage and one-time prices are left out, and taxes are not added. A tax-inclusive price
+  counts in full, though: see the limits below.
 - `forever` discounts, and `repeating` ones until they end, are subtracted; `once` discounts are
   not. A customer's discount applies to the subscriptions without a discount of their own.
   Deleting a coupon only stops new redemptions: the discounts already using it keep counting.
@@ -73,6 +74,9 @@ Some limits to keep in mind:
 - **History before the import** is rebuilt, as explained above: each subscription counts at its
   current amount from its start, so upgrades and downgrades that happened before the import don't
   show on the chart.
+- **Tax-inclusive prices** count with their tax. Stripe leaves taxes out of MRR, but the tax
+  share of an inclusive price is only known on invoices, from Stripe Tax: with such prices, the
+  MRR on the wall is higher than in the Stripe Dashboard.
 - **Coupons deleted before the import** can no longer be read from Stripe (SaaS Monitor keeps
   the terms of every coupon it reads, for when they are deleted later). Their terms then come
   from the discounts using them, when Stripe shows them there, but without the products a coupon

@@ -19,7 +19,8 @@ import type {
  * - a subscription set to cancel at period end stops counting when the cancellation is requested,
  *   while one with a `cancel_at` date keeps counting until it actually ends;
  * - metered usage and one-time prices are excluded, and taxes are not added (Stripe computes them
- *   on invoices; a tax-inclusive price is counted as is);
+ *   on invoices). A tax-inclusive price is counted with its tax, unlike in Stripe: its tax share
+ *   is only known on invoices (docs/stripe.md lists this limit);
  * - `forever` and `repeating` discounts are subtracted, `once` discounts are not;
  * - every item is normalized to a month with its own billing interval.
  *
