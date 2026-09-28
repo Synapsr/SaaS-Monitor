@@ -1,6 +1,6 @@
+import { ACCENT_PALETTES } from "@/lib/display/accents";
 import type { Accent } from "@/lib/screens/settings";
 import { cn } from "@/lib/utils";
-import { ACCENT_COLORS } from "./accents";
 
 const LINE = "M0 74 C18 72 26 64 40 63 S62 55 76 50 S98 46 110 36 S136 26 160 14";
 
@@ -12,7 +12,7 @@ export function ScreenThumbnail({ accent, className }: { accent: Accent; classNa
   return (
     <div
       aria-hidden="true"
-      style={{ "--accent": ACCENT_COLORS[accent] } as React.CSSProperties}
+      style={{ "--accent": ACCENT_PALETTES[accent].base } as React.CSSProperties}
       className={cn(
         "relative aspect-video overflow-hidden bg-neutral-950 outline-1 -outline-offset-1 outline-white/10",
         className,

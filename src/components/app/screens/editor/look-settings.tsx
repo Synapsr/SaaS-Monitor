@@ -5,6 +5,7 @@ import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 import { useId } from "react";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ACCENT_PALETTES } from "@/lib/display/accents";
 import {
   ACCENTS,
   CHART_RANGES,
@@ -12,7 +13,6 @@ import {
   type ChartRange,
   type ScreenSettings,
 } from "@/lib/screens/settings";
-import { ACCENT_COLORS, ACCENT_LABELS } from "../accents";
 import { SettingRow } from "./settings-section";
 
 const CHART_RANGE_LABELS: Record<ChartRange, string> = {
@@ -40,7 +40,7 @@ export function LookSettings({
         <p className="text-sm font-medium">
           <span id={`${id}-accent`}>Accent color</span>{" "}
           <span aria-hidden="true" className="font-normal text-muted-foreground">
-            · {ACCENT_LABELS[settings.accent]}
+            · {ACCENT_PALETTES[settings.accent].label}
           </span>
         </p>
         <RadioGroupPrimitive.Root
@@ -53,8 +53,8 @@ export function LookSettings({
             <RadioGroupPrimitive.Item
               key={accent}
               value={accent}
-              aria-label={ACCENT_LABELS[accent]}
-              style={{ backgroundColor: ACCENT_COLORS[accent] }}
+              aria-label={ACCENT_PALETTES[accent].label}
+              style={{ backgroundColor: ACCENT_PALETTES[accent].base }}
               className="relative flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-background transition-shadow outline-none after:absolute after:-inset-1 focus-visible:ring-3 focus-visible:ring-ring/60 data-[state=checked]:ring-2 data-[state=checked]:ring-foreground"
             >
               <RadioGroupPrimitive.Indicator>
