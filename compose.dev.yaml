@@ -1,0 +1,30 @@
+# Local development services. Start them with `pnpm db:up`.
+name: saas-monitor-dev
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: saas_monitor
+      POSTGRES_PASSWORD: saas_monitor
+      POSTGRES_DB: saas_monitor
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saas_monitor -d saas_monitor"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  # Validates Stripe requests against the official OpenAPI spec (no real account needed).
+  stripe-mock:
+    image: stripe/stripe-mock:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${STRIPE_MOCK_PORT:-12111}:12111"
+
+volumes:
+  postgres:
