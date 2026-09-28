@@ -19,7 +19,10 @@ import {
 import type { StripeEvent, UnixTime } from "@/server/stripe/types";
 import { stripeId } from "./stripe-fixtures";
 
-const PROBE_PERMISSIONS: Record<ProbedResource, string> = {
+type FakeResource = ProbedResource | "account" | "webhook_endpoints";
+
+/** The permission Stripe names when a restricted key may not use a resource. */
+const PERMISSIONS: Record<FakeResource, string> = {
   subscriptions: "rak_subscription_read",
   customers: "rak_customer_read",
   charges: "rak_charge_read",
@@ -27,6 +30,8 @@ const PROBE_PERMISSIONS: Record<ProbedResource, string> = {
   products: "rak_product_read",
   prices: "rak_plan_read",
   coupons: "rak_coupon_read",
+  account: "rak_account_read",
+  webhook_endpoints: "rak_webhook_write",
 };
 
 /**
@@ -49,7 +54,7 @@ export class FakeStripe implements StripeGateway {
   /** Every request fails with this error while it is set, e.g. a revoked key. */
   failure: StripeAccessError | null = null;
   /** Resources the key may not read, to test permission checks. */
-  readonly deniedResources = new Set<ProbedResource | "account" | "webhook_endpoints">();
+  readonly deniedResources = new Set<FakeResource>();
   readonly webhookEndpoints = new Map<string, { url: string; events: readonly string[] }>();
 
   private readonly subscriptions = new Map<string, SubscriptionInput>();
@@ -204,16 +209,11 @@ export class FakeStripe implements StripeGateway {
   }
 
   /** Counts the request and fails it like Stripe would. */
-  private request(resource: ProbedResource | "account" | "webhook_endpoints") {
+  private request(resource: FakeResource) {
     this.requestCount += 1;
     if (this.failure) throw this.failure;
     if (this.deniedResources.has(resource)) {
-      const permission =
-        resource in PROBE_PERMISSIONS
-          ? PROBE_PERMISSIONS[resource as ProbedResource]
-          : resource === "webhook_endpoints"
-            ? "rak_webhook_write"
-            : "rak_account_read";
+      const permission = PERMISSIONS[resource];
       throw new StripeAccessError(
         "permission",
         `The provided key 'rk_test_…abcd' does not have the required permissions for this endpoint on account '${this.account.id}'. Having the '${permission}' permission would allow this request to continue.`,

@@ -172,6 +172,10 @@ describe("MRR of a subscription", () => {
     it("counts free plans as zero", () => {
       expect(mrrOf(withPrice(monthlyPrice(0)))).toBe(0);
     });
+
+    it("skips intervals it does not know rather than guessing", () => {
+      expect(mrrOf(withPrice(monthlyPrice(1000, recurring("toString"))))).toBe(0);
+    });
   });
 
   describe("statuses", () => {

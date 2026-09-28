@@ -18,7 +18,8 @@ import type {
  *   `incomplete` ones do not;
  * - a subscription set to cancel at period end stops counting when the cancellation is requested,
  *   while one with a `cancel_at` date keeps counting until it actually ends;
- * - metered usage, one-time prices and taxes are excluded;
+ * - metered usage and one-time prices are excluded, and taxes are not added (Stripe computes them
+ *   on invoices; a tax-inclusive price is counted as is);
  * - `forever` and `repeating` discounts are subtracted, `once` discounts are not;
  * - every item is normalised to a month with its own billing interval.
  *
@@ -48,8 +49,8 @@ const PERIODS_PER_MONTH: Record<BillingInterval, { numerator: number; denominato
 
 const CONTRIBUTING_STATUSES = new Set(["active", "past_due"]);
 
-export function isBillingInterval(value: string): value is BillingInterval {
-  return value in PERIODS_PER_MONTH;
+function isBillingInterval(value: string): value is BillingInterval {
+  return Object.hasOwn(PERIODS_PER_MONTH, value);
 }
 
 /** Whether the subscription counts towards MRR right now. */
