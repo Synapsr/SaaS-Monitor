@@ -5,7 +5,13 @@ import { RadioGroup as RadioGroupPrimitive, Slider as SliderPrimitive } from "ra
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { SOUND_PACKS, type ScreenSettings, type SoundPack } from "@/lib/screens/settings";
+import { recurringMetric, type RecurringMetric } from "@/lib/display/metric";
+import {
+  SOUND_PACKS,
+  type Metric,
+  type ScreenSettings,
+  type SoundPack,
+} from "@/lib/screens/settings";
 import { playSound, SOUND_PACK_NAMES, unlockAudio, type SoundEvent } from "@/lib/sounds";
 import { ChoiceCard } from "./choice-card";
 import { SettingRow } from "./settings-section";
@@ -18,29 +24,30 @@ const PACK_HINTS: Record<SoundPack, string> = {
   arcade: "8-bit coins",
 };
 
+/** Recurring revenue events are named after the screen's metric: "ARR goes up". */
 const EVENTS = [
   {
     key: "onPayment",
     event: "payment",
-    label: "Payment received",
+    label: () => "Payment received",
     description: "Every successful charge.",
   },
   {
     key: "onMrrUp",
     event: "mrrUp",
-    label: "MRR goes up",
+    label: (metric) => `${metric} goes up`,
     description: "New subscription, upgrade or reactivation.",
   },
   {
     key: "onMrrDown",
     event: "mrrDown",
-    label: "MRR goes down",
+    label: (metric) => `${metric} goes down`,
     description: "Downgrade or cancellation.",
   },
 ] as const satisfies readonly {
   key: keyof Sound;
   event: SoundEvent;
-  label: string;
+  label: (metric: RecurringMetric["label"]) => string;
   description: string;
 }[];
 
@@ -76,12 +83,15 @@ function PreviewButton({
 
 export function SoundSettings({
   sound,
+  metric,
   onChange,
 }: {
   sound: Sound;
+  metric: Metric;
   onChange: (patch: Partial<Sound>) => void;
 }) {
   const id = useId();
+  const metricLabel = recurringMetric(metric).label;
   const volumePercent = Math.round(sound.volume * 100);
 
   return (
@@ -168,21 +178,29 @@ export function SoundSettings({
 
         <div className="flex flex-col gap-4">
           <p className="text-sm font-medium">Play a sound when</p>
-          {EVENTS.map(({ key, event, label, description }) => (
-            <SettingRow key={key} htmlFor={`${id}-${key}`} label={label} description={description}>
-              <PreviewButton
+          {EVENTS.map(({ key, event, label: labelFor, description }) => {
+            const label = labelFor(metricLabel);
+            return (
+              <SettingRow
+                key={key}
+                htmlFor={`${id}-${key}`}
                 label={label}
-                disabled={!sound.enabled}
-                onClick={() => preview(event, sound.pack, sound.volume)}
-              />
-              <Switch
-                id={`${id}-${key}`}
-                checked={sound[key]}
-                disabled={!sound.enabled}
-                onCheckedChange={(checked) => onChange({ [key]: checked })}
-              />
-            </SettingRow>
-          ))}
+                description={description}
+              >
+                <PreviewButton
+                  label={label}
+                  disabled={!sound.enabled}
+                  onClick={() => preview(event, sound.pack, sound.volume)}
+                />
+                <Switch
+                  id={`${id}-${key}`}
+                  checked={sound[key]}
+                  disabled={!sound.enabled}
+                  onCheckedChange={(checked) => onChange({ [key]: checked })}
+                />
+              </SettingRow>
+            );
+          })}
         </div>
       </fieldset>
     </div>

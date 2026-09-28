@@ -166,6 +166,7 @@ export function ScreenEditor({
           <SettingsSection title="Sound">
             <SoundSettings
               sound={draft.settings.sound}
+              metric={draft.settings.metric}
               onChange={(patch) =>
                 setDraft((current) => ({
                   ...current,
