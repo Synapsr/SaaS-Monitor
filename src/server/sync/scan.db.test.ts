@@ -542,6 +542,27 @@ describe("reconcile", () => {
     expect(totals.ledger).toEqual(totals.mirror);
   });
 
+  it("starts a phase over when its cursor was deleted between runs", async () => {
+    stripe.pageSize = 1;
+    await syncAt(25 * HOUR_SECONDS, { scanBudgetMs: 0 });
+    // The newest subscription was the first page: the saved cursor now names nothing.
+    stripe.deleteSubscription("sub_launch_offer");
+
+    let runs = 0;
+    do {
+      runs += 1;
+      await syncAt(25 * HOUR_SECONDS + 60 * runs, { scanBudgetMs: 0 });
+    } while ((await getStripeAccount(accountId)).reconcile && runs < 10);
+
+    expect((await getStripeAccount(accountId)).reconcile).toBeNull();
+    expect(await reconciled()).toContainEqual(
+      expect.objectContaining({ subscription: "sub_launch_offer", kind: "churn" }),
+    );
+    const totals = await mrrTotals(accountId);
+    expect(totals.mirror).toEqual({ usd: 1000 + 2000 + 4900 });
+    expect(totals.ledger).toEqual(totals.mirror);
+  });
+
   it("resumes across runs until every page is checked", async () => {
     stripe.pageSize = 1;
     stripe.updateSubscription("sub_canceled", (subscription) => ({

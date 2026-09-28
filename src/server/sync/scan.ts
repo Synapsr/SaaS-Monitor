@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { stripeAccounts, type ScanProgress } from "@/db/schema";
 import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
+import { StripeAccessError } from "@/server/stripe/errors";
+import type { Page } from "@/server/stripe/gateway";
 import { applyCharges, applySubscriptionUpdates, endUnlistedSubscriptions } from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
 import { couponArchive } from "./coupons";
@@ -60,7 +62,11 @@ export async function runScan(
   // At least one page per run, so that a scan always makes progress.
   do {
     if (progress.phase === "subscriptions") {
-      const page = await gateway.listSubscriptions(progress.cursor ?? undefined);
+      const { page, restarted } = await listPage(
+        (cursor) => gateway.listSubscriptions(cursor),
+        progress.cursor,
+      );
+      if (restarted) progress = startedOver(progress, now);
       const subscriptions = await catalog.complete(page.data);
       const updates = subscriptions.map((subscription) =>
         valueSubscription(subscription, catalog.coupons, nowSeconds),
@@ -87,10 +93,15 @@ export async function runScan(
     } else {
       // Scans without `paymentsSince` end with their subscriptions phase.
       const since = progress.paymentsSince ?? nowSeconds;
-      const page = await gateway.listCharges(since, progress.cursor ?? undefined);
+      const { page, restarted } = await listPage(
+        (cursor) => gateway.listCharges(since, cursor),
+        progress.cursor,
+      );
+      if (restarted) progress = startedOver(progress, now);
       const collected = page.data.filter((charge) => charge.collected).length;
+      const payments = progress.payments + collected;
       const next: ScanProgress | null = hasNextPage(page)
-        ? { ...progress, cursor: lastId(page.data), payments: progress.payments + collected }
+        ? { ...progress, cursor: lastId(page.data), payments }
         : afterLastPage(progress, now);
 
       changes += await db().transaction(async (tx) => {
@@ -104,6 +115,34 @@ export async function runScan(
   } while (Date.now() < context.deadline);
 
   return changes;
+}
+
+/**
+ * Lists the page after `cursor`. A scan spread over several runs can outlive its cursor's object
+ * (e.g. test data deleted in between), which Stripe then rejects: the phase restarts from its
+ * first page instead of failing forever. Pages are idempotent, so reading some twice is harmless.
+ */
+async function listPage<T>(
+  list: (cursor: string | undefined) => Promise<Page<T>>,
+  cursor: string | null,
+): Promise<{ page: Page<T>; restarted: boolean }> {
+  try {
+    return { page: await list(cursor ?? undefined), restarted: false };
+  } catch (error) {
+    const unknownCursor = error instanceof StripeAccessError && error.kind === "not_found";
+    if (!cursor || !unknownCursor) throw error;
+    return { page: await list(undefined), restarted: true };
+  }
+}
+
+/**
+ * The progress of a phase listed again from its first page. A subscriptions listing started over
+ * only vouches for what it lists from now on: subscriptions it saw before may have been deleted.
+ */
+function startedOver(progress: ScanProgress, now: Date): ScanProgress {
+  return progress.phase === "subscriptions"
+    ? { ...progress, cursor: null, startedAt: now.toISOString(), subscriptions: 0 }
+    : { ...progress, cursor: null, payments: 0 };
 }
 
 /** Saves the cursor, or completes the scan when `next` is `null`. */

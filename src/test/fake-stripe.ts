@@ -297,7 +297,12 @@ function paginate<T extends { id: string }>(
   startingAfter: string | undefined,
   pageSize: number,
 ): Page<T> {
-  const start = startingAfter ? items.findIndex((item) => item.id === startingAfter) + 1 : 0;
+  const cursor = startingAfter ? items.findIndex((item) => item.id === startingAfter) : -1;
+  // Like Stripe, a cursor naming an object that no longer exists is rejected.
+  if (startingAfter && cursor === -1) {
+    throw new StripeAccessError("not_found", `No such object: '${startingAfter}'`);
+  }
+  const start = cursor + 1;
   return { data: items.slice(start, start + pageSize), hasMore: start + pageSize < items.length };
 }
 
