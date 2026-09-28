@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
+import { PERSON_NAME_MAX_LENGTH } from "@/lib/names";
 import { MIN_PASSWORD_LENGTH } from "@/lib/passwords";
 import type { SocialProvider } from "@/lib/social-providers";
 import { authErrorMessage } from "./auth-errors";
@@ -67,7 +68,7 @@ export function SignUpForm({
               autoComplete="name"
               required
               autoFocus
-              maxLength={100}
+              maxLength={PERSON_NAME_MAX_LENGTH}
               className="h-9"
             />
           </Field>

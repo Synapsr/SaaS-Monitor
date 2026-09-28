@@ -10,6 +10,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useSignOut } from "@/hooks/use-sign-out";
+import { PERSON_NAME_MAX_LENGTH } from "@/lib/names";
 import { SettingsCard } from "./settings-card";
 
 export function ProfileCard({ name, email }: { name: string; email: string }) {
@@ -61,7 +62,7 @@ export function ProfileCard({ name, email }: { name: string; email: string }) {
               value={value}
               onChange={(event) => setValue(event.target.value)}
               required
-              maxLength={100}
+              maxLength={PERSON_NAME_MAX_LENGTH}
               autoComplete="name"
               className="h-9"
               aria-invalid={Boolean(error)}

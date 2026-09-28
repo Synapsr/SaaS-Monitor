@@ -5,15 +5,15 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { invalidInput, type ActionResult } from "@/lib/action-result";
-import { auth } from "@/server/auth";
+import { personNameSchema } from "@/lib/names";
 import {
-  authFailure,
   inviteMember,
   inviteSchema,
   leaveWorkspace,
   removeMember,
   revokeInvitation,
 } from "@/server/members";
+import { updateProfile } from "@/server/profile";
 import { requireWorkspace } from "@/server/session";
 import {
   activateDefaultWorkspace,
@@ -88,19 +88,10 @@ export async function deleteWorkspaceAction(): Promise<ActionResult> {
 
 export async function updateProfileAction(name: string): Promise<ActionResult> {
   await requireWorkspace();
-  const parsed = z
-    .string()
-    .trim()
-    .min(1, "Enter your name.")
-    .max(100, "Keep your name under 100 characters.")
-    .safeParse(name);
+  const parsed = personNameSchema.safeParse(name);
   if (!parsed.success) return invalidInput(parsed.error);
 
-  try {
-    await auth().api.updateUser({ headers: await headers(), body: { name: parsed.data } });
-  } catch (error) {
-    return authFailure(error);
-  }
-  revalidatePath("/app", "layout");
-  return { ok: true };
+  const result = await updateProfile(await headers(), parsed.data);
+  if (result.ok) revalidatePath("/app", "layout");
+  return result;
 }
