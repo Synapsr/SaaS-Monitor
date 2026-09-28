@@ -1,6 +1,6 @@
 import "server-only";
 import type { DisplayState } from "@/lib/display/types";
-import { getDisplayStateByToken } from "./state";
+import { getDisplayStateByToken, isScreenToken } from "./state";
 
 /**
  * Several displays often show the same screen, and a public URL can be polled too eagerly: polls
@@ -12,6 +12,9 @@ const recentStates = new Map<string, { computedAt: number; state: Promise<Displa
 
 /** The screen's state, and whether this call computed it (rather than reusing a recent one). */
 export function getRecentDisplayState(token: string, now = Date.now()) {
+  // Anyone can poll any token: only those a screen can have get an entry.
+  if (!isScreenToken(token)) return { state: Promise.resolve(null), computed: false };
+
   for (const [key, entry] of recentStates) {
     if (now - entry.computedAt >= SHARED_FOR_MS) recentStates.delete(key);
   }

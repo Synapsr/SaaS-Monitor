@@ -28,6 +28,11 @@ export interface DisplayStateOptions {
 /** Screen links carry a 32-character token (`generatePublicToken`): longer is not worth a query. */
 const tokenSchema = z.string().min(1).max(256);
 
+/** Whether a token from a public URL may be a screen's, before it costs a query or memory. */
+export function isScreenToken(token: string): boolean {
+  return tokenSchema.safeParse(token).success;
+}
+
 const FEED_LENGTH = 20;
 /** How long a "Send a test celebration" request stays visible to displays that poll. */
 const TEST_EVENT_TTL_MS = 10 * MINUTE_MS;
@@ -42,7 +47,7 @@ export async function getDisplayStateByToken(
   token: string,
   { now = new Date(), rateSource }: DisplayStateOptions = {},
 ): Promise<DisplayState | null> {
-  if (!tokenSchema.safeParse(token).success) return null;
+  if (!isScreenToken(token)) return null;
   const screen = await findScreen(token);
   if (!screen) return null;
 
