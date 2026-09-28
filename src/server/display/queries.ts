@@ -242,24 +242,14 @@ export interface ActivityRow {
   planName: string | null;
 }
 
-/**
- * The screen's accounts as rows of `account(id)`, to read each one's latest rows in a lateral
- * subquery filtered on `ACCOUNT_ID`: they come from the end of its `(account_id, occurred_at)`
- * index. Given several accounts in one condition, PostgreSQL reads and sorts their whole history.
- */
-function eachAccount(accountIds: readonly string[]) {
-  const ids = sql.join(
-    accountIds.map((id) => sql`${id}`),
-    sql`, `,
-  );
-  return sql`unnest(array[${ids}]::uuid[]) as account(id)`;
+/** Newest first, and rows of the same instant by descending id, like the queries below. */
+function newestFirst(a: { occurredAt: Date; id: string }, b: { occurredAt: Date; id: string }) {
+  return b.occurredAt.getTime() - a.occurredAt.getTime() || b.id.localeCompare(a.id);
 }
 
-const ACCOUNT_ID = sql`account.id`;
-
-/** The latest movements and payments, newest first. */
-export async function latestActivity(accountIds: string[], limit: number): Promise<ActivityRow[]> {
-  const movement = db()
+/** An account's latest movements, newest first. */
+function latestMovements(accountId: string, limit: number) {
+  return db()
     .select({
       id: mrrMovements.id,
       kind: mrrMovements.kind,
@@ -274,16 +264,20 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       planName: mrrMovements.planName,
     })
     .from(mrrMovements)
-    .where(eq(mrrMovements.accountId, ACCOUNT_ID))
+    .where(eq(mrrMovements.accountId, accountId))
     .orderBy(desc(mrrMovements.occurredAt), desc(mrrMovements.id))
-    .limit(limit)
-    .as("movement");
-  const payment = db()
+    .limit(limit);
+}
+
+/**
+ * An account's latest payments, newest first, net of refunds. Fully refunded payments are not
+ * worth showing.
+ */
+function latestPayments(accountId: string, limit: number) {
+  return db()
     .select({
       id: payments.id,
-      amount: sql<number>`${payments.amount} - ${payments.amountRefunded}`
-        .mapWith(Number)
-        .as("net_amount"),
+      amount: sql<number>`${payments.amount} - ${payments.amountRefunded}`.mapWith(Number),
       currency: payments.currency,
       occurredAt: payments.occurredAt,
       origin: payments.origin,
@@ -293,27 +287,30 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       customerId: payments.stripeCustomerId,
     })
     .from(payments)
-    // Fully refunded payments are not worth showing.
-    .where(and(eq(payments.accountId, ACCOUNT_ID), gt(payments.amount, payments.amountRefunded)))
+    .where(and(eq(payments.accountId, accountId), gt(payments.amount, payments.amountRefunded)))
     .orderBy(desc(payments.occurredAt), desc(payments.id))
-    .limit(limit)
-    .as("payment");
+    .limit(limit);
+}
 
+/**
+ * The `limit` newest rows of the screen's accounts, read with one query per account: each one's
+ * come from the end of its `(account_id, occurred_at)` index, while a condition on several
+ * accounts would read and sort their whole history. Screens show a few accounts at most.
+ */
+async function newestOfEachAccount<Row extends { occurredAt: Date; id: string }>(
+  accountIds: readonly string[],
+  limit: number,
+  latest: (accountId: string, limit: number) => Promise<Row[]>,
+): Promise<Row[]> {
+  const rows = await Promise.all(accountIds.map((accountId) => latest(accountId, limit)));
+  return rows.flat().sort(newestFirst).slice(0, limit);
+}
+
+/** The latest movements and payments, newest first. */
+export async function latestActivity(accountIds: string[], limit: number): Promise<ActivityRow[]> {
   const [movementRows, paymentRows] = await Promise.all([
-    db()
-      .select()
-      .from(eachAccount(accountIds))
-      .crossJoinLateral(movement)
-      .orderBy(desc(movement.occurredAt), desc(movement.id))
-      .limit(limit)
-      .then((rows) => rows.map((row) => row.movement)),
-    db()
-      .select()
-      .from(eachAccount(accountIds))
-      .crossJoinLateral(payment)
-      .orderBy(desc(payment.occurredAt), desc(payment.id))
-      .limit(limit)
-      .then((rows) => rows.map((row) => row.payment)),
+    newestOfEachAccount(accountIds, limit, latestMovements),
+    newestOfEachAccount(accountIds, limit, latestPayments),
   ]);
 
   const profiles = await customerProfiles(
@@ -336,9 +333,7 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       };
     }),
   ];
-  return rows
-    .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime() || b.id.localeCompare(a.id))
-    .slice(0, limit);
+  return rows.sort(newestFirst).slice(0, limit);
 }
 
 /**
