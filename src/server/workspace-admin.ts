@@ -1,9 +1,9 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
-import { z } from "zod";
 import { db } from "@/db";
 import { members, organizations, stripeAccounts } from "@/db/schema";
-import { invalidInput, type ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/action-result";
+import { nameSchema } from "@/lib/names";
 import { canManageMembers, parseRole, type WorkspaceRole } from "@/lib/roles";
 import { auth } from "@/server/auth";
 import { authFailure } from "@/server/members";
@@ -11,11 +11,8 @@ import type { WorkspaceContext } from "@/server/session";
 import { disconnectStripeAccount } from "@/server/stripe/accounts";
 import { ensureWorkspace } from "@/server/workspaces";
 
-export const workspaceNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Give the workspace a name.")
-  .max(60, "Keep the name under 60 characters.");
+/** Validates workspace names in the actions: the functions below trust theirs. */
+export const workspaceNameSchema = nameSchema("Give the workspace a name.");
 
 export interface UserWorkspace {
   id: string;
@@ -63,13 +60,11 @@ export async function createWorkspace(
   requestHeaders: Headers,
   name: string,
 ): Promise<ActionResult<{ workspaceId: string }>> {
-  const parsed = workspaceNameSchema.safeParse(name);
-  if (!parsed.success) return invalidInput(parsed.error);
   try {
     const workspace = await auth().api.createOrganization({
       headers: requestHeaders,
       // Better Auth requires a unique slug; the app never shows it.
-      body: { name: parsed.data, slug: crypto.randomUUID() },
+      body: { name, slug: crypto.randomUUID() },
     });
     const switched = await switchWorkspace(requestHeaders, workspace.id);
     return switched.ok ? { ok: true, workspaceId: workspace.id } : switched;
@@ -86,12 +81,10 @@ export async function renameWorkspace(
   if (!canManageMembers(context.role)) {
     return { ok: false, error: "Only owners and admins can rename the workspace." };
   }
-  const parsed = workspaceNameSchema.safeParse(name);
-  if (!parsed.success) return invalidInput(parsed.error);
   try {
     await auth().api.updateOrganization({
       headers: requestHeaders,
-      body: { organizationId: context.workspace.id, data: { name: parsed.data } },
+      body: { organizationId: context.workspace.id, data: { name } },
     });
     return { ok: true };
   } catch (error) {

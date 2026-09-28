@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { NAME_MAX_LENGTH } from "@/lib/names";
 import { SettingsCard } from "./settings-card";
 
 export function WorkspaceNameCard({ name, canEdit }: { name: string; canEdit: boolean }) {
@@ -33,7 +34,9 @@ export function WorkspaceNameCard({ name, canEdit }: { name: string; canEdit: bo
         footer={
           <>
             <p className="text-sm text-muted-foreground">
-              {canEdit ? "Up to 60 characters." : "Only owners and admins can rename it."}
+              {canEdit
+                ? `Up to ${NAME_MAX_LENGTH} characters.`
+                : "Only owners and admins can rename it."}
             </p>
             {canEdit && (
               <Button type="submit" size="sm" disabled={pending || value.trim() === name}>
@@ -51,7 +54,7 @@ export function WorkspaceNameCard({ name, canEdit }: { name: string; canEdit: bo
             value={value}
             onChange={(event) => setValue(event.target.value)}
             disabled={!canEdit}
-            maxLength={60}
+            maxLength={NAME_MAX_LENGTH}
             required
             autoComplete="off"
             className="h-9"

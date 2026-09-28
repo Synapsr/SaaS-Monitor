@@ -19,13 +19,14 @@ import {
   activateDefaultWorkspace,
   deleteWorkspace,
   renameWorkspace,
+  workspaceNameSchema,
 } from "@/server/workspace-admin";
 
 const idSchema = z.string().min(1).max(100);
 
 export async function renameWorkspaceAction(name: string): Promise<ActionResult> {
   const context = await requireWorkspace();
-  const parsed = z.string().max(200).safeParse(name);
+  const parsed = workspaceNameSchema.safeParse(name);
   if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await renameWorkspace(context, await headers(), parsed.data);
