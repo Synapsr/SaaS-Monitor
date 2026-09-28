@@ -8,9 +8,9 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
+import type { SocialProvider } from "@/lib/social-providers";
 import { authErrorMessage } from "./auth-errors";
 import { OrDivider, SocialSignIn } from "./social-sign-in";
-import type { SocialProvider } from "./social-providers";
 
 export const MIN_PASSWORD_LENGTH = 8;
 

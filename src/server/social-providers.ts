@@ -1,5 +1,5 @@
 import "server-only";
-import { isSocialProvider, type SocialProvider } from "@/components/auth/social-providers";
+import { isSocialProvider, type SocialProvider } from "@/lib/social-providers";
 import { auth } from "@/server/auth";
 
 /** Social sign-in buttons to show: only the providers configured on this server. */
