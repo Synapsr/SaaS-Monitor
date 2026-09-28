@@ -15,7 +15,7 @@
 .DS_Store
 *.pem
 
-# local agent worktrees
+# local agent worktrees (tools ignore all of .claude; shared agent settings may be committed)
 /.claude/worktrees/
 
 # debug

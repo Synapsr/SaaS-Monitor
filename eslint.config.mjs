@@ -25,13 +25,14 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    // The default ignores of eslint-config-next, which this list replaces.
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Claude Code settings and agent worktrees (other checkouts of the repository), like in
+    // tsconfig.json, .prettierignore and .dockerignore.
     ".claude/**",
   ]),
 ]);
