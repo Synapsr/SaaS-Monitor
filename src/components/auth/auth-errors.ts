@@ -7,7 +7,7 @@ export interface AuthClientError {
   status: number;
 }
 
-export const SIGNUPS_CLOSED_MESSAGE =
+const SIGNUPS_CLOSED_MESSAGE =
   "Sign-ups are closed on this server. Ask a workspace owner for an invitation link.";
 
 const MESSAGES: Record<string, string> = {

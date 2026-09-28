@@ -1,7 +1,7 @@
 import { CopyCode } from "@/components/app/copy-button";
 
 /** Starts Chromium full screen, allowed to play sounds without a click, and without popups. */
-export function kioskCommand(url: string): string {
+function kioskCommand(url: string): string {
   return `chromium --kiosk --autoplay-policy=no-user-gesture-required --noerrdialogs --disable-infobars --incognito ${url}`;
 }
 

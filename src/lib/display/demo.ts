@@ -42,7 +42,7 @@ import {
  */
 
 /** Picked so that the history ends about $300 below the goal, crossed a minute after loading. */
-export const DEMO_SEED = 70;
+const DEMO_SEED = 70;
 const SCREEN_NAME = "Acme Analytics";
 /** Major units: the goal the demo crosses within its first minutes. */
 export const DEMO_GOAL = 15_000;

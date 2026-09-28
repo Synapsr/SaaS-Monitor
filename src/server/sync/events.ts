@@ -21,7 +21,6 @@ export interface EventDigest {
   charges: Map<string, { charge: Charge; event: EventRef }>;
   /** Newest event seen, to move the cursor forward. */
   newest: EventRef | null;
-  count: number;
 }
 
 export function emptyDigest(): EventDigest {
@@ -30,7 +29,6 @@ export function emptyDigest(): EventDigest {
     customers: new Map(),
     charges: new Map(),
     newest: null,
-    count: 0,
   };
 }
 
@@ -40,7 +38,6 @@ export function emptyDigest(): EventDigest {
  */
 export function digestEvents(digest: EventDigest, events: readonly StripeEvent[]): EventDigest {
   for (const event of events) {
-    digest.count += 1;
     const ref = { id: event.id, created: event.created };
     if (!digest.newest || ref.created > digest.newest.created) digest.newest = ref;
 

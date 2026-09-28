@@ -90,10 +90,12 @@ describe("screens", () => {
     ]) {
       expect(result).toEqual({ ok: false, error: "This screen doesn't exist anymore." });
     }
-    expect(await getScreen(owner.workspaceId, screenId)).toMatchObject({
-      name: "Office TV",
-      testEventAt: null,
-    });
+    expect(await getScreen(owner.workspaceId, screenId)).toMatchObject({ name: "Office TV" });
+    const [row] = await db()
+      .select({ testEventAt: screens.testEventAt })
+      .from(screens)
+      .where(eq(screens.id, screenId));
+    expect(row.testEventAt).toBeNull();
   });
 
   it("refuses to show another workspace's Stripe account", async () => {
@@ -158,7 +160,10 @@ describe("screens", () => {
     const result = await sendTestEvent(workspaceId, screenId);
 
     expect(result.ok).toBe(true);
-    const { testEventAt } = (await getScreen(workspaceId, screenId))!;
+    const [{ testEventAt }] = await db()
+      .select({ testEventAt: screens.testEventAt })
+      .from(screens)
+      .where(eq(screens.id, screenId));
     expect(Math.abs(testEventAt!.getTime() - Date.now())).toBeLessThan(5_000);
   });
 

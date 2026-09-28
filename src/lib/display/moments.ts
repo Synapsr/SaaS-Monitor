@@ -28,7 +28,7 @@ export type Moment =
   | { id: string; kind: "test" };
 
 /** From this many fresh items at once (e.g. after a reconnection), celebrate once with a summary. */
-export const BURST_SIZE = 4;
+const BURST_SIZE = 4;
 
 /** A payment and a subscription change of the same customer within this delay are one moment. */
 const SAME_CHECKOUT_MS = 10 * 60_000;

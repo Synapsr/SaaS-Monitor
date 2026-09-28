@@ -3,12 +3,10 @@ import { cn } from "@/lib/utils";
 /** A titled group of settings in the screen editor. */
 export function SettingsSection({
   title,
-  description,
   children,
   className,
 }: {
   title: string;
-  description?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -18,12 +16,9 @@ export function SettingsSection({
       aria-labelledby={id}
       className={cn("flex flex-col gap-5 border-t pt-8 first:border-t-0 first:pt-0", className)}
     >
-      <div className="flex flex-col gap-1">
-        <h2 id={id} className="text-base font-medium tracking-tight">
-          {title}
-        </h2>
-        {description && <p className="text-sm text-pretty text-muted-foreground">{description}</p>}
-      </div>
+      <h2 id={id} className="text-base font-medium tracking-tight">
+        {title}
+      </h2>
       {children}
     </section>
   );

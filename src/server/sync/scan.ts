@@ -40,18 +40,15 @@ export function newBackfill(now: Date): ScanProgress {
   return newScan(now, toUnixTime(now) - IMPORTED_PAYMENT_DAYS * DAY_SECONDS);
 }
 
-export interface ScanResult {
-  finished: boolean;
-  /** Movements and payments written. */
-  changes: number;
-}
-
-/** Scans pages until the scan is complete or the sync's time budget is spent. */
+/**
+ * Scans pages until the scan is complete or the sync's time budget is spent. Returns the number
+ * of movements and payments written.
+ */
 export async function runScan(
   context: SyncContext,
   kind: ScanKind,
   initial: ScanProgress,
-): Promise<ScanResult> {
+): Promise<number> {
   const { account, gateway, now } = context;
   const nowSeconds = toUnixTime(now);
   const catalog = createCatalog(gateway, { bulk: true });
@@ -78,7 +75,7 @@ export async function runScan(
         await saveProgress(tx, account.id, kind, next, progress);
         return written;
       });
-      if (!next) return { finished: true, changes };
+      if (!next) return changes;
       progress = next;
     } else {
       // Scans without `paymentsSince` end with their subscriptions phase.
@@ -94,12 +91,12 @@ export async function runScan(
         await saveProgress(tx, account.id, kind, next, progress);
         return written;
       });
-      if (!next) return { finished: true, changes };
+      if (!next) return changes;
       progress = next;
     }
   } while (Date.now() < context.deadline);
 
-  return { finished: false, changes };
+  return changes;
 }
 
 /** Saves the cursor, or completes the scan when `next` is `null`. */

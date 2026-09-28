@@ -28,7 +28,6 @@ export interface Screen {
   publicToken: string;
   settings: ScreenSettings;
   accounts: LinkedAccount[];
-  testEventAt: Date | null;
   createdAt: Date;
 }
 
@@ -37,7 +36,7 @@ export interface AccountOption extends LinkedAccount {
   currency: string | null;
 }
 
-export const screenNameSchema = nameSchema("Give the screen a name.");
+const screenNameSchema = nameSchema("Give the screen a name.");
 
 /** The editor always saves the whole screen, so an auto-save is a single idempotent write. */
 export const screenInputSchema = z.object({
@@ -95,7 +94,6 @@ async function findScreens(where: SQL | undefined): Promise<Screen[]> {
     accounts: row.screenAccounts
       .map(({ account }) => account)
       .sort((a, b) => a.name.localeCompare(b.name)),
-    testEventAt: row.testEventAt,
     createdAt: row.createdAt,
   }));
 }
@@ -256,16 +254,13 @@ export async function regenerateScreenToken(
 }
 
 /** Asks every open display of the screen to play a fake sale, to check sound and confetti. */
-export async function sendTestEvent(
-  workspaceId: string,
-  screenId: string,
-): Promise<ActionResult<{ testEventAt: Date }>> {
+export async function sendTestEvent(workspaceId: string, screenId: string): Promise<ActionResult> {
   const [screen] = await db()
     .update(screens)
     .set({ testEventAt: sql`now()` })
     .where(inWorkspace(workspaceId, screenId))
-    .returning({ testEventAt: screens.testEventAt });
-  return screen?.testEventAt ? { ok: true, testEventAt: screen.testEventAt } : SCREEN_NOT_FOUND;
+    .returning({ id: screens.id });
+  return screen ? { ok: true } : SCREEN_NOT_FOUND;
 }
 
 export async function deleteScreen(workspaceId: string, screenId: string): Promise<ActionResult> {

@@ -20,13 +20,7 @@ import type { ActionResult } from "@/lib/action-result";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 
 /** Creates a screen with sensible defaults, then opens its editor. */
-export function NewScreenButton({
-  variant = "default",
-  label = "New screen",
-}: {
-  variant?: React.ComponentProps<typeof Button>["variant"];
-  label?: string;
-}) {
+export function NewScreenButton({ label = "New screen" }: { label?: string }) {
   const [open, setOpen] = useState(false);
   const [state, create, pending] = useActionState(
     (_: ActionResult | null, name: string) =>
@@ -43,7 +37,7 @@ export function NewScreenButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant}>
+        <Button>
           <PlusIcon data-icon="inline-start" />
           {label}
         </Button>

@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 /** "Ada Lovelace" → "AL". */
-export function initials(name: string): string {
+function initials(name: string): string {
   const letters = name
     .trim()
     .split(/\s+/)

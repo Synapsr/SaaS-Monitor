@@ -83,7 +83,7 @@ export async function syncAccount(
     };
 
     if (account.backfill) {
-      changes += (await runScan(context, "backfill", account.backfill)).changes;
+      changes += await runScan(context, "backfill", account.backfill);
     } else {
       const incremental = await runIncremental(context);
       changes += incremental.changes;
@@ -93,7 +93,7 @@ export async function syncAccount(
         (isReconcileDue(account.lastReconciledAt, now) ? newScan(now, null) : null);
       if (reconcile) {
         mode = "reconcile";
-        changes += (await runScan(context, "reconcile", reconcile)).changes;
+        changes += await runScan(context, "reconcile", reconcile);
       }
     }
 

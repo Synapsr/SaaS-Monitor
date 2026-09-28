@@ -32,13 +32,11 @@ export function PageHeader({
 /** A titled group of content on a page, e.g. "Screens" on the home page. */
 export function PageSection({
   title,
-  description,
   actions,
   children,
   className,
 }: {
   title: string;
-  description?: React.ReactNode;
   actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -47,14 +45,9 @@ export function PageSection({
   return (
     <section aria-labelledby={id} className={cn("flex flex-col gap-4", className)}>
       <div className="flex items-end justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h2 id={id} className="text-base font-medium tracking-tight">
-            {title}
-          </h2>
-          {description && (
-            <p className="text-sm text-pretty text-muted-foreground">{description}</p>
-          )}
-        </div>
+        <h2 id={id} className="min-w-0 text-base font-medium tracking-tight">
+          {title}
+        </h2>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
       {children}

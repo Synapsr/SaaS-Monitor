@@ -64,8 +64,7 @@ export async function sendTestCelebrationAction(screenId: string): Promise<Actio
   const parsed = screenIdSchema.safeParse(screenId);
   if (!parsed.success) return invalidInput(parsed.error);
 
-  const result = await sendTestEvent(workspace.id, parsed.data);
-  return result.ok ? { ok: true } : result;
+  return sendTestEvent(workspace.id, parsed.data);
 }
 
 export async function deleteScreenAction(screenId: string): Promise<ActionResult> {

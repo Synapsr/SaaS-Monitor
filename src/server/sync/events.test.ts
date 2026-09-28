@@ -20,7 +20,7 @@ describe("event digest", () => {
 
     expect([...digest.subscriptions.keys()]).toEqual(["sub_1", "sub_2"]);
     expect(digest.subscriptions.get("sub_1")).toEqual({ id: newer.id, created: JANUARY_1 + 60 });
-    expect(digest).toMatchObject({ count: 3, newest: { id: newer.id } });
+    expect(digest.newest).toMatchObject({ id: newer.id });
   });
 
   it("points discount events at their subscription, or at every subscription of the customer", () => {
@@ -56,12 +56,11 @@ describe("event digest", () => {
     expect(digest.charges.get("ch_1")?.charge.amountRefunded).toBe(100);
   });
 
-  it("accumulates pages and counts what it cannot read", () => {
+  it("accumulates pages and skips events it cannot read", () => {
     const digest = emptyDigest();
     digestEvents(digest, [event("customer.subscription.updated", { id: "sub_1" })]);
     digestEvents(digest, [event("customer.subscription.updated", { unexpected: true })]);
 
-    expect(digest.count).toBe(2);
     expect(digest.subscriptions.size).toBe(1);
   });
 });
