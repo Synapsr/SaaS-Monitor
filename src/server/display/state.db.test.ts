@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import { calendarDay } from "@/lib/display/calendar";
 import type { MrrMovementKind } from "@/lib/display/types";
-import type { ScreenSettingsInput } from "@/lib/screens/settings";
+import { isTimeZone, type ScreenSettingsInput } from "@/lib/screens/settings";
 import type { RateSource } from "@/server/fx";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { createScreen } from "@/test/screens";
@@ -305,6 +306,33 @@ describe("display state", () => {
       at("2026-03-15T09:00:00Z"),
     );
     expect(newYork.metrics.thisMonth).toMatchObject({ new: 0, expansion: 2000 });
+  });
+
+  it("buckets days like browsers in every time zone a screen accepts", async () => {
+    // 20:00 UTC is already the next day from UTC+04:00 on.
+    const instant = "2026-01-01T20:00:00Z";
+    const zones = [
+      "UTC",
+      "America/New_York",
+      "Asia/Calcutta",
+      "Asia/Kolkata",
+      "Pacific/Kiritimati",
+      "Etc/GMT+5",
+      "Etc/GMT-14",
+      "+05:30",
+      "-03:00",
+    ].filter(isTimeZone);
+
+    const rows = await db().execute<{ zone: string; day: string }>(sql`
+      select zone, (${instant}::timestamptz at time zone zone)::date::text as day
+      from unnest(array[${sql.join(
+        zones.map((zone) => sql`${zone}`),
+        sql`, `,
+      )}]) as zone`);
+
+    expect(Object.fromEntries(rows.map(({ zone, day }) => [zone, day]))).toEqual(
+      Object.fromEntries(zones.map((zone) => [zone, calendarDay(new Date(instant), zone)])),
+    );
   });
 
   it("compares revenue with the same days of the previous month, net of refunds", async () => {

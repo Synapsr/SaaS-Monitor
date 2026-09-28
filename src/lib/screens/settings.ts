@@ -11,8 +11,14 @@ export type SoundPack = (typeof SOUND_PACKS)[number];
 export type Accent = (typeof ACCENTS)[number];
 export type ChartRange = (typeof CHART_RANGES)[number];
 
-/** Whether `value` is an IANA time zone this runtime knows, e.g. `Europe/Paris`. */
+/**
+ * Whether `value` is an IANA time zone this runtime knows, e.g. `Europe/Paris`, aliases included:
+ * browsers may report `Asia/Calcutta`, which `Intl.supportedValuesOf` may not list. Offsets such as
+ * `+05:30` are refused: ICU reads them as UTC+05:30, PostgreSQL's `AT TIME ZONE`, which buckets
+ * days, as UTC−05:30 (POSIX signs). Names never start with a sign.
+ */
 export function isTimeZone(value: string): boolean {
+  if (!/^[a-z]/i.test(value)) return false;
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: value });
     return true;
