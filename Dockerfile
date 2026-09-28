@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-bookworm-slim AS base
+FROM node:26-bookworm-slim AS base
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 RUN corepack enable
@@ -18,7 +18,7 @@ ARG APP_URL BUILD_ID
 ENV APP_URL=${APP_URL} BUILD_ID=${BUILD_ID} STANDALONE_BUILD=true
 RUN mkdir -p public && pnpm build
 
-FROM node:24-bookworm-slim AS runner
+FROM node:26-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
