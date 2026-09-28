@@ -46,6 +46,15 @@ All settings are environment variables, documented in [`.env.example`](../.env.e
 After your team has signed up, set `DISABLE_SIGNUPS=true` and restart: nobody else can create an
 account on your instance, while invitations keep working.
 
+`compose.yaml` also passes two values to the image build:
+
+- `APP_URL`, because the absolute links of social previews (a screen shared in a chat, the landing
+  page) are written into the pages when the app is built. Rebuild after changing it:
+  `docker compose up -d --build`.
+- `BUILD_ID` (optional), which identifies the build: open screens reload themselves when it
+  changes. Leave it empty to get a new one with every build; the published images use their
+  version number.
+
 ## Public URL and HTTPS
 
 The app works on a local network (`http://192.168.1.20:3000`), which is enough for a TV in the
@@ -65,9 +74,8 @@ monitor.example.com {
 }
 ```
 
-Then set `APP_URL=https://monitor.example.com` in `.env` and run `docker compose up -d --build`:
-the image is rebuilt too, since links in social previews (a screen shared in a chat, the landing
-page) are written into the pages when the app is built.
+Then set `APP_URL=https://monitor.example.com` in `.env` and run `docker compose up -d --build`
+(the image is rebuilt for `APP_URL`, see above).
 
 ## Updating
 
