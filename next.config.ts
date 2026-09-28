@@ -10,7 +10,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // The Docker image ships the minimal standalone server; `next start` needs the regular output.
+  output: process.env.STANDALONE_BUILD === "true" ? "standalone" : undefined,
   poweredByHeader: false,
   env: { NEXT_PUBLIC_BUILD_ID: buildId },
   async headers() {

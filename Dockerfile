@@ -14,7 +14,7 @@ FROM dependencies AS builder
 COPY . .
 # Identifies the build: open wall displays reload themselves when it changes.
 ARG BUILD_ID
-ENV BUILD_ID=${BUILD_ID}
+ENV BUILD_ID=${BUILD_ID} STANDALONE_BUILD=true
 RUN mkdir -p public && pnpm build
 
 FROM node:24-bookworm-slim AS runner
