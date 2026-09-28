@@ -13,6 +13,7 @@ import {
   reimportStripeAccount,
   renameStripeAccount,
   setWebhookSigningSecret,
+  type MissingPermissions,
 } from "@/server/stripe/accounts";
 
 const accountIdSchema = z.uuid();
@@ -33,11 +34,9 @@ const connectSchema = z.object({
   timeZone: z.string().max(100),
 });
 
-export type ConnectAccountResult = { ok: false; error: string; missingPermissions?: string[] };
-
 export async function connectAccountAction(
   input: z.input<typeof connectSchema>,
-): Promise<ConnectAccountResult> {
+): Promise<ActionResult<object, MissingPermissions>> {
   const { workspace } = await requireWorkspace();
   const parsed = connectSchema.safeParse(input);
   if (!parsed.success) return invalidInput(parsed.error);
@@ -56,21 +55,6 @@ export async function connectAccountAction(
   redirect(firstScreenId ? "/app?onboarding=1" : "/app/accounts");
 }
 
-/**
- * The data layer's account mutations throw when something unexpected happens: report it as a
- * result, so the page shows a message instead of an error screen.
- */
-async function attempt(mutation: () => Promise<unknown>, failure: string): Promise<ActionResult> {
-  try {
-    await mutation();
-  } catch (error) {
-    console.error(failure, error);
-    return { ok: false, error: failure };
-  }
-  revalidatePath("/app", "layout");
-  return { ok: true };
-}
-
 export async function renameAccountAction(accountId: string, name: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = z.object({ accountId: accountIdSchema, name: accountNameSchema }).safeParse({
@@ -78,30 +62,30 @@ export async function renameAccountAction(accountId: string, name: string): Prom
     name,
   });
   if (!parsed.success) return invalidInput(parsed.error);
-  return attempt(
-    () => renameStripeAccount(workspace.id, parsed.data.accountId, parsed.data.name),
-    "We couldn't rename this account. Please try again.",
-  );
+
+  const result = await renameStripeAccount(workspace.id, parsed.data.accountId, parsed.data.name);
+  if (result.ok) revalidatePath("/app", "layout");
+  return result;
 }
 
 export async function reimportAccountAction(accountId: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = accountIdSchema.safeParse(accountId);
   if (!parsed.success) return invalidInput(parsed.error);
-  return attempt(
-    () => reimportStripeAccount(workspace.id, parsed.data),
-    "We couldn't start the import. Please try again.",
-  );
+
+  const result = await reimportStripeAccount(workspace.id, parsed.data);
+  if (result.ok) revalidatePath("/app", "layout");
+  return result;
 }
 
 export async function disconnectAccountAction(accountId: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = accountIdSchema.safeParse(accountId);
   if (!parsed.success) return invalidInput(parsed.error);
-  return attempt(
-    () => disconnectStripeAccount(workspace.id, parsed.data),
-    "We couldn't disconnect this account. Please try again.",
-  );
+
+  const result = await disconnectStripeAccount(workspace.id, parsed.data);
+  if (result.ok) revalidatePath("/app", "layout");
+  return result;
 }
 
 export async function enableInstantUpdatesAction(accountId: string): Promise<ActionResult> {

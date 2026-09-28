@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, eq, inArray, sum } from "drizzle-orm";
 import { db } from "@/db";
 import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import type { ActionResult } from "@/lib/action-result";
 import { permissionLabel, type StripePermissionId } from "@/lib/stripe-permissions";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
 import { createCurrencyConverter } from "@/server/fx";
@@ -22,8 +23,12 @@ import { inspectSecretKey } from "./keys";
 import type { AccountInfo } from "./types";
 import { isWebhookSigningSecret, registerWebhookEndpoint, webhookEndpointUrl } from "./webhooks";
 
-export type ConnectStripeAccountResult =
-  { ok: true; accountId: string } | { ok: false; error: string; missingPermissions?: string[] };
+/** Why a key was refused, when it lacks permissions: their ids, e.g. `rak_charge_read`. */
+export interface MissingPermissions {
+  missingPermissions?: string[];
+}
+
+const ACCOUNT_NOT_FOUND = { ok: false, error: "This Stripe account no longer exists." } as const;
 
 /** What the dashboard shows about a connected Stripe account. */
 export interface StripeAccountSummary {
@@ -71,9 +76,9 @@ const MAX_NAME_LENGTH = 80;
 export async function connectStripeAccount(
   input: { workspaceId: string; name: string; secretKey: string },
   options: StripeAccessOptions = {},
-): Promise<ConnectStripeAccountResult> {
+): Promise<ActionResult<{ accountId: string }, MissingPermissions>> {
   const key = inspectSecretKey(input.secretKey);
-  if (!key.ok) return { ok: false, error: key.error };
+  if (!key.ok) return key;
 
   const gateway = (options.createGateway ?? createStripeGateway)(key.key);
   const access = await checkReadAccess(gateway);
@@ -136,9 +141,9 @@ export async function connectStripeAccount(
   return { ok: true, accountId: account.id };
 }
 
-type ReadAccess = { ok: true } | { ok: false; error: string; missingPermissions?: string[] };
-
-async function checkReadAccess(gateway: StripeGateway): Promise<ReadAccess> {
+async function checkReadAccess(
+  gateway: StripeGateway,
+): Promise<ActionResult<object, MissingPermissions>> {
   const results = await Promise.allSettled(
     REQUIRED_READS.map(({ resource }) => gateway.probe(resource)),
   );
@@ -257,13 +262,19 @@ async function accountMrr(
   return { amount, currency };
 }
 
-export async function renameStripeAccount(workspaceId: string, accountId: string, name: string) {
+export async function renameStripeAccount(
+  workspaceId: string,
+  accountId: string,
+  name: string,
+): Promise<ActionResult> {
   const newName = accountName(name);
-  if (!newName) return;
-  await db()
+  if (!newName) return { ok: false, error: "Name the account, for example after your product." };
+  const renamed = await db()
     .update(stripeAccounts)
     .set({ name: newName })
-    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+    .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
+    .returning({ id: stripeAccounts.id });
+  return renamed.length ? { ok: true } : ACCOUNT_NOT_FOUND;
 }
 
 /** Deletes the account, its imported data and the webhook endpoint the app created. */
@@ -271,7 +282,7 @@ export async function disconnectStripeAccount(
   workspaceId: string,
   accountId: string,
   options: StripeAccessOptions = {},
-) {
+): Promise<ActionResult> {
   const [account] = await db()
     .select({
       encryptedSecretKey: stripeAccounts.encryptedSecretKey,
@@ -279,7 +290,7 @@ export async function disconnectStripeAccount(
     })
     .from(stripeAccounts)
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
-  if (!account) return;
+  if (!account) return ACCOUNT_NOT_FOUND;
 
   if (account.webhookEndpointId) {
     try {
@@ -299,10 +310,14 @@ export async function disconnectStripeAccount(
   await db()
     .delete(stripeAccounts)
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
+  return { ok: true };
 }
 
 /** Drops the imported data and imports the account again from scratch. */
-export async function reimportStripeAccount(workspaceId: string, accountId: string) {
+export async function reimportStripeAccount(
+  workspaceId: string,
+  accountId: string,
+): Promise<ActionResult> {
   const now = new Date();
   const reset = await db().transaction(async (tx) => {
     const [account] = await tx
@@ -328,7 +343,9 @@ export async function reimportStripeAccount(workspaceId: string, accountId: stri
     await tx.delete(payments).where(eq(payments.accountId, accountId));
     return true;
   });
-  if (reset) scheduleSync([accountId]);
+  if (!reset) return ACCOUNT_NOT_FOUND;
+  scheduleSync([accountId]);
+  return { ok: true };
 }
 
 /**
@@ -339,7 +356,7 @@ export async function enableInstantUpdates(
   workspaceId: string,
   accountId: string,
   options: StripeAccessOptions = {},
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<ActionResult> {
   const [account] = await db()
     .select({
       encryptedSecretKey: stripeAccounts.encryptedSecretKey,
@@ -347,7 +364,7 @@ export async function enableInstantUpdates(
     })
     .from(stripeAccounts)
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
-  if (!account) return { ok: false, error: "This Stripe account no longer exists." };
+  if (!account) return ACCOUNT_NOT_FOUND;
   if (account.webhookEndpointId) return { ok: true };
 
   const gateway = (options.createGateway ?? createStripeGateway)(
@@ -369,7 +386,7 @@ export async function setWebhookSigningSecret(
   workspaceId: string,
   accountId: string,
   secret: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<ActionResult> {
   const signingSecret = secret.trim();
   if (!isWebhookSigningSecret(signingSecret)) {
     return {
@@ -383,9 +400,7 @@ export async function setWebhookSigningSecret(
     .set({ encryptedWebhookSecret: encryptSecret(signingSecret) })
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
     .returning({ id: stripeAccounts.id });
-  return updated.length
-    ? { ok: true }
-    : { ok: false, error: "This Stripe account no longer exists." };
+  return updated.length ? { ok: true } : ACCOUNT_NOT_FOUND;
 }
 
 /** Endpoint URL and events to configure when adding the webhook manually in the Dashboard. */

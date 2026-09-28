@@ -3,9 +3,11 @@ import type { z } from "zod";
 /**
  * Outcome of a mutation, shared by services, server actions and the forms that render it.
  * Expected failures (invalid input, missing permission, record not found) are returned with a
- * message that can be shown as is; only unexpected failures throw.
+ * message that can be shown as is, and details (`F`) when a form needs more; only unexpected
+ * failures throw.
  */
-export type ActionResult<T extends object = object> = ({ ok: true } & T) | ActionFailure;
+export type ActionResult<T extends object = object, F extends object = object> =
+  ({ ok: true } & T) | (ActionFailure & F);
 
 export interface ActionFailure {
   ok: false;

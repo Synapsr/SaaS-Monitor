@@ -8,7 +8,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { startTransition, useActionState, useId, useState } from "react";
-import { connectAccountAction, type ConnectAccountResult } from "@/app/app/accounts/actions";
+import { connectAccountAction } from "@/app/app/accounts/actions";
 import { SecretInput } from "@/components/secret-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { permissionLabel } from "@/lib/stripe-permissions";
 
 type ConnectInput = Parameters<typeof connectAccountAction>[0];
+type ConnectResult = Awaited<ReturnType<typeof connectAccountAction>>;
 
 const REASSURANCES = [
   { Icon: ShieldCheckIcon, text: "Read-only: it can’t charge, refund or change anything." },
@@ -44,7 +45,7 @@ export function ConnectAccountForm() {
   const [name, setName] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [state, connect, pending] = useActionState(
-    (_: ConnectAccountResult | null, input: ConnectInput) => connectAccountAction(input),
+    (_: ConnectResult | null, input: ConnectInput) => connectAccountAction(input),
     null,
   );
   const keyHintId = useId();

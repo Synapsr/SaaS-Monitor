@@ -25,6 +25,7 @@ vi.mock("next/server", () => ({ after: vi.fn() }));
 vi.stubEnv("APP_URL", "https://monitor.example.com");
 
 const TEST_KEY = "rk_test_51AbCdEfGhIjKlMnOp4f2a";
+const NOT_FOUND = { ok: false, error: "This Stripe account no longer exists." };
 const LIVE_KEY = "rk_live_51AbCdEfGhIjKlMnOp9z9z";
 
 describe("Stripe accounts", () => {
@@ -235,10 +236,10 @@ describe("Stripe accounts", () => {
       const account = await createStripeAccount(workspaceId);
       const other = await createUserWithWorkspace("Grace Hopper");
 
-      await renameStripeAccount(other.workspaceId, account.id, "Stolen");
-      await renameStripeAccount(workspaceId, account.id, "  ");
+      expect(await renameStripeAccount(other.workspaceId, account.id, "Stolen")).toEqual(NOT_FOUND);
+      expect(await renameStripeAccount(workspaceId, account.id, "  ")).toMatchObject({ ok: false });
       expect((await getStripeAccount(account.id)).name).toBe("Acme");
-      await renameStripeAccount(workspaceId, account.id, " Acme EU ");
+      expect(await renameStripeAccount(workspaceId, account.id, " Acme EU ")).toEqual({ ok: true });
       expect((await getStripeAccount(account.id)).name).toBe("Acme EU");
     });
 
@@ -247,10 +248,14 @@ describe("Stripe accounts", () => {
       if (!result.ok) throw new Error(result.error);
       const other = await createUserWithWorkspace("Grace Hopper");
 
-      await disconnectStripeAccount(other.workspaceId, result.accountId, options);
+      expect(await disconnectStripeAccount(other.workspaceId, result.accountId, options)).toEqual(
+        NOT_FOUND,
+      );
       expect(await getStripeAccount(result.accountId)).toBeDefined();
 
-      await disconnectStripeAccount(workspaceId, result.accountId, options);
+      expect(await disconnectStripeAccount(workspaceId, result.accountId, options)).toEqual({
+        ok: true,
+      });
       expect(await getStripeAccount(result.accountId)).toBeUndefined();
       expect(stripe.webhookEndpoints.size).toBe(0);
     });
@@ -288,11 +293,11 @@ describe("Stripe accounts", () => {
       });
 
       const other = await createUserWithWorkspace("Grace Hopper");
-      await reimportStripeAccount(other.workspaceId, account.id);
+      expect(await reimportStripeAccount(other.workspaceId, account.id)).toEqual(NOT_FOUND);
       expect(await db().$count(payments)).toBe(1);
       expect(after).not.toHaveBeenCalled();
 
-      await reimportStripeAccount(workspaceId, account.id);
+      expect(await reimportStripeAccount(workspaceId, account.id)).toEqual({ ok: true });
 
       expect(await getStripeAccount(account.id)).toMatchObject({
         status: "importing",
@@ -320,11 +325,9 @@ describe("Stripe accounts", () => {
       });
       expect(stripe.webhookEndpoints.size).toBe(1);
       const other = await createUserWithWorkspace("Grace Hopper");
-      expect(
-        await enableInstantUpdates(other.workspaceId, result.accountId, options),
-      ).toMatchObject({
-        ok: false,
-      });
+      expect(await enableInstantUpdates(other.workspaceId, result.accountId, options)).toEqual(
+        NOT_FOUND,
+      );
     });
 
     it("stores the signing secret of an endpoint added by hand", async () => {
@@ -346,7 +349,7 @@ describe("Stripe accounts", () => {
           account.id,
           "whsec_someoneelse0123456789ab",
         ),
-      ).toEqual({ ok: false, error: "This Stripe account no longer exists." });
+      ).toEqual(NOT_FOUND);
       expect((await getStripeAccount(account.id)).encryptedWebhookSecret).toBe(stored);
     });
 
