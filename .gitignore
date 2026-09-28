@@ -15,6 +15,9 @@
 .DS_Store
 *.pem
 
+# local agent worktrees
+/.claude/worktrees/
+
 # debug
 npm-debug.log*
 .pnpm-debug.log*
