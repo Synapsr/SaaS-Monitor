@@ -4,6 +4,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  /* Indeterminate progress: a Stripe import cannot know how much history is left to read. */
+  --animate-import-progress: import-progress 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
+  @keyframes import-progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -3,14 +3,14 @@
 import { useId, useState } from "react";
 import { saveScreenAction } from "@/app/app/screens/actions";
 import { BackLink } from "@/components/app/back-link";
+import { ScreenPreview } from "@/components/app/screens/screen-preview";
+import { screenUrl } from "@/components/app/screens/screen-url";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 import type { ScreenSettings } from "@/lib/screens/settings";
 import type { AccountOption, Screen } from "@/server/screens";
-import { ScreenPreview } from "../screen-preview";
-import { screenUrl } from "../screen-url";
 import { AccountPicker } from "./account-picker";
 import { CurrencySelect } from "./currency-select";
 import { DeleteScreen } from "./delete-screen";

@@ -1,4 +1,4 @@
-import { VolumeX } from "lucide-react";
+import { VolumeXIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 /**
@@ -18,7 +18,7 @@ export function AudioPrompt({ visible }: { visible: boolean }) {
           exit={{ opacity: 0, filter: "blur(4px)", transition: { duration: 0.25 } }}
           className="flex items-center gap-3 rounded-full bg-(--surface) py-2 pr-5 pl-4 text-lg whitespace-nowrap text-(--ink-2) ring-1 ring-(--hairline) transition-[background-color,color,scale] duration-150 hover:bg-white/6 hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow) focus-visible:outline-none active:scale-[0.96]"
         >
-          <VolumeX aria-hidden className="size-[1.15em] text-(--glow)" />
+          <VolumeXIcon aria-hidden className="size-[1.15em] text-(--glow)" />
           Click anywhere to enable sound
         </motion.button>
       )}

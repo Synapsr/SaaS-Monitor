@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { regenerateScreenLinkAction, sendTestCelebrationAction } from "@/app/app/screens/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CopyField } from "@/components/app/copy-button";
+import { TvSetupSteps } from "@/components/app/screens/tv-setup";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Spinner } from "@/components/ui/spinner";
-import { TvSetupSteps } from "../tv-setup";
 
 /** Everything needed to get the screen onto a TV, and to check it works there. */
 export function SharePanel({

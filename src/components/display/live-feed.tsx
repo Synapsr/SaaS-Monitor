@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { KindIcon } from "@/components/display/feed-kind-icon";
@@ -75,7 +75,7 @@ export function LiveFeed({
       </div>
       {warnings.length > 0 && (
         <p className="flex items-start gap-2.5 border-t border-(--hairline) px-8 py-4 text-base text-(--ink-3)">
-          <Info aria-hidden className="mt-0.5 size-[1.1em] shrink-0" />
+          <InfoIcon aria-hidden className="mt-0.5 size-[1.1em] shrink-0" />
           <span className="line-clamp-2">{warnings[0]}</span>
         </p>
       )}

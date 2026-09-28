@@ -1,4 +1,4 @@
-import { Link2Off } from "lucide-react";
+import { Link2OffIcon } from "lucide-react";
 import { ScreenMessage } from "@/components/display/screen-message";
 import { LogoPulse } from "@/components/logo";
 import { siteConfig } from "@/lib/site";
@@ -11,7 +11,11 @@ export function ScreenGone() {
         <LogoPulse className="h-6 text-(--glow)" />
         {siteConfig.name}
       </p>
-      <ScreenMessage icon={<Link2Off />} title="This screen link no longer works" tone="neutral">
+      <ScreenMessage
+        icon={<Link2OffIcon />}
+        title="This screen link no longer works"
+        tone="neutral"
+      >
         <p>
           The screen may have been deleted, or its link regenerated. Open it again from your{" "}
           {siteConfig.name} dashboard to get its current link.

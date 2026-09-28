@@ -1,5 +1,5 @@
 import NumberFlow from "@number-flow/react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import type { CSSProperties } from "react";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
 import type { DisplayMetrics } from "@/lib/display/types";
@@ -61,7 +61,7 @@ function Growth({ mrr, before, currency }: { mrr: number; before: number; curren
   const change = mrr - before;
   const ratio = percentChange(mrr, before);
   const growing = change >= 0;
-  const Icon = growing ? TrendingUp : TrendingDown;
+  const Icon = growing ? TrendingUpIcon : TrendingDownIcon;
   return (
     <p className="flex items-center gap-3">
       <span

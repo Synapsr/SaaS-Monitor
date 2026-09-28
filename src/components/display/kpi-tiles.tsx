@@ -1,5 +1,5 @@
 import NumberFlow from "@number-flow/react";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { ArrowDownRightIcon, ArrowUpRightIcon } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { calendarDay, displayCalendar } from "@/lib/display/calendar";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
@@ -92,7 +92,7 @@ function Tile({ label, value, characters, children }: TileProps) {
 }
 
 function Change({ ratio, children }: { ratio: number; children: ReactNode }) {
-  const Icon = ratio >= 0 ? ArrowUpRight : ArrowDownRight;
+  const Icon = ratio >= 0 ? ArrowUpRightIcon : ArrowDownRightIcon;
   return (
     <span className="inline-flex items-center gap-1.5">
       <span

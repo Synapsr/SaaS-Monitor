@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { RefreshCwIcon } from "lucide-react";
 import { useEffect } from "react";
 import { ScreenMessage } from "@/components/display/screen-message";
 
@@ -35,7 +35,7 @@ export default function DisplayError({ error, retry }: { error: Error; retry: ()
   return (
     <div className="display fixed inset-0 flex overflow-hidden">
       <ScreenMessage
-        icon={<RefreshCw className="motion-safe:animate-[spin_3s_linear_infinite]" />}
+        icon={<RefreshCwIcon className="motion-safe:animate-[spin_3s_linear_infinite]" />}
         tone="neutral"
         title="Reconnecting…"
       >

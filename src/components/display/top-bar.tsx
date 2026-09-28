@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2Icon, Minimize2Icon } from "lucide-react";
 import { AudioPrompt } from "@/components/display/audio-prompt";
 import { LogoPulse } from "@/components/logo";
 import { useNow } from "@/hooks/use-now";
@@ -87,9 +87,9 @@ export function TopBar({
             )}
           >
             {fullscreen.active ? (
-              <Minimize2 aria-hidden className="size-5" />
+              <Minimize2Icon aria-hidden className="size-5" />
             ) : (
-              <Maximize2 aria-hidden className="size-5" />
+              <Maximize2Icon aria-hidden className="size-5" />
             )}
           </button>
         )}

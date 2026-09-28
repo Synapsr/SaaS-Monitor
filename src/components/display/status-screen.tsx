@@ -1,4 +1,4 @@
-import { CircleAlert, Plug } from "lucide-react";
+import { CircleAlertIcon, PlugIcon } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { ScreenMessage } from "@/components/display/screen-message";
 import { LogoPulse } from "@/components/logo";
@@ -56,7 +56,7 @@ export function StatusScreen({ state }: { state: DisplayState }) {
   if (state.status === "error") {
     return (
       <ScreenMessage
-        icon={<CircleAlert />}
+        icon={<CircleAlertIcon />}
         title="Stripe can’t be reached right now"
         tone="neutral"
       >
@@ -69,7 +69,7 @@ export function StatusScreen({ state }: { state: DisplayState }) {
   }
 
   return (
-    <ScreenMessage icon={<Plug />} title="Connect Stripe to bring this screen to life">
+    <ScreenMessage icon={<PlugIcon />} title="Connect Stripe to bring this screen to life">
       <p>
         Add a Stripe account to “{state.screen.name}” in your dashboard. Your MRR, revenue and every
         new payment will show up here, live.

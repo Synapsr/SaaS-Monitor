@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useMemo, useState, type PointerEvent } from "react";
 import { useElementSize } from "@/hooks/use-element-size";
@@ -34,7 +34,7 @@ export function MrrChart({ series, currency, range, target, className }: MrrChar
   const last = series.at(-1);
   const change = first && last ? last.value - first.value : 0;
   const ratio = first && last ? percentChange(last.value, first.value) : null;
-  const Trend = change >= 0 ? TrendingUp : TrendingDown;
+  const Trend = change >= 0 ? TrendingUpIcon : TrendingDownIcon;
 
   return (
     <figure className={cn("flex min-h-0 flex-col gap-3", className)}>

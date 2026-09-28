@@ -1,4 +1,4 @@
-import { CircleDollarSign, PartyPopper } from "lucide-react";
+import { CircleDollarSignIcon, PartyPopperIcon } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { KIND_ICONS } from "@/components/display/feed-kind-icon";
 import { MilestoneCelebration } from "@/components/display/milestone-celebration";
@@ -81,7 +81,7 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
     case "summary": {
       const received = moment.revenue > 0;
       return {
-        icon: CircleDollarSign,
+        icon: CircleDollarSignIcon,
         eyebrow: "Catching up",
         amount: received
           ? formatPayment(moment.revenue, currency)
@@ -100,7 +100,7 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       const { arpu } = state.metrics;
       const typical = arpu > 0 ? Math.max(1, Math.round(toMajorUnits(arpu, currency))) : 49;
       return {
-        icon: PartyPopper,
+        icon: PartyPopperIcon,
         eyebrow: "Test celebration",
         amount: formatPayment(toMinorUnits(typical, currency), currency),
         details: ["This is how your next payment will look and sound"],
@@ -110,7 +110,7 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
     case "milestone":
       // Without celebrations, a milestone is still worth a card.
       return {
-        icon: PartyPopper,
+        icon: PartyPopperIcon,
         eyebrow: moment.isGoal ? "Goal reached" : "Milestone reached",
         amount: formatMoney(moment.amount, currency, { compact: true }),
         recurring: true,

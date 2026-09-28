@@ -77,6 +77,10 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
 ## Style
 
 - TypeScript strict, Prettier (100 columns, double quotes). Run `pnpm format`.
+- Imports use the `@/` alias; a module may import its siblings as `./name`, never a parent folder
+  (`../`). Lucide icons are imported by their `…Icon` names. ESLint enforces both.
+- Styling is Tailwind classes; animations and tokens are defined in the stylesheets
+  (`globals.css`, `wall-palette.css`, `d/display.css`), no CSS modules.
 - Small modules with explicit names; comments explain _why_, not _what_.
 - UI: clean and calm. English copy, sentence case.
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`…). No AI attribution or
