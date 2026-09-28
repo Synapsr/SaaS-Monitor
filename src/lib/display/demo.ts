@@ -28,6 +28,7 @@ import {
   ACCENTS,
   CHART_RANGES,
   defaultScreenSettings,
+  isTimeZone,
   SOUND_PACKS,
   type Accent,
   type ChartRange,
@@ -56,15 +57,6 @@ export interface DemoOptions {
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
-
-function isTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** Reads `/d/demo?accent=violet&sound=arcade&names=1&range=12m&tz=Europe/Paris&preview=1`. */
 export function parseDemoOptions(params: SearchParams): { options: DemoOptions; preview: boolean } {

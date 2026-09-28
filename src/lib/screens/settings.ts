@@ -8,7 +8,8 @@ export type SoundPack = (typeof SOUND_PACKS)[number];
 export type Accent = (typeof ACCENTS)[number];
 export type ChartRange = (typeof CHART_RANGES)[number];
 
-function isTimeZone(value: string): boolean {
+/** Whether `value` is an IANA time zone this runtime knows, e.g. `Europe/Paris`. */
+export function isTimeZone(value: string): boolean {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: value });
     return true;
