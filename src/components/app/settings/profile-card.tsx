@@ -2,7 +2,7 @@
 
 import { LogOutIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { startTransition, useActionState, useId, useState } from "react";
 import { toast } from "sonner";
 import { updateProfileAction } from "@/app/app/settings/actions";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useSignOut } from "@/hooks/use-sign-out";
+import type { ActionResult } from "@/lib/action-result";
 import { PERSON_NAME_MAX_LENGTH } from "@/lib/names";
 import { SettingsCard } from "./settings-card";
 
@@ -17,27 +18,25 @@ export function ProfileCard({ name, email }: { name: string; email: string }) {
   const id = useId();
   const router = useRouter();
   const [value, setValue] = useState(name);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, startSaving] = useTransition();
-  const { signOut, signingOut } = useSignOut();
-
-  function save(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    startSaving(async () => {
-      const result = await updateProfileAction(value);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
+  const [state, save, saving] = useActionState(async (_: ActionResult | null, newName: string) => {
+    const result = await updateProfileAction(newName);
+    if (result.ok) {
       toast.success("Profile saved.");
       // The session cookie holding the name was just refreshed: render the header with it.
       router.refresh();
-    });
-  }
+    }
+    return result;
+  }, null);
+  const { signOut, signingOut } = useSignOut();
+  const error = state && !state.ok ? state.error : null;
 
   return (
-    <form onSubmit={save}>
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        startTransition(() => save(value));
+      }}
+    >
       <SettingsCard
         title="Your profile"
         description="How you appear to the other members."

@@ -43,6 +43,17 @@ Data flow: Stripe → sync engine (backfill once, then incremental from the Even
 tables (`subscriptions`, `mrr_movements`, `payments`) → metrics → `DisplayState` → display.
 Syncs are triggered on demand when a display polls or the dashboard is open (no worker needed).
 
+## Actions and forms
+
+- Server actions live next to the routes that use them, in `src/app/**/actions.ts`. An action
+  resolves the workspace (`requireWorkspace()`), parses its input with the service's Zod schema,
+  calls the service and revalidates. Services trust their typed input and return an
+  `ActionResult` (`src/lib/action-result.ts`); only unexpected failures throw, to the error
+  boundary.
+- Forms submit with `useActionState`: the action's result is the state, errors render from it
+  and `pending` disables the submit button. Buttons that run an action on their own (revoke,
+  re-import, send a test) use `useTransition` and report the outcome with a toast.
+
 ## Rules
 
 - **Tenant isolation**: every query on tenant data filters on the workspace id returned by

@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleCheckIcon, SendIcon } from "lucide-react";
-import { useId, useState, useTransition } from "react";
+import { startTransition, useActionState, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { inviteMemberAction, revokeInvitationAction } from "@/app/app/settings/actions";
 import { CopyButton, CopyField } from "@/components/app/copy-button";
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import type { ActionResult } from "@/lib/action-result";
 import { INVITATION_TTL_DAYS, invitationPath } from "@/lib/invitations";
 import { ROLE_DETAILS, type WorkspaceRole } from "@/lib/roles";
 import { SettingsCard } from "./settings-card";
@@ -46,28 +47,24 @@ export function InviteCard({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<WorkspaceRole>("member");
   const [created, setCreated] = useState<{ email: string; url: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [state, invite, pending] = useActionState(
+    async (_: ActionResult | null, input: { email: string; role: WorkspaceRole }) => {
+      const result = await inviteMemberAction(input);
+      if (result.ok) {
+        setCreated({
+          email: input.email.trim().toLowerCase(),
+          url: invitationUrl(appUrl, result.invitationId),
+        });
+        setEmail("");
+      }
+      return result;
+    },
+    null,
+  );
+  const error = state && !state.ok ? state.error : null;
   const roles = canInviteOwners
     ? (["member", "admin", "owner"] as const)
     : (["member", "admin"] as const);
-
-  function invite(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    startTransition(async () => {
-      const result = await inviteMemberAction({ email, role });
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setCreated({
-        email: email.trim().toLowerCase(),
-        url: invitationUrl(appUrl, result.invitationId),
-      });
-      setEmail("");
-    });
-  }
 
   return (
     <SettingsCard
@@ -75,7 +72,13 @@ export function InviteCard({
       description={`No email is sent: you get a link to share. It works for that email address only, for ${INVITATION_TTL_DAYS} days.`}
     >
       <div className="flex flex-col gap-5">
-        <form onSubmit={invite} className="flex flex-col gap-2">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            startTransition(() => invite({ email, role }));
+          }}
+          className="flex flex-col gap-2"
+        >
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               type="email"
@@ -153,10 +156,10 @@ export function InviteCard({
 }
 
 function PendingInvitation({ invitation, url }: { invitation: InvitationRow; url: string }) {
-  const [pending, startTransition] = useTransition();
+  const [revoking, startRevoking] = useTransition();
 
   function revoke() {
-    startTransition(async () => {
+    startRevoking(async () => {
       const result = await revokeInvitationAction(invitation.id);
       if (result.ok) toast.success(`Invitation for ${invitation.email} revoked.`);
       else toast.error(result.error);
@@ -166,7 +169,7 @@ function PendingInvitation({ invitation, url }: { invitation: InvitationRow; url
   return (
     <li
       className="flex items-center gap-3 py-2.5 transition-opacity data-pending:opacity-50"
-      data-pending={pending || undefined}
+      data-pending={revoking || undefined}
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="truncate text-sm">{invitation.email}</p>
@@ -175,8 +178,8 @@ function PendingInvitation({ invitation, url }: { invitation: InvitationRow; url
         </p>
       </div>
       <CopyButton value={url} label="Copy link" variant="ghost" />
-      <Button variant="ghost" size="sm" onClick={revoke} disabled={pending}>
-        {pending && <Spinner />}
+      <Button variant="ghost" size="sm" onClick={revoke} disabled={revoking}>
+        {revoking && <Spinner />}
         Revoke
       </Button>
     </li>

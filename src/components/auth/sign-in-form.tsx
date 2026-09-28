@@ -2,7 +2,7 @@
 
 import { CircleAlertIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { startTransition, useActionState, useId, useState } from "react";
 import { SecretInput } from "@/components/secret-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -26,27 +26,23 @@ export function SignInForm({
   const router = useRouter();
   // A failed social sign-in comes back as a page error; a wrong password is a field error.
   const [pageError, setPageError] = useState(initialError);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [error, signIn, pending] = useActionState(async (_: string | null, form: FormData) => {
+    const { error } = await authClient.signIn.email({
+      email: String(form.get("email")),
+      password: String(form.get("password")),
+    });
+    if (error) return authErrorMessage(error);
+    router.replace(next);
+    router.refresh();
+    return null;
+  }, null);
   const errorId = useId();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setPageError(null);
-    setError(null);
-    startTransition(async () => {
-      const { error } = await authClient.signIn.email({
-        email: String(form.get("email")),
-        password: String(form.get("password")),
-      });
-      if (error) {
-        setError(authErrorMessage(error));
-        return;
-      }
-      router.replace(next);
-      router.refresh();
-    });
+    startTransition(() => signIn(form));
   }
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { startTransition, useActionState, useId } from "react";
 import { SecretInput } from "@/components/secret-input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -27,27 +27,23 @@ export function SignUpForm({
   signupsClosed: boolean;
 }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [error, signUp, pending] = useActionState(async (_: string | null, form: FormData) => {
+    const { error } = await authClient.signUp.email({
+      name: String(form.get("name")).trim(),
+      email: invitedEmail ?? String(form.get("email")),
+      password: String(form.get("password")),
+    });
+    if (error) return authErrorMessage(error, { signupsClosed });
+    router.replace(next);
+    router.refresh();
+    return null;
+  }, null);
   const passwordHintId = useId();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    setError(null);
-    startTransition(async () => {
-      const { error } = await authClient.signUp.email({
-        name: String(form.get("name")).trim(),
-        email: invitedEmail ?? String(form.get("email")),
-        password: String(form.get("password")),
-      });
-      if (error) {
-        setError(authErrorMessage(error, { signupsClosed }));
-        return;
-      }
-      router.replace(next);
-      router.refresh();
-    });
+    startTransition(() => signUp(form));
   }
 
   return (

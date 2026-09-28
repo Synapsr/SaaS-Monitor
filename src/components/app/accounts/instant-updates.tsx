@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRightIcon, ChevronRightIcon, ClockIcon, ZapIcon } from "lucide-react";
-import { useId, useState, useTransition } from "react";
+import { startTransition, useActionState, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { enableInstantUpdatesAction, saveWebhookSecretAction } from "@/app/app/accounts/actions";
 import { CopyCode, CopyField } from "@/components/app/copy-button";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import type { ActionResult } from "@/lib/action-result";
 import { formatApproximateDuration } from "@/lib/format";
 import type { StripeAccountSummary } from "@/server/stripe/accounts";
 
@@ -39,7 +40,7 @@ export function InstantUpdates({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [enabling, startEnabling] = useTransition();
 
   if (updates.mode === "webhook") {
     return (
@@ -58,7 +59,7 @@ export function InstantUpdates({
 
   function enable() {
     setError(null);
-    startTransition(async () => {
+    startEnabling(async () => {
       const result = await enableInstantUpdatesAction(accountId);
       if (result.ok) {
         toast.success("Instant updates are on.");
@@ -81,8 +82,8 @@ export function InstantUpdates({
             Turn on instant updates to hear each sale the moment it happens.
           </p>
         </div>
-        <Button variant="outline" onClick={enable} disabled={pending} className="shrink-0">
-          {pending ? <Spinner /> : <ZapIcon data-icon="inline-start" />}
+        <Button variant="outline" onClick={enable} disabled={enabling} className="shrink-0">
+          {enabling ? <Spinner /> : <ZapIcon data-icon="inline-start" />}
           Enable instant updates
         </Button>
       </div>
@@ -127,20 +128,14 @@ function ManualWebhookSetup({
   instructions: WebhookInstructions;
 }) {
   const [secret, setSecret] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [state, save, pending] = useActionState(async (_: ActionResult | null, value: string) => {
+    const result = await saveWebhookSecretAction(accountId, value);
+    if (result.ok) toast.success("Instant updates are on.");
+    return result;
+  }, null);
+  const error = state && !state.ok ? state.error : null;
   const id = useId();
   const webhooksUrl = `https://dashboard.stripe.com/${livemode ? "" : "test/"}webhooks`;
-
-  function save(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    startTransition(async () => {
-      const result = await saveWebhookSecretAction(accountId, secret);
-      if (result.ok) toast.success("Instant updates are on.");
-      else setError(result.error);
-    });
-  }
 
   return (
     <ol className="mt-4 flex flex-col gap-5 border-l pl-5 text-sm">
@@ -168,7 +163,13 @@ function ManualWebhookSetup({
         <CopyCode code={instructions.events.join("\n")} label="events" />
       </li>
       <li>
-        <form onSubmit={save} className="flex flex-col gap-2">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            startTransition(() => save(secret));
+          }}
+          className="flex flex-col gap-2"
+        >
           <Field>
             <FieldLabel htmlFor={`${id}-secret`}>Paste the endpoint’s signing secret</FieldLabel>
             <div className="flex flex-col gap-2 sm:flex-row">

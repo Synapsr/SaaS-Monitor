@@ -1,33 +1,36 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
+import { startTransition, useActionState, useId, useState } from "react";
 import { toast } from "sonner";
 import { renameWorkspaceAction } from "@/app/app/settings/actions";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import type { ActionResult } from "@/lib/action-result";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 import { SettingsCard } from "./settings-card";
 
 export function WorkspaceNameCard({ name, canEdit }: { name: string; canEdit: boolean }) {
   const id = useId();
   const [value, setValue] = useState(name);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  function save(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    startTransition(async () => {
-      const result = await renameWorkspaceAction(value);
+  const [state, rename, pending] = useActionState(
+    async (_: ActionResult | null, newName: string) => {
+      const result = await renameWorkspaceAction(newName);
       if (result.ok) toast.success("Workspace renamed.");
-      else setError(result.error);
-    });
-  }
+      return result;
+    },
+    null,
+  );
+  const error = state && !state.ok ? state.error : null;
 
   return (
-    <form onSubmit={save}>
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        startTransition(() => rename(value));
+      }}
+    >
       <SettingsCard
         title="Workspace name"
         description="Shown in the workspace switcher and in invitations."
