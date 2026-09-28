@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1790584557689,
+      "when": 1790605486742,
       "tag": "0000_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1790588142971,
-      "tag": "0001_sync_engine",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1790603310924,
-      "tag": "0002_stripe_coupons",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1790603583581,
-      "tag": "0003_recent_event_ids",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1790603862541,
-      "tag": "0004_subscription_last_seen_at",
       "breakpoints": true
     }
   ]

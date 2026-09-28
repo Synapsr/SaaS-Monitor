@@ -71,16 +71,28 @@ CREATE TABLE "stripe_accounts" (
 	"status" "stripe_account_status" DEFAULT 'importing' NOT NULL,
 	"last_error" text,
 	"backfill" jsonb,
+	"reconcile" jsonb,
 	"events_cursor" bigint,
+	"recent_event_ids" text[] DEFAULT '{}' NOT NULL,
+	"last_event_at" timestamp with time zone,
 	"last_synced_at" timestamp with time zone,
 	"last_reconciled_at" timestamp with time zone,
 	"sync_locked_until" timestamp with time zone,
+	"sync_failures" integer DEFAULT 0 NOT NULL,
 	"sync_requested_at" timestamp with time zone,
 	"webhook_endpoint_id" text,
 	"encrypted_webhook_secret" text,
 	"last_webhook_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stripe_coupons" (
+	"account_id" uuid NOT NULL,
+	"coupon_id" text NOT NULL,
+	"terms" jsonb NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "stripe_coupons_account_id_coupon_id_pk" PRIMARY KEY("account_id","coupon_id")
 );
 --> statement-breakpoint
 CREATE TABLE "subscriptions" (
@@ -100,6 +112,7 @@ CREATE TABLE "subscriptions" (
 	"canceled_at" timestamp with time zone,
 	"ended_at" timestamp with time zone,
 	"cancel_at_period_end" boolean DEFAULT false NOT NULL,
+	"last_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -188,6 +201,7 @@ ALTER TABLE "screen_accounts" ADD CONSTRAINT "screen_accounts_screen_id_screens_
 ALTER TABLE "screen_accounts" ADD CONSTRAINT "screen_accounts_account_id_stripe_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."stripe_accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "screens" ADD CONSTRAINT "screens_workspace_id_organizations_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "stripe_accounts" ADD CONSTRAINT "stripe_accounts_workspace_id_organizations_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stripe_coupons" ADD CONSTRAINT "stripe_coupons_account_id_stripe_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."stripe_accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_account_id_stripe_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."stripe_accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -196,11 +210,13 @@ ALTER TABLE "members" ADD CONSTRAINT "members_organization_id_organizations_id_f
 ALTER TABLE "members" ADD CONSTRAINT "members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "mrr_movements_account_id_occurred_at_index" ON "mrr_movements" USING btree ("account_id","occurred_at");--> statement-breakpoint
+CREATE INDEX "mrr_movements_account_id_stripe_subscription_id_index" ON "mrr_movements" USING btree ("account_id","stripe_subscription_id");--> statement-breakpoint
+CREATE INDEX "mrr_movements_account_id_stripe_customer_id_index" ON "mrr_movements" USING btree ("account_id","stripe_customer_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "payments_account_id_stripe_charge_id_index" ON "payments" USING btree ("account_id","stripe_charge_id");--> statement-breakpoint
 CREATE INDEX "payments_account_id_occurred_at_index" ON "payments" USING btree ("account_id","occurred_at");--> statement-breakpoint
 CREATE INDEX "screens_workspace_id_index" ON "screens" USING btree ("workspace_id");--> statement-breakpoint
 CREATE INDEX "stripe_accounts_workspace_id_index" ON "stripe_accounts" USING btree ("workspace_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "stripe_accounts_workspace_id_stripe_account_id_index" ON "stripe_accounts" USING btree ("workspace_id","stripe_account_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "stripe_accounts_workspace_id_stripe_account_id_livemode_index" ON "stripe_accounts" USING btree ("workspace_id","stripe_account_id","livemode");--> statement-breakpoint
 CREATE UNIQUE INDEX "subscriptions_account_id_stripe_subscription_id_index" ON "subscriptions" USING btree ("account_id","stripe_subscription_id");--> statement-breakpoint
 CREATE INDEX "subscriptions_account_id_stripe_customer_id_index" ON "subscriptions" USING btree ("account_id","stripe_customer_id");--> statement-breakpoint
 CREATE INDEX "accounts_userId_idx" ON "accounts" USING btree ("user_id");--> statement-breakpoint

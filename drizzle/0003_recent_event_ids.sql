@@ -1,1 +1,0 @@
-ALTER TABLE "stripe_accounts" ADD COLUMN "recent_event_ids" text[] DEFAULT '{}' NOT NULL;
