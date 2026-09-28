@@ -69,7 +69,7 @@ export function InviteCard({
   return (
     <SettingsCard
       title="Invite people"
-      description={`No email is sent: you get a link to share. It works for that email address only, for ${INVITATION_TTL_DAYS} days.`}
+      description={`No email is sent: you get a link for that email address, valid for ${INVITATION_TTL_DAYS} days. Share it privately: whoever opens it can join with that address.`}
     >
       <div className="flex flex-col gap-5">
         <form
@@ -130,8 +130,8 @@ export function InviteCard({
             </p>
             <CopyField value={created.url} label="Invite link" />
             <p className="text-sm text-pretty text-muted-foreground">
-              Send it to them: they sign in or create an account with this email address, and join
-              right away.
+              Send it to them privately: they sign in or create an account with this email address,
+              and join right away.
             </p>
           </div>
         )}

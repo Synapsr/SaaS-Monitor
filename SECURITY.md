@@ -19,3 +19,9 @@ few days, and a fix will be released as quickly as possible, crediting you if yo
 - Screen URLs contain an unguessable token. They only expose the metrics shown on the screen;
   customer names are hidden unless enabled. Regenerating the link revokes the old one.
 - Every dashboard query is scoped to the workspace of the signed-in member.
+- Invitation links work like passwords: email addresses are not verified yet, so whoever opens a
+  link can create an account with the invited address and join the workspace. Share them
+  privately, and revoke the ones that are no longer needed.
+- Behind a reverse proxy, publish the app on localhost only and let the proxy set
+  `X-Forwarded-For`, or sign-in rate limits can be bypassed (see
+  [Self-hosting](docs/self-hosting.md#public-url-and-https)).

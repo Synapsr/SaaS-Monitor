@@ -70,12 +70,30 @@ automatically:
 
 ```caddyfile
 monitor.example.com {
+	header Strict-Transport-Security "max-age=31536000"
 	reverse_proxy localhost:3000
 }
 ```
 
-Then set `APP_URL=https://monitor.example.com` in `.env` and run `docker compose up -d --build`
-(the image is rebuilt for `APP_URL`, see above).
+Then, in `.env`:
+
+```bash
+APP_URL=https://monitor.example.com
+# Only the proxy reaches the app: see below.
+APP_PORT=127.0.0.1:3000
+```
+
+and run `docker compose up -d --build` (the image is rebuilt for `APP_URL`, see above).
+
+Behind a proxy, keep these in mind:
+
+- **Publish the app on localhost only** (`APP_PORT=127.0.0.1:3000`). Sign-in attempts are rate
+  limited by client address, which the app reads from `X-Forwarded-For`: anyone reaching port
+  3000 directly could forge that header and get around the limit. TVs then open screens through
+  the proxy's HTTPS address.
+- **Use a proxy that sets `X-Forwarded-For` itself** rather than passing on what clients send.
+  Caddy does by default.
+- **Enable HSTS at the proxy**, as above, so that browsers never use plain HTTP again.
 
 ## Updating
 
