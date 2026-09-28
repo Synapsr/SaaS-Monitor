@@ -30,7 +30,8 @@
     "db:down": "docker compose -f compose.dev.yaml down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "setup": "node scripts/setup.mjs"
   },
   "dependencies": {
     "@number-flow/react": "0.6.2",

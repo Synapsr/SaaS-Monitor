@@ -1,0 +1,14 @@
+.git
+.github
+.claude
+.vscode
+**/node_modules
+**/.next
+coverage
+docs
+*.md
+!README.md
+.env*
+!.env.example
+Dockerfile
+compose*.yaml

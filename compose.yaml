@@ -1,0 +1,51 @@
+# Self-hosting: `pnpm setup` (or copy .env.example to .env and fill in the secrets), then
+# `docker compose up -d`. The app listens on http://localhost:3000 (APP_PORT).
+name: saas-monitor
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: saas_monitor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: saas_monitor
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saas_monitor -d saas_monitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      args:
+        BUILD_ID: ${BUILD_ID:-}
+    restart: unless-stopped
+    init: true
+    ports:
+      # Reachable from your network, so a TV or Raspberry Pi can open the screens.
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      DATABASE_URL: postgres://saas_monitor:${POSTGRES_PASSWORD}@db:5432/saas_monitor
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env}
+      DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-false}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      MIGRATE_ON_START: ${MIGRATE_ON_START:-true}
+      FX_RATES_URL: ${FX_RATES_URL:-https://api.frankfurter.dev/v1}
+    depends_on:
+      db:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+volumes:
+  postgres:
