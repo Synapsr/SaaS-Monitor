@@ -88,6 +88,11 @@ describe("webhook health", () => {
       mode: "polling",
       intervalSeconds: 208,
     });
+    // An account in error is only checked again now and then, whatever its sales.
+    expect(updatesMode(state({ paymentsLast30Days: 100, status: "error" }))).toEqual({
+      mode: "polling",
+      intervalSeconds: 30 * 60,
+    });
   });
 });
 

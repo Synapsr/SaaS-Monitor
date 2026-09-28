@@ -49,12 +49,6 @@ export function isWebhookHealthy(state: UpdatesState): boolean {
 export type UpdatesMode =
   { mode: "webhook"; lastEventAt: Date | null } | { mode: "polling"; intervalSeconds: number };
 
-export function updatesMode(state: UpdatesState): UpdatesMode {
-  return isWebhookHealthy(state)
-    ? { mode: "webhook", lastEventAt: state.lastWebhookAt }
-    : { mode: "polling", intervalSeconds: pollIntervalSeconds(state.paymentsLast30Days) };
-}
-
 export interface SyncState extends UpdatesState {
   status: "importing" | "ready" | "error";
   lastSyncedAt: Date | null;
@@ -63,16 +57,29 @@ export interface SyncState extends UpdatesState {
   syncLockedUntil: Date | null;
 }
 
+type CheckedAccount = UpdatesState & Pick<SyncState, "status">;
+
+/**
+ * How long an account may go without a sync. An account in error only needs its key checked
+ * again now and then, like an account whose webhook announces everything.
+ */
+function checkIntervalSeconds(account: CheckedAccount): number {
+  return account.status === "error" || isWebhookHealthy(account)
+    ? SAFETY_NET_INTERVAL_SECONDS
+    : pollIntervalSeconds(account.paymentsLast30Days);
+}
+
+export function updatesMode(account: CheckedAccount): UpdatesMode {
+  return isWebhookHealthy(account)
+    ? { mode: "webhook", lastEventAt: account.lastWebhookAt }
+    : { mode: "polling", intervalSeconds: checkIntervalSeconds(account) };
+}
+
 export function isSyncDue(account: SyncState, now: Date): boolean {
   if (account.syncLockedUntil && account.syncLockedUntil > now) return false;
   if (account.status === "importing" || !account.lastSyncedAt) return true;
   if (account.syncRequestedAt && account.syncRequestedAt > account.lastSyncedAt) return true;
-
-  const intervalSeconds =
-    account.status === "error" || isWebhookHealthy(account)
-      ? SAFETY_NET_INTERVAL_SECONDS
-      : pollIntervalSeconds(account.paymentsLast30Days);
-  return now.getTime() - account.lastSyncedAt.getTime() >= intervalSeconds * 1000;
+  return now.getTime() - account.lastSyncedAt.getTime() >= checkIntervalSeconds(account) * 1000;
 }
 
 /** A full reconcile runs daily to fix drift, such as a repeating coupon that silently ended. */
