@@ -19,6 +19,7 @@ import {
 } from "./accounts";
 import { StripeAccessError } from "./errors";
 import { SYNC_EVENT_TYPES } from "./event-types";
+import { secretKeySchema } from "./keys";
 
 vi.mock("next/server", () => ({ after: vi.fn() }));
 // Stripe only delivers webhooks to public HTTPS addresses.
@@ -33,7 +34,10 @@ describe("Stripe accounts", () => {
   let workspaceId: string;
   const options = { createGateway: () => stripe };
   const connect = (secretKey = TEST_KEY, name = "Acme") =>
-    connectStripeAccount({ workspaceId, name, secretKey }, options);
+    connectStripeAccount(
+      { workspaceId, name, secretKey: secretKeySchema.parse(secretKey) },
+      options,
+    );
 
   beforeEach(async () => {
     vi.mocked(after).mockClear();
@@ -70,19 +74,6 @@ describe("Stripe accounts", () => {
       expect(account.webhookEndpointId).toBe([...stripe.webhookEndpoints.keys()][0]);
       expect(decryptSecret(account.encryptedWebhookSecret!)).toMatch(/^whsec_/);
       expect(after).toHaveBeenCalledTimes(1);
-    });
-
-    it("names the account after Stripe when no name is given", async () => {
-      const result = await connect(TEST_KEY, "  ");
-      if (!result.ok) throw new Error(result.error);
-
-      expect((await getStripeAccount(result.accountId)).name).toBe("Fake Inc");
-    });
-
-    it("rejects malformed keys without calling Stripe", async () => {
-      expect(await connect("pk_test_51AbCdEfGhIjKlMnOp4f2a")).toMatchObject({ ok: false });
-      expect(await connect("hello")).toMatchObject({ ok: false });
-      expect(stripe.requestCount).toBe(0);
     });
 
     it("explains an invalid key", async () => {
@@ -237,9 +228,8 @@ describe("Stripe accounts", () => {
       const other = await createUserWithWorkspace("Grace Hopper");
 
       expect(await renameStripeAccount(other.workspaceId, account.id, "Stolen")).toEqual(NOT_FOUND);
-      expect(await renameStripeAccount(workspaceId, account.id, "  ")).toMatchObject({ ok: false });
       expect((await getStripeAccount(account.id)).name).toBe("Acme");
-      expect(await renameStripeAccount(workspaceId, account.id, " Acme EU ")).toEqual({ ok: true });
+      expect(await renameStripeAccount(workspaceId, account.id, "Acme EU")).toEqual({ ok: true });
       expect((await getStripeAccount(account.id)).name).toBe("Acme EU");
     });
 
@@ -333,11 +323,8 @@ describe("Stripe accounts", () => {
     it("stores the signing secret of an endpoint added by hand", async () => {
       const account = await createStripeAccount(workspaceId);
 
-      expect(await setWebhookSigningSecret(workspaceId, account.id, "secret")).toMatchObject({
-        ok: false,
-      });
       expect(
-        await setWebhookSigningSecret(workspaceId, account.id, " whsec_0123456789abcdefghijKLMN "),
+        await setWebhookSigningSecret(workspaceId, account.id, "whsec_0123456789abcdefghijKLMN"),
       ).toEqual({ ok: true });
       const stored = (await getStripeAccount(account.id)).encryptedWebhookSecret;
       expect(decryptSecret(stored!)).toBe("whsec_0123456789abcdefghijKLMN");

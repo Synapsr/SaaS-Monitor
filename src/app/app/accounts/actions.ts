@@ -7,6 +7,8 @@ import { invalidInput, type ActionResult } from "@/lib/action-result";
 import { createFirstScreen } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
 import {
+  accountNameSchema,
+  connectAccountSchema,
   connectStripeAccount,
   disconnectStripeAccount,
   enableInstantUpdates,
@@ -15,21 +17,11 @@ import {
   setWebhookSigningSecret,
   type MissingPermissions,
 } from "@/server/stripe/accounts";
+import { webhookSigningSecretSchema } from "@/server/stripe/webhooks";
 
 const accountIdSchema = z.uuid();
-const accountNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Name the account, for example after your product.")
-  .max(60, "Keep the name under 60 characters.");
 
-const connectSchema = z.object({
-  name: accountNameSchema,
-  secretKey: z
-    .string()
-    .trim()
-    .regex(/^(rk|sk)_(live|test)_\S+$/, "Paste a Stripe key: it starts with rk_live_ or rk_test_.")
-    .max(500),
+const connectSchema = connectAccountSchema.extend({
   /** The browser's time zone, for the screen created with the first account. */
   timeZone: z.string().max(100),
 });
@@ -104,14 +96,7 @@ export async function saveWebhookSecretAction(
 ): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = z
-    .object({
-      accountId: accountIdSchema,
-      secret: z
-        .string()
-        .trim()
-        .regex(/^whsec_\S+$/, "Paste the signing secret: it starts with whsec_.")
-        .max(500),
-    })
+    .object({ accountId: accountIdSchema, secret: webhookSigningSecretSchema })
     .safeParse({ accountId, secret });
   if (!parsed.success) return invalidInput(parsed.error);
 

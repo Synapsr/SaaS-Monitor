@@ -28,6 +28,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionResult } from "@/lib/action-result";
+import { NAME_MAX_LENGTH } from "@/lib/names";
 
 type OpenDialog = "rename" | "reimport" | "disconnect" | null;
 
@@ -141,7 +142,7 @@ function RenameAccountDialog({
               name="name"
               defaultValue={account.name}
               required
-              maxLength={60}
+              maxLength={NAME_MAX_LENGTH}
               autoComplete="off"
               aria-invalid={Boolean(error)}
               aria-describedby={error ? errorId : undefined}

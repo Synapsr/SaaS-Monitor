@@ -3,6 +3,7 @@ import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
 import { getStripeAccount } from "@/test/stripe-accounts";
 import { connectStripeAccount, enableInstantUpdates } from "./accounts";
+import { secretKeySchema } from "./keys";
 
 vi.mock("next/server", () => ({ after: vi.fn() }));
 
@@ -20,7 +21,11 @@ describe("instant updates on a private address", () => {
   it("connects without a webhook and explains why instant updates are unavailable", async () => {
     const options = { createGateway: () => stripe };
     const result = await connectStripeAccount(
-      { workspaceId, name: "Acme", secretKey: "rk_test_51AbCdEfGhIjKlMnOp4f2a" },
+      {
+        workspaceId,
+        name: "Acme",
+        secretKey: secretKeySchema.parse("rk_test_51AbCdEfGhIjKlMnOp4f2a"),
+      },
       options,
     );
     if (!result.ok) throw new Error(result.error);

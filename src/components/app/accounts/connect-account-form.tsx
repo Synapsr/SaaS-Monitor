@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { NAME_MAX_LENGTH } from "@/lib/names";
 import { permissionLabel } from "@/lib/stripe-permissions";
 
 type ConnectInput = Parameters<typeof connectAccountAction>[0];
@@ -74,7 +75,7 @@ export function ConnectAccountForm() {
             onChange={(event) => setName(event.target.value)}
             placeholder="Acme"
             required
-            maxLength={60}
+            maxLength={NAME_MAX_LENGTH}
             autoComplete="off"
             className="h-9"
           />

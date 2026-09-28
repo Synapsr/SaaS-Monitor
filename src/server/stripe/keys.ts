@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 import type { ActionResult } from "@/lib/action-result";
 
 /** A Stripe API key whose format was checked. */
@@ -32,3 +33,16 @@ export function inspectSecretKey(input: string): ActionResult<SecretKey> {
   const [, prefix, mode] = match;
   return { ok: true, key, livemode: mode === "live", hint: `${prefix}…${key.slice(-4)}` };
 }
+
+/** A pasted API key, read into a `SecretKey`: how actions validate the key of a connection. */
+export const secretKeySchema = z
+  .string()
+  .max(500, "This doesn't look like a Stripe API key.")
+  .transform((input, context): SecretKey => {
+    const inspection = inspectSecretKey(input);
+    if (!inspection.ok) {
+      context.addIssue({ code: "custom", message: inspection.error });
+      return z.NEVER;
+    }
+    return { key: inspection.key, livemode: inspection.livemode, hint: inspection.hint };
+  });

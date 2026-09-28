@@ -1,8 +1,10 @@
 import "server-only";
 import { and, asc, eq, inArray, sum } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
 import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import type { ActionResult } from "@/lib/action-result";
+import { nameSchema } from "@/lib/names";
 import { permissionLabel, type StripePermissionId } from "@/lib/stripe-permissions";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
 import { createCurrencyConverter } from "@/server/fx";
@@ -19,9 +21,9 @@ import {
   type ProbedResource,
   type StripeGateway,
 } from "./gateway";
-import { inspectSecretKey } from "./keys";
+import { secretKeySchema } from "./keys";
 import type { AccountInfo } from "./types";
-import { isWebhookSigningSecret, registerWebhookEndpoint, webhookEndpointUrl } from "./webhooks";
+import { registerWebhookEndpoint, webhookEndpointUrl } from "./webhooks";
 
 /** Why a key was refused, when it lacks permissions: their ids, e.g. `rak_charge_read`. */
 export interface MissingPermissions {
@@ -29,6 +31,17 @@ export interface MissingPermissions {
 }
 
 const ACCOUNT_NOT_FOUND = { ok: false, error: "This Stripe account no longer exists." } as const;
+
+/*
+ * The actions validate input with the schemas below: the functions of this module trust it.
+ */
+
+export const accountNameSchema = nameSchema("Name the account, for example after your product.");
+
+export const connectAccountSchema = z.object({
+  name: accountNameSchema,
+  secretKey: secretKeySchema,
+});
 
 /** What the dashboard shows about a connected Stripe account. */
 export interface StripeAccountSummary {
@@ -66,20 +79,16 @@ const REQUIRED_READS: readonly { resource: ProbedResource; permission: StripePer
   { resource: "coupons", permission: "rak_coupon_read" },
 ];
 
-const MAX_NAME_LENGTH = 80;
-
 /**
  * Checks `secretKey` against Stripe, stores it encrypted in `workspaceId`, tries to register a
  * webhook for instant updates and starts the first import. Returns a user-facing error when the
  * key is invalid or lacks read permissions.
  */
 export async function connectStripeAccount(
-  input: { workspaceId: string; name: string; secretKey: string },
+  input: { workspaceId: string } & z.infer<typeof connectAccountSchema>,
   options: StripeAccessOptions = {},
 ): Promise<ActionResult<{ accountId: string }, MissingPermissions>> {
-  const key = inspectSecretKey(input.secretKey);
-  if (!key.ok) return key;
-
+  const key = input.secretKey;
   const gateway = (options.createGateway ?? createStripeGateway)(key.key);
   const access = await checkReadAccess(gateway);
   if (!access.ok) return access;
@@ -120,7 +129,7 @@ export async function connectStripeAccount(
     .insert(stripeAccounts)
     .values({
       workspaceId: input.workspaceId,
-      name: accountName(input.name) ?? info?.name?.slice(0, MAX_NAME_LENGTH) ?? "Stripe account",
+      name: input.name,
       stripeAccountId: info?.id ?? null,
       livemode: key.livemode,
       encryptedSecretKey: encryptSecret(key.key),
@@ -189,11 +198,6 @@ async function readAccountInfo(gateway: StripeGateway): Promise<AccountInfo | nu
       ? { id: error.stripeAccountId, name: null, defaultCurrency: null }
       : null;
   }
-}
-
-function accountName(input: string): string | null {
-  const name = input.trim().slice(0, MAX_NAME_LENGTH);
-  return name || null;
 }
 
 export async function listStripeAccountSummaries(
@@ -267,11 +271,9 @@ export async function renameStripeAccount(
   accountId: string,
   name: string,
 ): Promise<ActionResult> {
-  const newName = accountName(name);
-  if (!newName) return { ok: false, error: "Name the account, for example after your product." };
   const renamed = await db()
     .update(stripeAccounts)
-    .set({ name: newName })
+    .set({ name })
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)))
     .returning({ id: stripeAccounts.id });
   return renamed.length ? { ok: true } : ACCOUNT_NOT_FOUND;
@@ -385,16 +387,8 @@ export async function enableInstantUpdates(
 export async function setWebhookSigningSecret(
   workspaceId: string,
   accountId: string,
-  secret: string,
+  signingSecret: string,
 ): Promise<ActionResult> {
-  const signingSecret = secret.trim();
-  if (!isWebhookSigningSecret(signingSecret)) {
-    return {
-      ok: false,
-      error:
-        "This doesn't look like a signing secret. It starts with whsec_ and is shown on the endpoint's page.",
-    };
-  }
   const updated = await db()
     .update(stripeAccounts)
     .set({ encryptedWebhookSecret: encryptSecret(signingSecret) })

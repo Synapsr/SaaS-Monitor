@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inspectSecretKey } from "./keys";
+import { inspectSecretKey, secretKeySchema } from "./keys";
 
 describe("API key inspection", () => {
   it("accepts restricted and secret keys and masks them", () => {
@@ -29,5 +29,21 @@ describe("API key inspection", () => {
     ]) {
       expect(inspectSecretKey(key)).toMatchObject({ ok: false });
     }
+  });
+});
+
+describe("API key schema", () => {
+  it("reads a pasted key", () => {
+    expect(secretKeySchema.parse(" rk_test_51AbCdEfGhIjKlMnOp4f2a ")).toEqual({
+      key: "rk_test_51AbCdEfGhIjKlMnOp4f2a",
+      livemode: false,
+      hint: "rk_test_…4f2a",
+    });
+  });
+
+  it("explains a publishable key rather than refusing it vaguely", () => {
+    expect(
+      secretKeySchema.safeParse("pk_test_51AbCdEfGhIjKlMnOp4f2a").error?.issues[0].message,
+    ).toBe("This is a publishable key. Paste a restricted key instead (it starts with rk_).");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicHttpsUrl, isWebhookSigningSecret } from "./webhooks";
+import { isPublicHttpsUrl, webhookSigningSecretSchema } from "./webhooks";
 
 describe("public webhook URLs", () => {
   it("accepts public HTTPS addresses", () => {
@@ -31,9 +31,17 @@ describe("public webhook URLs", () => {
 });
 
 describe("webhook signing secrets", () => {
-  it("recognises the whsec_ format", () => {
-    expect(isWebhookSigningSecret("whsec_4c0eA1b2C3d4E5f6G7h8I9j0K1l2M3n4")).toBe(true);
-    expect(isWebhookSigningSecret("whsec_short")).toBe(false);
-    expect(isWebhookSigningSecret("rk_live_4c0eA1b2C3d4E5f6G7h8I9j0K1l2M3n4")).toBe(false);
+  it("accepts the whsec_ format, trimmed", () => {
+    expect(webhookSigningSecretSchema.parse(" whsec_4c0eA1b2C3d4E5f6G7h8I9j0K1l2M3n4 \n")).toBe(
+      "whsec_4c0eA1b2C3d4E5f6G7h8I9j0K1l2M3n4",
+    );
+  });
+
+  it("explains where to find a signing secret", () => {
+    for (const secret of ["whsec_short", "rk_live_4c0eA1b2C3d4E5f6G7h8I9j0K1l2M3n4", "secret"]) {
+      expect(webhookSigningSecretSchema.safeParse(secret).error?.issues[0].message).toMatch(
+        /starts with whsec_/,
+      );
+    }
   });
 });

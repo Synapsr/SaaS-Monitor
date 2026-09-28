@@ -2,6 +2,7 @@ import "server-only";
 import { BlockList, isIP } from "node:net";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
+import { z } from "zod";
 import { db } from "@/db";
 import { stripeAccounts } from "@/db/schema";
 import { env } from "@/env";
@@ -19,11 +20,15 @@ export function webhookEndpointUrl(accountId: string): string {
   return `${env().APP_URL}/api/webhooks/stripe/${accountId}`;
 }
 
-const SIGNING_SECRET_PATTERN = /^whsec_[A-Za-z0-9+/=]{16,}$/;
+const NOT_A_SIGNING_SECRET =
+  "This doesn't look like a signing secret. It starts with whsec_ and is shown on the endpoint's page.";
 
-export function isWebhookSigningSecret(value: string): boolean {
-  return SIGNING_SECRET_PATTERN.test(value);
-}
+/** The signing secret (`whsec_…`) of an endpoint added by hand in the Stripe Dashboard. */
+export const webhookSigningSecretSchema = z
+  .string()
+  .trim()
+  .max(500, NOT_A_SIGNING_SECRET)
+  .regex(/^whsec_[A-Za-z0-9+/=]{16,}$/, NOT_A_SIGNING_SECRET);
 
 /** Loopback, private, link-local and carrier-grade NAT ranges Stripe cannot reach. */
 function unreachableAddresses(): BlockList {
