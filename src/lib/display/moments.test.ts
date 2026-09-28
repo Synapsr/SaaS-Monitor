@@ -9,9 +9,9 @@ import {
   type Moment,
   type MomentTracker,
 } from "@/lib/display/moments";
-import { displayState, feedItem, withActivity } from "@/lib/display/testing";
 import type { DisplayState } from "@/lib/display/types";
 import { defaultScreenSettings } from "@/lib/screens/settings";
+import { displayState, feedItem, withActivity } from "@/test/display";
 
 function track(states: DisplayState[]): Moment[][] {
   let tracker: MomentTracker = initialMomentTracker;

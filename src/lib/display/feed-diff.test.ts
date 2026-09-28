@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { diffFeed } from "@/lib/display/feed-diff";
-import { feedItem } from "@/lib/display/testing";
+import { feedItem } from "@/test/display";
 
 describe("feed diffing", () => {
   it("never finds anything fresh on the first load, even live items", () => {

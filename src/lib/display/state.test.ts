@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isDisplayState, resolveDisplayState, seriesInRange } from "@/lib/display/state";
-import { displayState, feedItem } from "@/lib/display/testing";
 import { defaultScreenSettings } from "@/lib/screens/settings";
+import { displayState, feedItem } from "@/test/display";
 
 describe("polled state validation", () => {
   it("accepts a display state", () => {
