@@ -8,7 +8,6 @@ import {
   gt,
   gte,
   inArray,
-  isNotNull,
   sql,
   sum,
   type AnyColumn,
@@ -314,18 +313,25 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       .then((rows) => rows.map((row) => row.payment)),
   ]);
 
-  const plans = await mainPlans(
+  const profiles = await customerProfiles(
     accountIds,
     paymentRows.flatMap((row) => (row.customerId ? [row.customerId] : [])),
   );
   const rows: ActivityRow[] = [
     ...movementRows.map((row) => ({ ...row, source: "movement" as const })),
-    ...paymentRows.map((row) => ({
-      ...row,
-      source: "payment" as const,
-      kind: "payment" as const,
-      planName: (row.customerId && plans.get(`${row.accountId}:${row.customerId}`)) || null,
-    })),
+    ...paymentRows.map((row) => {
+      const profile = row.customerId ? profiles.get(`${row.accountId}:${row.customerId}`) : null;
+      return {
+        ...row,
+        source: "payment" as const,
+        kind: "payment" as const,
+        planName: profile?.planName ?? null,
+        // A charge only knows its card and billing details: the card may come from another
+        // country, so the customer's own profile names them like their subscription does.
+        customerName: profile?.customerName ?? row.customerName,
+        country: profile?.country ?? row.country,
+      };
+    }),
   ];
   return rows
     .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime() || b.id.localeCompare(a.id))
@@ -333,31 +339,36 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
 }
 
 /**
- * Charges don't say which plan they pay for: name each customer's main subscription (the one
- * bringing the most MRR, then the latest), keyed by `<account id>:<customer id>`.
+ * Charges don't say which plan they pay for, and their billing details may differ from the
+ * customer's: describe each customer as their main subscription does (the one bringing the most
+ * MRR, then the latest), keyed by `<account id>:<customer id>`.
  */
-async function mainPlans(accountIds: string[], customerIds: string[]) {
-  const plans = new Map<string, string>();
-  if (!customerIds.length) return plans;
+async function customerProfiles(accountIds: string[], customerIds: string[]) {
+  const profiles = new Map<
+    string,
+    { planName: string | null; customerName: string | null; country: string | null }
+  >();
+  if (!customerIds.length) return profiles;
 
   const rows = await db()
     .select({
       accountId: subscriptions.accountId,
       customerId: subscriptions.stripeCustomerId,
       planName: subscriptions.planName,
+      customerName: subscriptions.customerName,
+      country: subscriptions.customerCountry,
     })
     .from(subscriptions)
     .where(
       and(
         inArray(subscriptions.accountId, accountIds),
         inArray(subscriptions.stripeCustomerId, [...new Set(customerIds)]),
-        isNotNull(subscriptions.planName),
       ),
     )
     .orderBy(desc(subscriptions.mrr), desc(subscriptions.startedAt));
-  for (const row of rows) {
-    const key = `${row.accountId}:${row.customerId}`;
-    if (row.planName && !plans.has(key)) plans.set(key, row.planName);
+  for (const { accountId, customerId, ...profile } of rows) {
+    const key = `${accountId}:${customerId}`;
+    if (!profiles.has(key)) profiles.set(key, profile);
   }
-  return plans;
+  return profiles;
 }

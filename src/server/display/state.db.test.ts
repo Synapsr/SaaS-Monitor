@@ -33,6 +33,8 @@ async function addSubscription(
     status?: string;
     currency?: string;
     plan?: string;
+    customerName?: string;
+    country?: string;
   },
 ) {
   await db()
@@ -41,6 +43,8 @@ async function addSubscription(
       accountId,
       stripeSubscriptionId: row.id,
       stripeCustomerId: row.customer ?? `cus_${row.id}`,
+      customerName: row.customerName ?? null,
+      customerCountry: row.country ?? null,
       status: row.status ?? (row.mrr > 0 ? "active" : "canceled"),
       currency: row.currency ?? "usd",
       mrr: row.mrr,
@@ -486,6 +490,27 @@ describe("display state", () => {
     expect(feed.map((item) => [item.accountName, item.amount])).toEqual([
       ["Beta", 1000],
       ...latestPayments,
+    ]);
+  });
+
+  it("describes a payment's customer as their subscription does, not as their card", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, {
+      id: "sub_1",
+      mrr: 4900,
+      customer: "cus_1",
+      customerName: "Sakura Labs",
+      country: "JP",
+    });
+    // The charge only knows the card, issued in the United States to Grace Hopper.
+    await addPayment(accountId, { amount: 4900, at: "2026-03-15T10:00:00Z", customer: "cus_1" });
+    await addPayment(accountId, { amount: 1200, at: "2026-03-14T10:00:00Z" });
+
+    const { feed } = await displayOf([accountId], { showCustomerNames: true });
+
+    expect(feed.map(({ customerName, country }) => ({ customerName, country }))).toEqual([
+      { customerName: "Sakura Labs", country: "JP" },
+      { customerName: "Grace Hopper", country: "US" },
     ]);
   });
 
