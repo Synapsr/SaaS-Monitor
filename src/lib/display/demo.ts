@@ -1,5 +1,13 @@
 import { BUILD_ID } from "@/lib/build-id";
 import {
+  addDays,
+  calendarDay,
+  chartDays,
+  daysInRange,
+  displayCalendar,
+  monthOf,
+} from "@/lib/display/calendar";
+import {
   createRandom,
   pick,
   pickWeighted,
@@ -8,8 +16,6 @@ import {
   randomInt,
   type Random,
 } from "@/lib/display/random";
-import { CHART_RANGE_DAYS } from "@/lib/display/state";
-import { addDays, calendarDay, daysInRange, monthOf } from "@/lib/display/time";
 import type {
   DisplayMetrics,
   DisplayState,
@@ -529,7 +535,7 @@ function forgetOldDays(draft: Draft, today: string) {
   for (const day of Object.keys(draft.revenueByDay)) {
     if (day < oldestRevenueDay) delete draft.revenueByDay[day];
   }
-  const oldestMonth = monthOf(addDays(`${monthOf(today)}-01`, -1));
+  const oldestMonth = monthOf(displayCalendar(today).previousMonthStart);
   for (const month of Object.keys(draft.movementsByMonth)) {
     if (month < oldestMonth) delete draft.movementsByMonth[month];
   }
@@ -546,9 +552,9 @@ function mrrAt(mrrByDay: Readonly<Record<string, number>>, day: string): number 
   return first === undefined ? 0 : mrrByDay[first];
 }
 
-function mrrSeries(mrrByDay: Readonly<Record<string, number>>, from: string, to: string) {
-  let value = mrrAt(mrrByDay, from);
-  return daysInRange(from, to).map((date): SeriesPoint => {
+function mrrSeries(mrrByDay: Readonly<Record<string, number>>, days: readonly string[]) {
+  let value = mrrAt(mrrByDay, days[0]);
+  return days.map((date): SeriesPoint => {
     value = mrrByDay[date] ?? value;
     return { date, value };
   });
@@ -558,15 +564,10 @@ function mrrSeries(mrrByDay: Readonly<Record<string, number>>, from: string, to:
 export function demoState(world: DemoWorld, now: Date): DisplayState {
   const { options } = world;
   const today = calendarDay(now, options.timeZone);
+  const calendar = displayCalendar(today);
   const revenueOn = (day: string) => world.revenueByDay[day] ?? 0;
   const revenueBetween = (from: string, to: string) =>
     daysInRange(from, to).reduce((sum, day) => sum + revenueOn(day), 0);
-
-  const monthStart = `${monthOf(today)}-01`;
-  const previousMonthStart = `${monthOf(addDays(monthStart, -1))}-01`;
-  const elapsedDays = Number(today.slice(8, 10)) - 1;
-  const previousMonthEnd = addDays(monthStart, -1);
-  const previousMonthSameDay = addDays(previousMonthStart, elapsedDays);
   const customers = world.customers.length;
 
   return {
@@ -594,7 +595,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
     accounts: [{ id: "demo", name: SCREEN_NAME, status: "ready", livemode: true, mrr: world.mrr }],
     metrics: {
       mrr: world.mrr,
-      mrr30DaysAgo: mrrAt(world.mrrByDay, addDays(today, -30)),
+      mrr30DaysAgo: mrrAt(world.mrrByDay, calendar.thirtyDaysAgo),
       arr: world.mrr * 12,
       activeSubscriptions: customers,
       activeCustomers: customers,
@@ -602,22 +603,19 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
       arpu: customers > 0 ? Math.round(world.mrr / customers) : 0,
       revenue: {
         today: revenueOn(today),
-        yesterday: revenueOn(addDays(today, -1)),
-        monthToDate: revenueBetween(monthStart, today),
+        yesterday: revenueOn(calendar.yesterday),
+        monthToDate: revenueBetween(calendar.monthStart, today),
         previousMonthToDate: revenueBetween(
-          previousMonthStart,
-          previousMonthSameDay < previousMonthEnd ? previousMonthSameDay : previousMonthEnd,
+          calendar.previousMonthStart,
+          calendar.previousMonthCutoff,
         ),
-        last30Days: revenueBetween(addDays(today, -29), today),
+        last30Days: revenueBetween(calendar.revenueDays[0], today),
       },
       thisMonth: world.movementsByMonth[monthOf(today)] ?? emptyMonth,
     },
     series: {
-      mrr: mrrSeries(world.mrrByDay, addDays(today, -CHART_RANGE_DAYS[options.chartRange]), today),
-      revenue: daysInRange(addDays(today, -29), today).map((date) => ({
-        date,
-        value: revenueOn(date),
-      })),
+      mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange)),
+      revenue: calendar.revenueDays.map((date) => ({ date, value: revenueOn(date) })),
     },
     feed: world.feed.map((item) =>
       options.showCustomerNames ? item : { ...item, customerName: null },

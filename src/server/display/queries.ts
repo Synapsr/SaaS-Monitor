@@ -22,14 +22,23 @@ import {
   stripeAccounts,
   subscriptions,
 } from "@/db/schema";
+import { dayToUtcDate } from "@/lib/display/calendar";
 import type { MrrMovementKind } from "@/lib/display/types";
-import { instantBefore } from "./calendar";
+import { DAY_MS } from "@/lib/durations";
 
 /*
  * The few queries behind a display. Days are bucketed by PostgreSQL in the screen's time zone
  * (`AT TIME ZONE`), which handles daylight saving; the coarse timestamp bounds keep them on the
  * `(account_id, occurred_at)` indexes.
  */
+
+/**
+ * A moment surely before `day` starts in any time zone (UTC+14 is the earliest), so that queries
+ * can use their timestamp index before filtering on local days.
+ */
+function instantBefore(day: string): Date {
+  return new Date(dayToUtcDate(day).getTime() - DAY_MS);
+}
 
 export async function findScreen(token: string) {
   const [screen] = await db()

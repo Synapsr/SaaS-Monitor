@@ -1,4 +1,4 @@
-import { addDays } from "@/lib/display/time";
+import { chartStart } from "@/lib/display/calendar";
 import type { DisplayState, SeriesPoint } from "@/lib/display/types";
 import type { ChartRange, ScreenSettings } from "@/lib/screens/settings";
 
@@ -23,13 +23,11 @@ export function isDisplayState(value: unknown): value is DisplayState {
   );
 }
 
-export const CHART_RANGE_DAYS: Record<ChartRange, number> = { "30d": 30, "90d": 90, "12m": 365 };
-
-/** Points within `range` of the last day of `series`. */
+/** The points of `series` a chart of `range` shows, like the server would have sent them. */
 export function seriesInRange(series: readonly SeriesPoint[], range: ChartRange): SeriesPoint[] {
   const last = series.at(-1);
   if (!last) return [];
-  const first = addDays(last.date, -CHART_RANGE_DAYS[range]);
+  const first = chartStart(last.date, range);
   return series.filter((point) => point.date >= first);
 }
 

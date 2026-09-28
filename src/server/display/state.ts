@@ -1,10 +1,10 @@
 import "server-only";
 import { BUILD_ID } from "@/lib/build-id";
-import { MINUTE_MS } from "@/lib/durations";
+import { calendarDay, chartDays, daysInRange, displayCalendar } from "@/lib/display/calendar";
 import type { DisplayAccount, DisplayState, FeedItem } from "@/lib/display/types";
+import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
-import { daysBetween, displayCalendar, localDate } from "./calendar";
 import { displayStatus, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
 import {
   customerChanges,
@@ -42,9 +42,10 @@ export async function getDisplayStateByToken(
   const { currency, timeZone } = settings;
   const accounts = await linkedAccounts(screen.id);
   const accountIds = accounts.map((account) => account.id);
-  const calendar = displayCalendar(localDate(now, timeZone), settings.chartRange);
+  const calendar = displayCalendar(calendarDay(now, timeZone));
+  const chart = chartDays(calendar.today, settings.chartRange);
   // MRR history covers the chart and "30 days ago"; revenue the last 30 days and last month.
-  const historyStart = earliest(calendar.chartDays[0], calendar.thirtyDaysAgo);
+  const historyStart = earliest(chart[0], calendar.thirtyDaysAgo);
   const revenueStart = earliest(calendar.revenueDays[0], calendar.previousMonthStart);
 
   const [totals, payingCustomers, movements, revenue, customers, activity] = accountIds.length
@@ -87,7 +88,7 @@ export async function getDisplayStateByToken(
 
   const mrrChanges = inScreenCurrency(movements);
   const history = new Map(
-    mrrHistory(mrr, mrrChanges, daysBetween(historyStart, calendar.today)).map((point) => [
+    mrrHistory(mrr, mrrChanges, daysInRange(historyStart, calendar.today)).map((point) => [
       point.date,
       point.value,
     ]),
@@ -117,7 +118,7 @@ export async function getDisplayStateByToken(
       thisMonth: { ...movementTotals(mrrChanges, calendar.monthStart), ...customers },
     },
     series: {
-      mrr: calendar.chartDays.map((date) => ({ date, value: history.get(date) ?? mrr })),
+      mrr: chart.map((date) => ({ date, value: history.get(date) ?? mrr })),
       revenue: revenueSeries,
     },
     feed: activity.flatMap((row) => {

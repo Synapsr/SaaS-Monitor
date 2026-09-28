@@ -143,7 +143,7 @@ describe("display state", () => {
       generatedAt: NOW.toISOString(),
     });
     expect(state.metrics.mrr).toBe(0);
-    expect(state.series.mrr).toHaveLength(90);
+    expect(state.series.mrr).toHaveLength(91);
     expect(state.series.revenue).toHaveLength(30);
   });
 
@@ -209,9 +209,10 @@ describe("display state", () => {
     const { metrics, series } = await displayOf([accountId], { chartRange: "30d" });
 
     expect(metrics.mrr30DaysAgo).toBe(7000);
-    expect(series.mrr).toHaveLength(30);
+    // From the day the growth is measured from: the same MRR as 30 days ago.
+    expect(series.mrr).toHaveLength(31);
     const value = (date: string) => series.mrr.find((point) => point.date === date)?.value;
-    expect(series.mrr[0]).toEqual({ date: "2026-02-14", value: 7000 });
+    expect(series.mrr[0]).toEqual({ date: "2026-02-13", value: 7000 });
     expect(value("2026-02-28")).toBe(7000);
     expect(value("2026-03-01")).toBe(8000);
     expect(value("2026-03-11")).toBe(10_000);

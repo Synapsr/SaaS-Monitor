@@ -1,9 +1,7 @@
+import { calendarDay, dayToUtcDate, daysBetween } from "@/lib/display/calendar";
 import { DAY_MS, HOUR_MS, MINUTE_MS } from "@/lib/durations";
 
-/**
- * Dates on a screen live in the screen's time zone: "today", "this month" and the chart's days
- * follow `settings.timeZone`, not the time zone of the device showing it.
- */
+/** Dates and times as a screen writes them, in the screen's time zone. */
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
@@ -16,46 +14,6 @@ function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
     formatters.set(key, cached);
   }
   return cached;
-}
-
-/** Calendar day of `date` in `timeZone`, as `YYYY-MM-DD` like `SeriesPoint.date`. */
-export function calendarDay(date: Date, timeZone: string): string {
-  const parts = formatter({
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((candidate) => candidate.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
-}
-
-/** Midnight UTC of a calendar day: calendar arithmetic without daylight saving surprises. */
-export function dayToUtcDate(day: string): Date {
-  const [year, month, date] = day.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, date));
-}
-
-export function addDays(day: string, days: number): string {
-  const date = dayToUtcDate(day);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-export function daysBetween(from: string, to: string): number {
-  return Math.round((dayToUtcDate(to).getTime() - dayToUtcDate(from).getTime()) / DAY_MS);
-}
-
-/** `YYYY-MM` of a calendar day. */
-export function monthOf(day: string): string {
-  return day.slice(0, 7);
-}
-
-/** Calendar days from `from` to `to`, both included. */
-export function daysInRange(from: string, to: string): string[] {
-  const count = daysBetween(from, to);
-  return Array.from({ length: Math.max(0, count + 1) }, (_, index) => addDays(from, index));
 }
 
 /**
@@ -108,4 +66,9 @@ export function formatChartDay(day: string, monthOnly: boolean): string {
     ? { month: "short", year: date.getUTCMonth() === 0 ? "numeric" : undefined }
     : { month: "short", day: "numeric" };
   return formatter({ timeZone: "UTC", ...options }).format(date);
+}
+
+/** Name of the month of a calendar day: "September". */
+export function formatMonth(day: string): string {
+  return formatter({ timeZone: "UTC", month: "long" }).format(dayToUtcDate(day));
 }

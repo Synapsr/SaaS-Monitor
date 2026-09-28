@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { addDays } from "@/lib/display/calendar";
 import { layoutMrrChart } from "@/lib/display/chart";
-import { addDays } from "@/lib/display/time";
 
 const series = Array.from({ length: 91 }, (_, index) => ({
   date: addDays("2026-06-30", index),

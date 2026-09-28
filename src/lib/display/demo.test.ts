@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { addDays, calendarDay } from "@/lib/display/calendar";
 import {
   advanceDemo,
   createDemoWorld,
@@ -8,7 +9,6 @@ import {
   parseDemoOptions,
   type DemoWorld,
 } from "@/lib/display/demo";
-import { addDays, calendarDay } from "@/lib/display/time";
 import type { DisplayState } from "@/lib/display/types";
 
 const { options } = parseDemoOptions({});

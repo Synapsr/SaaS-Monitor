@@ -1,37 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  addDays,
-  calendarDay,
-  daysBetween,
-  daysInRange,
   formatChartDay,
   formatClock,
   formatEta,
+  formatMonth,
   formatRelativeTime,
 } from "@/lib/display/time";
 
 const PARIS = "Europe/Paris";
 const now = new Date("2026-09-28T12:00:00Z"); // Monday, 14:00 in Paris
-
-describe("calendar days", () => {
-  it("reads the day in the screen's time zone", () => {
-    const lateEvening = new Date("2026-09-28T23:30:00Z");
-    expect(calendarDay(lateEvening, "UTC")).toBe("2026-09-28");
-    expect(calendarDay(lateEvening, PARIS)).toBe("2026-09-29");
-    expect(calendarDay(lateEvening, "America/Los_Angeles")).toBe("2026-09-28");
-  });
-
-  it("does calendar arithmetic across months, years and daylight saving", () => {
-    expect(addDays("2026-03-28", 2)).toBe("2026-03-30");
-    expect(addDays("2026-01-01", -1)).toBe("2025-12-31");
-    expect(daysBetween("2026-02-27", "2026-03-02")).toBe(3);
-    expect(daysInRange("2026-09-29", "2026-10-01")).toEqual([
-      "2026-09-29",
-      "2026-09-30",
-      "2026-10-01",
-    ]);
-  });
-});
 
 describe("relative time", () => {
   const ago = (milliseconds: number) =>
@@ -82,5 +59,9 @@ describe("screen dates", () => {
     expect(formatChartDay("2026-09-12", false)).toBe("Sep 12");
     expect(formatChartDay("2026-09-01", true)).toBe("Sep");
     expect(formatChartDay("2027-01-01", true)).toBe("Jan 2027");
+  });
+
+  it("names months", () => {
+    expect(formatMonth("2026-08-01")).toBe("August");
   });
 });

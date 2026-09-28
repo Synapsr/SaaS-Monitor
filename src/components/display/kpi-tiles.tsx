@@ -1,8 +1,9 @@
 import NumberFlow from "@number-flow/react";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
+import { calendarDay, displayCalendar } from "@/lib/display/calendar";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
-import { addDays, calendarDay, dayToUtcDate } from "@/lib/display/time";
+import { formatMonth } from "@/lib/display/time";
 import type { DisplayMetrics } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -17,10 +18,8 @@ interface KpiTilesProps {
 /** The four numbers worth a glance: today, this month, customers and net new MRR. */
 export function KpiTiles({ metrics, currency, timeZone, now }: KpiTilesProps) {
   const { revenue, thisMonth } = metrics;
-  const today = calendarDay(new Date(now), timeZone);
-  const previousMonth = new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(
-    dayToUtcDate(addDays(`${today.slice(0, 7)}-01`, -1)),
-  );
+  const calendar = displayCalendar(calendarDay(new Date(now), timeZone));
+  const previousMonth = formatMonth(calendar.previousMonthStart);
   const monthChange = percentChange(revenue.monthToDate, revenue.previousMonthToDate);
   const gained = thisMonth.new + thisMonth.expansion + thisMonth.reactivation;
   const lost = thisMonth.contraction + thisMonth.churn;

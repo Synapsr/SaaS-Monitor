@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayCalendar } from "./calendar";
+import { displayCalendar } from "@/lib/display/calendar";
 import { displayStatus, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
 
 describe("MRR history", () => {
@@ -25,7 +25,7 @@ describe("MRR history", () => {
 
 describe("revenue", () => {
   it("adds daily revenue into today, this month and the comparable days of last month", () => {
-    const calendar = displayCalendar("2026-03-15", "30d");
+    const calendar = displayCalendar("2026-03-15");
     const { revenue, series } = revenueMetrics(
       [
         { day: "2026-02-15", amount: 100 },

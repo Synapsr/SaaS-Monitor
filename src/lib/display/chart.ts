@@ -1,7 +1,8 @@
 import { scaleLinear, scaleUtc, type ScaleLinear, type ScaleTime } from "d3-scale";
 import { area, curveMonotoneX, line } from "d3-shape";
 import { utcDay, utcMonday, utcMonth, type TimeInterval } from "d3-time";
-import { dayToUtcDate, formatChartDay } from "@/lib/display/time";
+import { dayToUtcDate } from "@/lib/display/calendar";
+import { formatChartDay } from "@/lib/display/time";
 import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 

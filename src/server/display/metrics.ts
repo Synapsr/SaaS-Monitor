@@ -1,11 +1,11 @@
 import "server-only";
+import type { DisplayCalendar } from "@/lib/display/calendar";
 import type {
   DisplayMetrics,
   DisplayState,
   MrrMovementKind,
   SeriesPoint,
 } from "@/lib/display/types";
-import type { DisplayCalendar } from "./calendar";
 
 /** An amount in the screen currency, on a calendar day of the screen's time zone. */
 export interface DayAmount {
