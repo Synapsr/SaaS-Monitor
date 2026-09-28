@@ -105,7 +105,7 @@ pnpm dev                 # http://localhost:3000
 ```
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
+pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build   # what CI runs
 ```
 
 Built with Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Drizzle ORM, PostgreSQL, Better Auth

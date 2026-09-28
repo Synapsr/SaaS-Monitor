@@ -22,7 +22,7 @@ pnpm db:migrate     # apply migrations in ./drizzle
 pnpm db:generate    # create a migration after editing src/db/schema
 pnpm dev            # http://localhost:3000 (use -p to pick another port)
 pnpm test           # Vitest: unit + db projects (db uses saas_monitor_test)
-pnpm lint && pnpm typecheck && pnpm format:check
+pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build   # what CI runs
 ```
 
 Node 24 (`.nvmrc`), pnpm 10.

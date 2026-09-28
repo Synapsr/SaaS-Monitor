@@ -20,7 +20,7 @@ from the dashboard.
 ## Checks
 
 ```bash
-pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build
+pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
 `pnpm test` runs two Vitest projects: `unit` (pure logic, `*.test.ts`) and `db` (integration
@@ -33,7 +33,7 @@ and migrated automatically). Set `TEST_DATABASE_URL` to use another database.
   (tenant isolation, secrets, money in minor units, no work at import time…).
 - Keep pull requests focused. Add or update tests with every behavior change.
 - Database changes: edit `src/db/schema`, then `pnpm db:generate --name <change>` and commit the
-  generated migration.
+  generated migration (CI fails when the schema and the migrations disagree).
 - UI changes: include screenshots of the dashboard and, when relevant, of the wall screen at TV
   resolution.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
