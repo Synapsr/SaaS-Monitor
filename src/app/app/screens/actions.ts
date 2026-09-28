@@ -12,16 +12,14 @@ import {
   screenInputSchema,
   sendTestEvent,
   updateScreen,
-  type ScreenInput,
 } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
 
 const screenIdSchema = z.uuid();
 
-export async function createScreenAction(input: {
-  name: string;
-  timeZone: string;
-}): Promise<ActionResult> {
+export async function createScreenAction(
+  input: z.input<typeof newScreenSchema>,
+): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = newScreenSchema.safeParse(input);
   if (!parsed.success) return invalidInput(parsed.error);
@@ -35,7 +33,7 @@ export async function createScreenAction(input: {
 /** Auto-save of the screen editor: the whole screen, validated like any other input. */
 export async function saveScreenAction(
   screenId: string,
-  input: ScreenInput,
+  input: z.input<typeof screenInputSchema>,
 ): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   const parsed = z.object({ screenId: screenIdSchema, input: screenInputSchema }).safeParse({

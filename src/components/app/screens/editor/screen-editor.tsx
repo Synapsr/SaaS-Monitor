@@ -5,6 +5,7 @@ import { saveScreenAction } from "@/app/app/screens/actions";
 import { BackLink } from "@/components/app/back-link";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NAME_MAX_LENGTH } from "@/lib/names";
 import type { ScreenSettings } from "@/lib/screens/settings";
 import type { AccountOption, Screen } from "@/server/screens";
 import { ScreenPreview } from "../screen-preview";
@@ -106,7 +107,7 @@ export function ScreenEditor({
                   const name = event.target.value;
                   setDraft((current) => ({ ...current, name }));
                 }}
-                maxLength={60}
+                maxLength={NAME_MAX_LENGTH}
                 autoComplete="off"
                 className="h-9"
                 aria-invalid={nameMissing}

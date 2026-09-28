@@ -4,7 +4,8 @@ import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, type Transaction } from "@/db";
 import { screenAccounts, screens, stripeAccounts } from "@/db/schema";
-import { invalidInput, type ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/action-result";
+import { NAME_MAX_LENGTH, nameSchema } from "@/lib/names";
 import {
   parseScreenSettings,
   screenSettingsSchema,
@@ -12,7 +13,8 @@ import {
 } from "@/lib/screens/settings";
 
 // Every function takes the workspace id resolved by `requireWorkspace()` and filters on it: a screen
-// or a Stripe account of another workspace is treated exactly like one that does not exist.
+// or a Stripe account of another workspace is treated exactly like one that does not exist. Input
+// is validated by the actions, with the schemas below.
 
 export interface LinkedAccount {
   id: string;
@@ -35,11 +37,7 @@ export interface AccountOption extends LinkedAccount {
   currency: string | null;
 }
 
-export const screenNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Give the screen a name.")
-  .max(60, "Keep the name under 60 characters.");
+export const screenNameSchema = nameSchema("Give the screen a name.");
 
 /** The editor always saves the whole screen, so an auto-save is a single idempotent write. */
 export const screenInputSchema = z.object({
@@ -48,7 +46,7 @@ export const screenInputSchema = z.object({
   settings: screenSettingsSchema,
 });
 
-export type ScreenInput = z.input<typeof screenInputSchema>;
+export type ScreenInput = z.infer<typeof screenInputSchema>;
 
 export const newScreenSchema = z.object({
   name: screenNameSchema,
@@ -180,11 +178,9 @@ async function insertScreen(
 
 export async function createScreen(
   workspaceId: string,
-  input: z.input<typeof newScreenSchema>,
+  input: z.infer<typeof newScreenSchema>,
 ): Promise<ActionResult<{ screenId: string }>> {
-  const parsed = newScreenSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error);
-  const screenId = await db().transaction((tx) => insertScreen(tx, workspaceId, parsed.data));
+  const screenId = await db().transaction((tx) => insertScreen(tx, workspaceId, input));
   return { ok: true, screenId };
 }
 
@@ -197,7 +193,6 @@ export async function createFirstScreen(
   workspaceId: string,
   input: { accountId: string; timeZone: string },
 ): Promise<string | null> {
-  if (!isUuid(input.accountId)) return null;
   return db().transaction(async (tx) => {
     const [existing] = await tx
       .select({ id: screens.id })
@@ -214,7 +209,7 @@ export async function createFirstScreen(
       );
     if (!account) return null;
 
-    const name = screenNameSchema.catch("My screen").parse(account.name.slice(0, 60));
+    const name = screenNameSchema.catch("My screen").parse(account.name.slice(0, NAME_MAX_LENGTH));
     return insertScreen(tx, workspaceId, {
       name,
       timeZone: input.timeZone,
@@ -228,11 +223,8 @@ export async function updateScreen(
   screenId: string,
   input: ScreenInput,
 ): Promise<ActionResult> {
-  const parsed = screenInputSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error);
-  if (!isUuid(screenId)) return SCREEN_NOT_FOUND;
-  const { name, settings } = parsed.data;
-  const accountIds = [...new Set(parsed.data.accountIds)];
+  const { name, settings } = input;
+  const accountIds = [...new Set(input.accountIds)];
 
   return db().transaction(async (tx): Promise<ActionResult> => {
     if (!(await ownsAccounts(tx, workspaceId, accountIds))) return FOREIGN_ACCOUNTS;
@@ -255,7 +247,6 @@ export async function regenerateScreenToken(
   workspaceId: string,
   screenId: string,
 ): Promise<ActionResult<{ publicToken: string }>> {
-  if (!isUuid(screenId)) return SCREEN_NOT_FOUND;
   const [screen] = await db()
     .update(screens)
     .set({ publicToken: generatePublicToken() })
@@ -269,7 +260,6 @@ export async function sendTestEvent(
   workspaceId: string,
   screenId: string,
 ): Promise<ActionResult<{ testEventAt: Date }>> {
-  if (!isUuid(screenId)) return SCREEN_NOT_FOUND;
   const [screen] = await db()
     .update(screens)
     .set({ testEventAt: sql`now()` })
@@ -279,7 +269,6 @@ export async function sendTestEvent(
 }
 
 export async function deleteScreen(workspaceId: string, screenId: string): Promise<ActionResult> {
-  if (!isUuid(screenId)) return SCREEN_NOT_FOUND;
   const [screen] = await db()
     .delete(screens)
     .where(inWorkspace(workspaceId, screenId))
