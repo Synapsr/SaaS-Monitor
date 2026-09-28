@@ -19,8 +19,10 @@ export interface EventDigest {
   customers: Map<string, EventRef>;
   /** Latest known state of each charge. */
   charges: Map<string, { charge: Charge; event: EventRef }>;
-  /** Newest event seen, to move the cursor forward. */
+  /** Newest event listed, to move the cursor forward. */
   newest: EventRef | null;
+  /** Every event listed, handled before or not: the next sync lists the latest ones again. */
+  listed: EventRef[];
 }
 
 export function emptyDigest(): EventDigest {
@@ -29,17 +31,25 @@ export function emptyDigest(): EventDigest {
     customers: new Map(),
     charges: new Map(),
     newest: null,
+    listed: [],
   };
 }
 
 /**
- * Adds events to a digest. The Events API lists them newest first: on equal timestamps the event
- * seen first is kept as the latest.
+ * Adds events to a digest, except those an earlier sync `handled`: syncs read a little before
+ * their cursor, and each event is only worth a request once. The Events API lists events newest
+ * first: on equal timestamps the event seen first is kept as the latest.
  */
-export function digestEvents(digest: EventDigest, events: readonly StripeEvent[]): EventDigest {
+export function digestEvents(
+  digest: EventDigest,
+  events: readonly StripeEvent[],
+  handled: ReadonlySet<string> = new Set(),
+): EventDigest {
   for (const event of events) {
     const ref = { id: event.id, created: event.created };
+    digest.listed.push(ref);
     if (!digest.newest || ref.created > digest.newest.created) digest.newest = ref;
+    if (handled.has(event.id)) continue;
 
     const signal = readEventSignal(event);
     if (signal?.kind === "subscription") {

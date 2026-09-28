@@ -20,7 +20,10 @@ import { newScan } from "./scan";
  * event payloads.
  */
 
-/** Stripe may list an event a little after its timestamp: re-read a few minutes each time. */
+/**
+ * Stripe may list an event a little after its timestamp: re-read a few minutes each time. The
+ * events already handled there are remembered and skipped, so a quiet sync costs one request.
+ */
 const CURSOR_OVERLAP_SECONDS = 5 * 60;
 /** Stripe keeps events for 30 days: past 25 days without a sync, catch up with a full scan. */
 const MAX_CURSOR_AGE_SECONDS = 25 * DAY_SECONDS;
@@ -49,7 +52,7 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
   // only read the events that come next.
   const digest =
     cursor !== null && nowSeconds - cursor <= MAX_CURSOR_AGE_SECONDS
-      ? await readEvents(context, since)
+      ? await readEvents(context, since, new Set(account.recentEventIds))
       : null;
   if (!digest) {
     return {
@@ -83,13 +86,20 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
   return { changes: await applyEvents(context, digest, updates), catchUp: null };
 }
 
-/** Lists the events since `since`, or returns `null` when there are too many to be worth it. */
-async function readEvents(context: SyncContext, since: number): Promise<EventDigest | null> {
+/**
+ * Lists the events since `since`, skipping those `handled` by an earlier sync, or returns `null`
+ * when there are too many to be worth it.
+ */
+async function readEvents(
+  context: SyncContext,
+  since: number,
+  handled: ReadonlySet<string>,
+): Promise<EventDigest | null> {
   const digest = emptyDigest();
   let startingAfter: string | undefined;
   for (let pages = 1; ; pages += 1) {
     const page = await context.gateway.listEvents(SYNC_EVENT_TYPES, since, startingAfter);
-    digestEvents(digest, page.data);
+    digestEvents(digest, page.data, handled);
     if (!page.hasMore || page.data.length === 0) return digest;
     if (pages >= MAX_EVENT_PAGES) return null;
     startingAfter = page.data[page.data.length - 1].id;
@@ -124,7 +134,10 @@ async function changedSubscriptions(
   return changed;
 }
 
-/** Writes charges and subscription changes, then moves the cursor, in one transaction. */
+/**
+ * Writes charges and subscription changes, then moves the cursor, in one transaction. Every event
+ * listed counts as handled, including those whose subscription a catch-up scan covers instead.
+ */
 async function applyEvents(
   context: SyncContext,
   digest: EventDigest,
@@ -139,11 +152,16 @@ async function applyEvents(
     if (digest.newest) {
       const newest = digest.newest.created;
       const newestAt = new Date(newest * 1000).toISOString();
+      // The next sync reads from a few minutes before the cursor: it skips these.
+      const rereadSince = Math.max(account.eventsCursor ?? newest, newest) - CURSOR_OVERLAP_SECONDS;
       await tx
         .update(stripeAccounts)
         .set({
           eventsCursor: sql`greatest(${stripeAccounts.eventsCursor}, ${newest})`,
           lastEventAt: sql`greatest(${stripeAccounts.lastEventAt}, ${newestAt}::timestamptz)`,
+          recentEventIds: digest.listed
+            .filter((event) => event.created >= rereadSince)
+            .map((event) => event.id),
         })
         .where(eq(stripeAccounts.id, account.id));
     }
@@ -152,22 +170,39 @@ async function applyEvents(
 }
 
 /**
- * Starts (or restarts) a reconcile covering what events could not. When events are skipped, the
- * cursor moves to now: new events are applied as usual while the scan runs.
+ * Starts a reconcile covering what events could not. When events are skipped, the cursor moves to
+ * now: new events are applied as usual while the scan runs.
+ *
+ * A reconcile already under way goes on rather than restarting, or bursts of events could keep it
+ * from ever completing. If it has scanned pages already, those may predate the changes to catch
+ * up with: a follow-up scan checks every subscription again once it completes.
  */
 async function startCatchUp(
   context: SyncContext,
   { paymentsSince, eventsCursor }: { paymentsSince: number | null; eventsCursor?: number },
 ): Promise<ScanProgress> {
   const { account, now } = context;
-  // A reconcile already under way restarts, still covering the payments it was due to import.
-  const since = [paymentsSince, account.reconcile?.paymentsSince ?? null].filter(
-    (time): time is number => time !== null,
-  );
-  const scan = newScan(now, since.length ? Math.min(...since) : null);
+  const current = account.reconcile;
+  let scan: ScanProgress;
+  if (!current) {
+    scan = newScan(now, paymentsSince);
+  } else if (current.phase === "subscriptions" && current.cursor === null) {
+    scan = { ...current, paymentsSince: earliest(current.paymentsSince, paymentsSince) };
+  } else {
+    const followUp = { paymentsSince: earliest(current.followUp?.paymentsSince, paymentsSince) };
+    scan = { ...current, followUp };
+  }
   await db()
     .update(stripeAccounts)
-    .set({ reconcile: scan, ...(eventsCursor !== undefined && { eventsCursor }) })
+    .set({
+      reconcile: scan,
+      ...(eventsCursor !== undefined && { eventsCursor, recentEventIds: [] }),
+    })
     .where(eq(stripeAccounts.id, account.id));
   return scan;
+}
+
+/** The earlier of two `paymentsSince`, where `null` means no payments to import. */
+function earliest(a: number | null | undefined, b: number | null): number | null {
+  return a === null || a === undefined ? b : b === null ? a : Math.min(a, b);
 }

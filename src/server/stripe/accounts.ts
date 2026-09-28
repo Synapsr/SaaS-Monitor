@@ -322,6 +322,7 @@ export async function reimportStripeAccount(
         backfill: newBackfill(now),
         reconcile: null,
         eventsCursor: toUnixTime(now),
+        recentEventIds: [],
         lastEventAt: null,
         lastSyncedAt: null,
         lastReconciledAt: null,

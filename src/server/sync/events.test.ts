@@ -56,6 +56,16 @@ describe("event digest", () => {
     expect(digest.charges.get("ch_1")?.charge.amountRefunded).toBe(100);
   });
 
+  it("lists the events an earlier sync handled, without acting on them again", () => {
+    const handled = event("customer.subscription.updated", { id: "sub_1" }, JANUARY_1 + 60);
+    const late = event("customer.subscription.updated", { id: "sub_2" }, JANUARY_1);
+    const digest = digestEvents(emptyDigest(), [handled, late], new Set([handled.id]));
+
+    expect([...digest.subscriptions.keys()]).toEqual(["sub_2"]);
+    expect(digest.listed.map((ref) => ref.id)).toEqual([handled.id, late.id]);
+    expect(digest.newest).toMatchObject({ id: handled.id });
+  });
+
   it("accumulates pages and skips events it cannot read", () => {
     const digest = emptyDigest();
     digestEvents(digest, [event("customer.subscription.updated", { id: "sub_1" })]);

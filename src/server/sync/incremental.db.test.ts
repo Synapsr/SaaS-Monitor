@@ -21,16 +21,19 @@ import { syncAccount } from "./run";
 
 const IMPORTED_AT = new Date("2026-03-15T12:00:00Z");
 const T0 = IMPORTED_AT.getTime() / 1000;
+const at = (seconds: number) => new Date((T0 + seconds) * 1000);
 
 describe("live updates", () => {
   let stripe: FakeStripe;
   let accountId: string;
 
-  const syncAt = (seconds: number) =>
-    syncAccount(accountId, {
-      createGateway: () => stripe,
-      now: () => new Date((T0 + seconds) * 1000),
-    });
+  const syncAt = (seconds: number, options: { scanBudgetMs?: number } = {}) =>
+    syncAccount(accountId, { createGateway: () => stripe, now: () => at(seconds), ...options });
+
+  const withQuantity = (quantity: number) => (subscription: SubscriptionInput) => ({
+    ...subscription,
+    items: { ...subscription.items, data: [{ ...subscription.items.data[0], quantity }] },
+  });
 
   async function liveMovements() {
     return db()
@@ -113,10 +116,6 @@ describe("live updates", () => {
   });
 
   it("records upgrades and downgrades", async () => {
-    const withQuantity = (quantity: number) => (subscription: SubscriptionInput) => ({
-      ...subscription,
-      items: { ...subscription.items, data: [{ ...subscription.items.data[0], quantity }] },
-    });
     change("sub_ada", withQuantity(3), MINUTE_SECONDS);
     await syncAt(2 * MINUTE_SECONDS);
     change("sub_ada", withQuantity(2), 3 * MINUTE_SECONDS);
@@ -227,6 +226,36 @@ describe("live updates", () => {
     await expectLedgerToMatchMirror();
   });
 
+  it("handles each event once, although the next syncs list it again", async () => {
+    change("sub_ada", withQuantity(2), MINUTE_SECONDS);
+    await syncAt(2 * MINUTE_SECONDS);
+
+    const requests: number[] = [];
+    for (const minutes of [3, 4, 5]) {
+      const before = stripe.requestCount;
+      await syncAt(minutes * MINUTE_SECONDS);
+      requests.push(stripe.requestCount - before);
+    }
+
+    // A quiet sync costs the one request the polling pace allows for (see policy.ts).
+    expect(requests).toEqual([1, 1, 1]);
+    expect(await liveMovements()).toHaveLength(1);
+  });
+
+  it("still applies an event Stripe lists late, a little before the cursor", async () => {
+    change("sub_ada", withQuantity(2), 2 * MINUTE_SECONDS);
+    await syncAt(3 * MINUTE_SECONDS);
+    stripe.putSubscription(stripeSubscription({ id: "sub_late", start_date: T0 }));
+    stripe.emit("customer.subscription.created", { id: "sub_late" }, T0 + MINUTE_SECONDS);
+
+    await syncAt(4 * MINUTE_SECONDS);
+
+    expect((await liveMovements()).map(({ subscription }) => subscription)).toEqual([
+      "sub_late",
+      "sub_ada",
+    ]);
+  });
+
   it("records payments and keeps their refunds up to date", async () => {
     const charge = stripe.putCharge(
       stripeCharge({ id: "ch_live", amount: 4900, created: T0 + MINUTE_SECONDS }),
@@ -285,6 +314,64 @@ describe("live updates", () => {
       ),
     ).toBe(51);
     expect((await getStripeAccount(accountId)).reconcile).toBeNull();
+    await expectLedgerToMatchMirror();
+  });
+
+  it("counts only new events towards a catch-up, so that its scan completes", async () => {
+    for (let index = 0; index < 60; index += 1) {
+      const subscription = stripe.putSubscription(stripeSubscription({ start_date: T0 }));
+      stripe.emit("customer.subscription.updated", subscription, T0 + 100 + index);
+    }
+    stripe.pageSize = 10;
+
+    // The events stay in the window the next syncs read again, until newer ones come.
+    let runs = 0;
+    do {
+      runs += 1;
+      await syncAt((4 + runs) * MINUTE_SECONDS, { scanBudgetMs: 0 });
+    } while ((await getStripeAccount(accountId)).reconcile && runs < 20);
+
+    // 62 subscriptions, 10 per page and one page per run.
+    expect(runs).toBe(7);
+    expect((await getStripeAccount(accountId)).lastReconciledAt).toEqual(at(5 * MINUTE_SECONDS));
+    expect((await mrrTotals(accountId)).mirror).toEqual({ usd: 4900 + 60 * 2000 });
+    await expectLedgerToMatchMirror();
+  });
+
+  it("lets a reconcile under way finish, then checks again what it had scanned", async () => {
+    stripe.pageSize = 1;
+    // The daily reconcile checks the newest subscription, then stops: one page per run.
+    await syncAt(DAY_SECONDS, { scanBudgetMs: 0 });
+    expect((await getStripeAccount(accountId)).reconcile).toMatchObject({ cursor: "sub_lapsed" });
+
+    // Too many changes for events: sub_lapsed, already checked, pays again; 50 customers sign up.
+    const burst = DAY_SECONDS + MINUTE_SECONDS;
+    change("sub_lapsed", (subscription) => ({ ...subscription, status: "active" }), burst);
+    for (let index = 0; index < 50; index += 1) {
+      const subscription = stripe.putSubscription(stripeSubscription({ start_date: T0 + burst }));
+      stripe.emit("customer.subscription.created", subscription, T0 + burst);
+    }
+    const caughtUpAt = DAY_SECONDS + 2 * MINUTE_SECONDS;
+    await syncAt(caughtUpAt, { scanBudgetMs: 0 });
+
+    // The reconcile checked its last page rather than starting over, and a new scan follows it.
+    expect(await getStripeAccount(accountId)).toMatchObject({
+      reconcile: { cursor: null, startedAt: at(caughtUpAt).toISOString() },
+      lastReconciledAt: IMPORTED_AT,
+    });
+    stripe.pageSize = 100;
+    await syncAt(caughtUpAt + MINUTE_SECONDS);
+
+    expect(await getStripeAccount(accountId)).toMatchObject({
+      reconcile: null,
+      lastReconciledAt: at(caughtUpAt),
+    });
+    const reconciled = await db()
+      .select({ subscription: mrrMovements.stripeSubscriptionId, kind: mrrMovements.kind })
+      .from(mrrMovements)
+      .where(and(eq(mrrMovements.accountId, accountId), eq(mrrMovements.origin, "reconcile")));
+    expect(reconciled).toHaveLength(51);
+    expect(reconciled).toContainEqual({ subscription: "sub_lapsed", kind: "reactivation" });
     await expectLedgerToMatchMirror();
   });
 

@@ -68,7 +68,7 @@ export async function runScan(
       const next: ScanProgress | null = hasNextPage(page)
         ? { ...progress, cursor: lastId(page.data), subscriptions: scanned }
         : progress.paymentsSince === null
-          ? null
+          ? afterLastPage(progress, now)
           : { ...progress, phase: "payments", cursor: null, subscriptions: scanned };
 
       changes += await db().transaction(async (tx) => {
@@ -85,7 +85,7 @@ export async function runScan(
       const collected = page.data.filter((charge) => charge.collected).length;
       const next: ScanProgress | null = hasNextPage(page)
         ? { ...progress, cursor: lastId(page.data), payments: progress.payments + collected }
-        : null;
+        : afterLastPage(progress, now);
 
       changes += await db().transaction(async (tx) => {
         const written = await applyCharges(tx, account.id, page.data, kind);
@@ -120,6 +120,11 @@ async function saveProgress(
     .update(stripeAccounts)
     .set({ ...progress, ...completion })
     .where(eq(stripeAccounts.id, accountId));
+}
+
+/** What comes after the last page: nothing, or the scan a catch-up asked for meanwhile. */
+function afterLastPage(progress: ScanProgress, now: Date): ScanProgress | null {
+  return progress.followUp ? newScan(now, progress.followUp.paymentsSince) : null;
 }
 
 function hasNextPage(page: { data: readonly unknown[]; hasMore: boolean }): boolean {

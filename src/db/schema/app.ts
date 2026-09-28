@@ -57,6 +57,11 @@ export interface ScanProgress {
   paymentsSince: number | null;
   subscriptions: number;
   payments: number;
+  /**
+   * A catch-up that came once the scan had passed some pages, which may predate the changes to
+   * catch up with: another scan runs when this one completes (see `startCatchUp`).
+   */
+  followUp?: { paymentsSince: number | null };
 }
 
 /** A Stripe account connected to a workspace with a (preferably restricted, read-only) API key. */
@@ -87,6 +92,11 @@ export const stripeAccounts = pgTable(
     reconcile: jsonb().$type<ScanProgress>(),
     /** Unix time (seconds) of the newest Stripe event applied by the incremental sync. */
     eventsCursor: bigint({ mode: "number" }),
+    /**
+     * Events already handled that the next sync lists again, as it reads from a few minutes before
+     * `eventsCursor` (events may be listed late): it skips them.
+     */
+    recentEventIds: text().array().notNull().default([]),
     /** Creation time of the newest Stripe event applied: webhooks are healthy if they keep up. */
     lastEventAt: timestamptz(),
     lastSyncedAt: timestamptz(),
