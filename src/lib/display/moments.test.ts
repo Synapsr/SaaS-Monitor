@@ -419,7 +419,23 @@ describe("moment sounds", () => {
   });
 
   it("shortens moments while others are waiting", () => {
-    expect(momentDuration(payment, 2)).toBeLessThan(momentDuration(payment, 0));
+    expect(momentDuration(payment, 2, 10)).toBeLessThan(momentDuration(payment, 0, 10));
+    expect(momentDuration(payment, 5, 3)).toBe(3_200);
+  });
+
+  it("stays on screen as long as the screen's setting says, milestones a little longer", () => {
+    expect(momentDuration(payment, 0, 10)).toBe(10_000);
+    expect(momentDuration(payment, 0, 30)).toBe(30_000);
+    const milestone: Moment = {
+      id: "m",
+      kind: "milestone",
+      amount: 1,
+      metric: "mrr",
+      isGoal: false,
+      accountId: null,
+    };
+    expect(momentDuration(milestone, 0, 3)).toBe(6_500);
+    expect(momentDuration(milestone, 0, 15)).toBe(15_000);
   });
 });
 

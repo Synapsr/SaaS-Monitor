@@ -16,6 +16,9 @@ import {
 import { AccentPicker, accentName } from "./accent-picker";
 import { SettingRow } from "./settings-section";
 
+/** Long enough to read from across the room, without hiding the numbers for too long. */
+const MOMENT_DURATIONS = [5, 10, 15, 30] as const;
+
 const THEME_OPTIONS: Record<Theme, { label: string; icon: LucideIcon }> = {
   dark: { label: "Dark", icon: MoonIcon },
   light: { label: "Light", icon: SunIcon },
@@ -30,7 +33,7 @@ const CHART_RANGE_LABELS: Record<ChartRange, string> = {
 
 type LookSettingsValue = Pick<
   ScreenSettings,
-  "theme" | "accent" | "chartRange" | "celebrations" | "showCustomerNames"
+  "theme" | "accent" | "chartRange" | "celebrations" | "momentSeconds" | "showCustomerNames"
 >;
 
 export function LookSettings({
@@ -99,6 +102,31 @@ export function LookSettings({
           {CHART_RANGES.map((range) => (
             <ToggleGroupItem key={range} value={range} className="px-3">
               {CHART_RANGE_LABELS[range]}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-0.5">
+          <p id={`${id}-moments`} className="text-sm font-medium">
+            Moments stay on screen
+          </p>
+          <p className="text-sm text-pretty text-muted-foreground">
+            For each sale, new customer or change. Shorter when several arrive at once.
+          </p>
+        </div>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          spacing={0}
+          value={String(settings.momentSeconds)}
+          onValueChange={(value) => value && onChange({ momentSeconds: Number(value) })}
+          aria-labelledby={`${id}-moments`}
+        >
+          {MOMENT_DURATIONS.map((seconds) => (
+            <ToggleGroupItem key={seconds} value={String(seconds)} className="px-3">
+              {seconds} s
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

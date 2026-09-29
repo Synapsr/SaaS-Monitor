@@ -1,4 +1,4 @@
-import { momentDuration, type Moment } from "@/lib/display/moments";
+import type { Moment } from "@/lib/display/moments";
 
 /** A breath between two moments, so they never overlap or blur into one. */
 const GAP_MS = 700;
@@ -16,7 +16,19 @@ export class MomentQueue {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly listeners = new Set<() => void>();
 
-  constructor(private readonly durationOf = momentDuration) {}
+  /**
+   * `durationOf` says how long a moment stays, knowing how many others wait behind it and the
+   * screen's setting (`seconds`).
+   */
+  constructor(
+    private readonly durationOf: (moment: Moment, waiting: number, seconds: number) => number,
+    private seconds: number,
+  ) {}
+
+  /** The screen's setting changed: it applies from the next moment. */
+  setSeconds(seconds: number): void {
+    this.seconds = seconds;
+  }
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -52,7 +64,10 @@ export class MomentQueue {
     this.timer = undefined;
     this.current = this.pending.shift() ?? null;
     if (this.current !== null) {
-      this.timer = setTimeout(this.finish, this.durationOf(this.current, this.pending.length));
+      this.timer = setTimeout(
+        this.finish,
+        this.durationOf(this.current, this.pending.length, this.seconds),
+      );
     }
     this.notify();
   };
@@ -70,7 +85,10 @@ export class MomentQueue {
 
   private resume() {
     if (this.current !== null) {
-      this.timer = setTimeout(this.finish, this.durationOf(this.current, this.pending.length));
+      this.timer = setTimeout(
+        this.finish,
+        this.durationOf(this.current, this.pending.length, this.seconds),
+      );
     } else if (this.pending.length > 0) {
       this.advance();
     }

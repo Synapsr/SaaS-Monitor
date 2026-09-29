@@ -11,6 +11,11 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 - Stripe Connect platforms: payments made for a connected account show with their own icon, and
   revenue only counts the application fee kept of them.
 
+### Changed
+
+- Moments stay on screen as long as each screen chooses (5 to 30 seconds, 10 by default, shorter
+  when several arrive at once), in a larger card that reads from across the room.
+
 ### Fixed
 
 - In development, the database sees new columns after a schema change without a restart.

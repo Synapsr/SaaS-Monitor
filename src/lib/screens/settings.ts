@@ -15,6 +15,8 @@ export const METRICS = ["mrr", "arr"] as const;
 export const MAX_GOAL = 1_000_000_000;
 /** How long each account may stay on a screen that rotates between them, in seconds. */
 export const ROTATION_SECONDS = { min: 5, max: 300 } as const;
+/** How long a moment (a sale, a new customer…) may stay on screen, in seconds. */
+export const MOMENT_SECONDS = { min: 3, max: 60 } as const;
 
 export type SoundPack = (typeof SOUND_PACKS)[number];
 export type PresetAccent = (typeof ACCENTS)[number];
@@ -90,6 +92,11 @@ export const screenSettingsSchema = z.object({
     .prefault({}),
   /** Confetti on new revenue and a full-screen moment when a milestone is crossed. */
   celebrations: z.boolean().default(true),
+  /**
+   * How long the moment of each event stays on screen: long enough to be read from across the
+   * room. Shorter when others are waiting.
+   */
+  momentSeconds: z.number().int().min(MOMENT_SECONDS.min).max(MOMENT_SECONDS.max).default(10),
   /** Customer names are hidden by default: the screen URL may be seen by visitors. */
   showCustomerNames: z.boolean().default(false),
   chartRange: z.enum(CHART_RANGES).default("90d"),

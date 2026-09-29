@@ -367,13 +367,17 @@ export function momentCelebration(moment: Moment): Celebration | null {
   }
 }
 
-/** How long a moment stays on screen; shorter when others are waiting, to never lag behind. */
-export function momentDuration(moment: Moment, waiting: number): number {
-  const base =
-    moment.kind === "milestone"
-      ? 6500
-      : moment.kind === "movement" || moment.kind === "customer"
-        ? 4200
-        : 5200;
-  return waiting > 0 ? Math.max(3200, base * 0.7) : base;
+/** A milestone takes over the whole screen: it deserves its full show, whatever the setting. */
+const MILESTONE_MS = 6500;
+/** However many moments wait, each stays long enough to be read. */
+const SHORTEST_MS = 3200;
+
+/**
+ * How long a moment stays on screen, from the screen's setting (`momentSeconds`); shorter when
+ * others are waiting, to never lag behind.
+ */
+export function momentDuration(moment: Moment, waiting: number, seconds: number): number {
+  const setting = seconds * 1000;
+  const base = moment.kind === "milestone" ? Math.max(setting, MILESTONE_MS) : setting;
+  return waiting > 0 ? Math.max(SHORTEST_MS, base * 0.5) : base;
 }

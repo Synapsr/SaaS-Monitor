@@ -143,6 +143,8 @@ export function demoState(worlds: readonly DemoWorld[], now: Date): DisplayState
         theme: options.theme,
         language: options.language,
         rotation: { ...defaultScreenSettings.rotation, enabled: options.rotation },
+        // Something happens every 12 to 25 seconds: shorter moments leave the numbers on show.
+        momentSeconds: 6,
       },
     },
     currency: DEMO_CURRENCY,

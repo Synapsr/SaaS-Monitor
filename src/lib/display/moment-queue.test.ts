@@ -17,7 +17,7 @@ describe("moment queue", () => {
   afterEach(() => vi.useRealTimers());
 
   it("plays moments one at a time with a pause in between", () => {
-    const queue = new MomentQueue(() => 1_000);
+    const queue = new MomentQueue(() => 1_000, 10);
     queue.subscribe(() => {});
     queue.enqueue([test("a"), test("b")]);
     expect(queue.getCurrent()?.id).toBe("a");
@@ -33,7 +33,7 @@ describe("moment queue", () => {
   });
 
   it("notifies subscribers of every change", () => {
-    const queue = new MomentQueue(() => 1_000);
+    const queue = new MomentQueue(() => 1_000, 10);
     const listener = vi.fn();
     queue.subscribe(listener);
     queue.enqueue([test("a")]);
@@ -42,7 +42,7 @@ describe("moment queue", () => {
   });
 
   it("waits for a subscriber and stops its timers without one", () => {
-    const queue = new MomentQueue(() => 1_000);
+    const queue = new MomentQueue(() => 1_000, 10);
     queue.enqueue([test("a")]);
     expect(queue.getCurrent()).toBeNull();
 
@@ -55,7 +55,7 @@ describe("moment queue", () => {
   });
 
   it("drops the oldest moments when too many wait, but never a milestone", () => {
-    const queue = new MomentQueue(() => 1_000);
+    const queue = new MomentQueue(() => 1_000, 10);
     queue.subscribe(() => {});
     queue.enqueue([test("playing")]);
     queue.enqueue([milestone("m"), ...["1", "2", "3", "4", "5", "6"].map(test)]);

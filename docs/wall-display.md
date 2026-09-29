@@ -17,6 +17,12 @@ and changing it locks every device out again. Members of your workspace, signed 
 - Reloads itself after you update SaaS Monitor, so a screen never runs an old version.
 - Press <kbd>F</kbd> (or use the button in the corner) to toggle full screen.
 
+## Moments
+
+Each sale, new customer or subscription change gets a large card in the middle of the screen, for
+as long as you choose in the screen settings (**Moments stay on screen**, 10 seconds by default).
+When several arrive at once, they play one after the other, a little faster.
+
 ## Sound
 
 Browsers block audio until someone interacts with the page. When sound is enabled, the screen

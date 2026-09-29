@@ -56,7 +56,8 @@ export function MomentCard({
         }}
         transition={SPRING}
         className={cn(
-          "relative flex w-[min(calc(var(--u)*84),92%)] flex-col items-center gap-4 overflow-hidden rounded-[calc(var(--rem)*2.5)] bg-(--card) px-16 pt-12 pb-13 text-center ring-1",
+          // Read from across the room: the card takes most of the screen's width.
+          "relative flex w-[min(calc(var(--u)*112),92%)] flex-col items-center gap-5 overflow-hidden rounded-[calc(var(--rem)*3)] bg-(--card) px-20 pt-16 pb-16 text-center ring-1",
           celebration
             ? "shadow-(--moment-glow) ring-(--edge)"
             : "shadow-(--moment-shadow) ring-(--hairline)",
@@ -73,7 +74,7 @@ export function MomentCard({
         <Reveal delay={0.1}>
           <p
             className={cn(
-              "flex items-center gap-3 text-2xl font-medium",
+              "flex items-center gap-3 text-3xl font-medium",
               celebration ? "text-(--glow-ink)" : "text-(--ink-2)",
             )}
           >
@@ -83,27 +84,27 @@ export function MomentCard({
         </Reveal>
         <Reveal delay={0.18}>
           {headlineKind === "amount" ? (
-            <p className="flex items-baseline gap-4 text-[length:calc(var(--rem)*7.5)] leading-none font-semibold tracking-[-0.04em] tabular-nums">
+            <p className="flex items-baseline gap-5 text-[length:calc(var(--rem)*10)] leading-none font-semibold tracking-[-0.04em] tabular-nums">
               <span className={celebration ? undefined : "text-(--ink-2)"}>{headline}</span>
               {metric && (
-                <span className="text-4xl font-medium tracking-tight text-(--ink-3)">{metric}</span>
+                <span className="text-5xl font-medium tracking-tight text-(--ink-3)">{metric}</span>
               )}
             </p>
           ) : (
             // Names run longer than amounts: smaller, and on two lines at most.
-            <p className="line-clamp-2 text-7xl leading-[1.05] font-semibold tracking-[-0.03em] text-balance">
+            <p className="line-clamp-2 text-8xl leading-[1.05] font-semibold tracking-[-0.03em] text-balance">
               {headline}
             </p>
           )}
         </Reveal>
         {details.length > 0 && (
           <Reveal delay={0.26}>
-            <p className="text-2xl text-balance text-(--ink-2)">{details.join(" · ")}</p>
+            <p className="text-3xl text-balance text-(--ink-2)">{details.join(" · ")}</p>
           </Reveal>
         )}
         {footnote && (
           <Reveal delay={0.34}>
-            <p className="mt-2 rounded-full bg-(--glow-wash) px-6 py-2.5 text-2xl font-medium text-(--glow-ink) tabular-nums">
+            <p className="mt-2 rounded-full bg-(--glow-wash) px-8 py-3 text-3xl font-medium text-(--glow-ink) tabular-nums">
               {footnote}
             </p>
           </Reveal>
@@ -119,7 +120,7 @@ export function MomentCard({
  */
 export function AccountBadge({ name }: { name: string }) {
   return (
-    <p className="flex max-w-full items-center gap-3 rounded-full bg-(--fill) py-2 pr-6 pl-4 text-2xl font-semibold text-(--ink) ring-1 ring-(--hairline)">
+    <p className="flex max-w-full items-center gap-3 rounded-full bg-(--fill) py-2.5 pr-7 pl-5 text-3xl font-semibold text-(--ink) ring-1 ring-(--hairline)">
       <LogoPulse className="h-[0.8em] shrink-0 text-(--glow)" />
       <span className="truncate">{name}</span>
     </p>

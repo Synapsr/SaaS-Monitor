@@ -87,6 +87,7 @@ describe("theme, language and rotation", () => {
       language: "en",
       rotation: { enabled: false, seconds: 15, includeTotal: true },
       sound: { onCustomer: true },
+      momentSeconds: 10,
     });
   });
 
@@ -96,6 +97,18 @@ describe("theme, language and rotation", () => {
       theme: "light",
       language: "fr",
       rotation: { enabled: true, seconds: 30, includeTotal: true },
+    });
+  });
+
+  it("refuse moments too short to read, or long enough to hide the screen", () => {
+    for (const momentSeconds of [2, 61, 7.5]) {
+      expect(screenSettingsSchema.safeParse({ momentSeconds }).success, `${momentSeconds}`).toBe(
+        false,
+      );
+    }
+    expect(parseScreenSettings({ momentSeconds: 2, theme: "light" })).toMatchObject({
+      momentSeconds: 10,
+      theme: "light",
     });
   });
 
