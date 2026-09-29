@@ -62,6 +62,25 @@ For a vertical monitor, rotate the output in **Screen Configuration** (or with
 | Smart TV browser      | Open the link, click once with the remote to enable sound. Some TV browsers are slow: a Raspberry Pi gives a smoother result. |
 | iPad / Android tablet | Open the link, add it to the home screen, then use Guided Access (iPad) or screen pinning (Android) to keep it in front.      |
 
+## Several products on one screen
+
+A screen may show several Stripe accounts, converted to its currency. In **Several accounts**,
+choose how:
+
+- **Added up**: one total for every account; the feed names the account of each item.
+- **One at a time**: each account takes its turn on screen with its own numbers, every 10 seconds
+  to a minute, and their total too if you like. When something happens, the screen shows its
+  account right away, and the moment names it; moments of several accounts play one after the
+  other.
+
+## Look and language
+
+In the screen settings, pick a dark or a light theme (light suits bright rooms and lit shelves),
+an accent color, or your own color pasted as hex: the screen makes it lighter or darker if it
+needs to, so that it stays readable. The screen speaks English, French, German, Spanish,
+Italian, Portuguese or Dutch, and writes numbers and dates the local way (`12 480 €` in French).
+The dashboard itself stays in English.
+
 ## Several screens
 
 Create as many screens as you like: one per product, one combining every Stripe account, a quiet

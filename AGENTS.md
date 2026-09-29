@@ -51,7 +51,8 @@ Node 24 (`.nvmrc`), pnpm 10.
 - `src/test` — test helpers and fixtures (database, Stripe fakes, display states).
 
 Data flow: Stripe → sync engine (backfill once, then incremental from the Events API) → local
-tables (`subscriptions`, `mrr_movements`, `payments`) → metrics → `DisplayState` → display.
+tables (`subscriptions`, `mrr_movements`, `payments`, `customers`) → metrics → `DisplayState` →
+display.
 Syncs are triggered on demand when a display polls or the dashboard is open (no worker needed).
 
 ## Actions and forms
@@ -81,6 +82,13 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   Display components present recurring amounts with `recurringMetric`
   (`src/lib/display/metric.ts`); nothing else multiplies by twelve.
 - **Screen settings** are JSON: every new field needs a default in `screenSettingsSchema`.
+- **Screens speak their own language** (`settings.language`): display components take their words
+  and locale from `useDisplayLocale()`, and every language of `src/lib/display/i18n` defines every
+  string (the type of `en.ts` enforces it). Numbers and dates go through the locale too. The
+  dashboard is in English.
+- **Screen colors are tokens** (`wall-palette.css`, `d/display.css`), redefined by the light theme:
+  never hard-code a white or black on a screen. Accents come from `accentPalette`, which keeps
+  custom colors readable on both themes.
 - **MySQL**: instants are UTC `datetime(6)` columns (`instant`). UUIDs, tokens and Stripe ids are
   `identifier` columns, compared byte for byte: MySQL's default collation ignores case. There is no
   `RETURNING`: the app creates its UUIDs (`$returningId()`), and an update's `affectedRows` counts
