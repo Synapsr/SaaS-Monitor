@@ -1,6 +1,7 @@
 # Contributing
 
 Thanks for helping make SaaS Monitor better. Bug reports, ideas and pull requests are welcome.
+Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Development setup
 

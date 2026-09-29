@@ -8,7 +8,11 @@
 
 Open-source Stripe dashboard for SaaS founders: put your revenue on a TV and hear every sale.
 
-[Live demo](#try-it) · [Self-host](docs/self-hosting.md) · [Connect Stripe](docs/stripe.md) · [Put it on a TV](docs/wall-display.md)
+[Live demo](https://saas-monitor.com/d/demo) · [Use it online](https://saas-monitor.com) · [Self-host](docs/self-hosting.md) · [Connect Stripe](docs/stripe.md) · [Put it on a TV](docs/wall-display.md)
+
+[![CI](https://github.com/Synapsr/SaaS-Monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/Synapsr/SaaS-Monitor/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Synapsr/SaaS-Monitor)](https://github.com/Synapsr/SaaS-Monitor/releases/latest)
+[![MIT license](https://img.shields.io/github/license/Synapsr/SaaS-Monitor)](LICENSE)
 
 <br />
 
@@ -27,6 +31,10 @@ when a payment lands, and confetti flies when you cross $10K MRR.
   <tr>
     <td width="50%"><img src="docs/assets/moment.webp" alt="A new customer appears in a large card with confetti" /></td>
     <td width="50%"><img src="docs/assets/milestone.webp" alt="A full-screen celebration: goal reached, $15K MRR" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/light.webp" alt="A light screen in German, in a custom orange" /></td>
+    <td width="50%"><img src="docs/assets/accounts.webp" alt="Two products on one screen: a new subscriber of Acme Analytics, named in the moment and in the rotation above" /></td>
   </tr>
 </table>
 
@@ -59,11 +67,15 @@ when a payment lands, and confetti flies when you cross $10K MRR.
 
 ## Try it
 
-Start the app locally (see [Development](#development)) and open
-<http://localhost:3000/d/demo>: a screen fed by a simulated SaaS, where a sale lands every few
-seconds. Add `?accent=violet&sound=arcade&range=all&metric=arr` to try other settings,
-`?theme=light&lang=fr&accent=ff6b35` for a light screen in French and your color, or
-`?accounts=2` for two products taking turns.
+- **Live demo**: <https://saas-monitor.com/d/demo> is a screen fed by a simulated SaaS, where
+  something happens every few seconds. No account needed. Add
+  [`?theme=light&lang=fr&accent=ff6b35`](https://saas-monitor.com/d/demo?theme=light&lang=fr&accent=ff6b35)
+  for a light screen in French and your color,
+  [`?accounts=2`](https://saas-monitor.com/d/demo?accounts=2) for two products taking turns, or
+  `?sound=arcade&range=all&metric=arr` for other settings.
+- **Online**: create an account on <https://saas-monitor.com>, connect Stripe with a read-only
+  key, and open your screen's link on any TV. Updates are instant.
+- **On your own server**: see [Self-hosting](#self-hosting). The demo is at `/d/demo` there too.
 
 ## Self-hosting
 
