@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const SOUND_PACKS = ["register", "chime", "arcade"] as const;
+/** Preset accents. A screen may also use a custom color (`#rrggbb`). */
 export const ACCENTS = ["emerald", "violet", "sky", "amber", "rose"] as const;
+export const THEMES = ["dark", "light"] as const;
+/** Languages a screen speaks. Its numbers and dates follow the language's conventions too. */
+export const LANGUAGES = ["en", "fr", "de", "es", "it", "pt", "nl"] as const;
 /** `all` starts with the first MRR movement of the screen's accounts. */
 export const CHART_RANGES = ["30d", "90d", "12m", "all"] as const;
 /** The recurring revenue a screen shows: monthly (MRR) or annual (ARR, twelve times MRR). */
@@ -9,11 +13,30 @@ export const METRICS = ["mrr", "arr"] as const;
 
 /** Highest goal a screen accepts, in major units. */
 export const MAX_GOAL = 1_000_000_000;
+/** How long each account may stay on a screen that rotates between them, in seconds. */
+export const ROTATION_SECONDS = { min: 5, max: 300 } as const;
 
 export type SoundPack = (typeof SOUND_PACKS)[number];
-export type Accent = (typeof ACCENTS)[number];
+export type PresetAccent = (typeof ACCENTS)[number];
+/** A custom accent: a hex color in lowercase, e.g. `#ff6b35`. */
+export type CustomAccent = `#${string}`;
+export type Accent = PresetAccent | CustomAccent;
+export type Theme = (typeof THEMES)[number];
+export type Language = (typeof LANGUAGES)[number];
 export type ChartRange = (typeof CHART_RANGES)[number];
 export type Metric = (typeof METRICS)[number];
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** Whether `value` is a custom accent: `#` and six hex digits, in any case. */
+export function isCustomAccent(value: string): value is CustomAccent {
+  return HEX_COLOR.test(value);
+}
+
+const customAccentSchema = z
+  .string()
+  .regex(HEX_COLOR, "Use a hex color such as #ff6b35")
+  .transform((value) => value.toLowerCase() as CustomAccent);
 
 /**
  * Whether `value` is an IANA time zone this runtime knows, e.g. `Europe/Paris`, aliases included:
@@ -61,6 +84,8 @@ export const screenSettingsSchema = z.object({
       onPayment: z.boolean().default(true),
       onMrrUp: z.boolean().default(true),
       onMrrDown: z.boolean().default(true),
+      /** A Stripe customer created, paying or not: often a sign-up. */
+      onCustomer: z.boolean().default(true),
     })
     .prefault({}),
   /** Confetti on new revenue and a full-screen moment when a milestone is crossed. */
@@ -68,7 +93,22 @@ export const screenSettingsSchema = z.object({
   /** Customer names are hidden by default: the screen URL may be seen by visitors. */
   showCustomerNames: z.boolean().default(false),
   chartRange: z.enum(CHART_RANGES).default("90d"),
-  accent: z.enum(ACCENTS).default("emerald"),
+  accent: z.union([z.enum(ACCENTS), customAccentSchema]).default("emerald"),
+  theme: z.enum(THEMES).default("dark"),
+  language: z.enum(LANGUAGES).default("en"),
+  /**
+   * With several Stripe accounts (several products, often), each can take its turn on screen with
+   * its own numbers, instead of one combined total. Moments name the account they come from.
+   */
+  rotation: z
+    .object({
+      enabled: z.boolean().default(false),
+      /** How long each account stays on screen. */
+      seconds: z.number().int().min(ROTATION_SECONDS.min).max(ROTATION_SECONDS.max).default(15),
+      /** The combined total takes a turn as well. */
+      includeTotal: z.boolean().default(true),
+    })
+    .prefault({}),
 });
 
 export type ScreenSettings = z.infer<typeof screenSettingsSchema>;

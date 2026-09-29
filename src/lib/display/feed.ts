@@ -1,11 +1,12 @@
 import { countryFlag, countryName, formatAmount, formatPayment } from "@/lib/display/format";
 import type { RecurringMetric } from "@/lib/display/metric";
-import type { FeedItem, FeedItemKind } from "@/lib/display/types";
+import type { DisplayWarning, FeedItem, FeedItemKind } from "@/lib/display/types";
 
 /* How a screen describes feed items, in the feed and in the moments that announce them. */
 
 export const KIND_LABELS: Record<FeedItemKind, string> = {
   payment: "Payment",
+  customer: "New customer",
   new: "New subscription",
   expansion: "Upgrade",
   reactivation: "Reactivation",
@@ -44,4 +45,14 @@ export function itemContext(item: FeedItem, options: { showAccount: boolean }): 
     item.country ? [flag, countryName(item.country)].filter(Boolean).join(" ") : null,
     options.showAccount ? item.accountName : null,
   ].filter((part): part is string => Boolean(part));
+}
+
+/** A warning of the screen, in a sentence. */
+export function warningText(warning: DisplayWarning): string {
+  switch (warning.kind) {
+    case "unconverted-currency":
+      return `Amounts in ${warning.currency.toUpperCase()} are left out: no exchange rate is available right now.`;
+    case "failing-account":
+      return `${warning.accountName}: this Stripe account needs attention.`;
+  }
 }

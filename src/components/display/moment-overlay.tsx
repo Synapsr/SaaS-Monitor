@@ -39,7 +39,8 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
 /** How each kind of activity is announced. */
 const TITLES: Record<FeedItemKind, string> = {
   payment: "Payment received",
-  new: "New customer",
+  customer: "New customer",
+  new: "New subscriber",
   expansion: "Upgrade",
   reactivation: "Welcome back",
   contraction: "Downgrade",

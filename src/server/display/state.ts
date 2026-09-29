@@ -9,7 +9,7 @@ import {
   daysInRange,
   displayCalendar,
 } from "@/lib/display/calendar";
-import type { DisplayState, FeedItem } from "@/lib/display/types";
+import type { DisplayState, DisplayWarning, FeedItem } from "@/lib/display/types";
 import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
@@ -115,12 +115,14 @@ export async function getDisplayStateByToken(
       activeCustomers: payingCustomers,
       trialingSubscriptions: totals.reduce((total, row) => total + row.trialing, 0),
       arpu: payingCustomers ? Math.round(mrr / payingCustomers) : 0,
+      customersCreatedToday: 0,
       revenue: revenueMetrics(convertDaily(revenue, converter, calendar.today), calendar),
       thisMonth: { ...movementTotals(mrrChanges, calendar.monthStart), newCustomers },
     },
     series: {
       mrr: chart.map((date) => ({ date, value: history.get(date) ?? mrr })),
     },
+    views: [],
     feed: activity.flatMap((row) => {
       const item = toFeedItem(row, converter, settings, accountNames.get(row.accountId) ?? "");
       return item ? [item] : [];
@@ -153,19 +155,16 @@ function recentTestEvent(testEventAt: Date | null, now: Date): DisplayState["tes
 /** Issues worth a discreet line on the screen: missing exchange rates, failing accounts. */
 function displayWarnings(
   unconvertedCurrencies: ReadonlySet<string>,
-  accounts: readonly { name: string; status: string; lastError: string | null }[],
-): string[] {
+  accounts: readonly { name: string; status: string }[],
+): DisplayWarning[] {
   return [
-    ...[...unconvertedCurrencies].map(
-      (code) =>
-        `Amounts in ${code.toUpperCase()} are left out: no exchange rate is available right now.`,
-    ),
+    ...[...unconvertedCurrencies].map((currency): DisplayWarning => ({
+      kind: "unconverted-currency",
+      currency,
+    })),
     ...accounts
       .filter((account) => account.status === "error")
-      .map(
-        (account) =>
-          `${account.name}: ${account.lastError ?? "this Stripe account needs attention."}`,
-      ),
+      .map((account): DisplayWarning => ({ kind: "failing-account", accountName: account.name })),
   ];
 }
 
@@ -190,6 +189,7 @@ function toFeedItem(
     customerName: settings.showCustomerNames ? row.customerName : null,
     country: row.country,
     planName: row.planName,
+    accountId: row.accountId,
     accountName,
   };
 }

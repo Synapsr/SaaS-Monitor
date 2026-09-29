@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultScreenSettings,
+  isCustomAccent,
   isTimeZone,
   parseScreenSettings,
   screenSettingsSchema,
@@ -52,5 +53,57 @@ describe("time zones", () => {
   it("refuses unknown names", () => {
     expect(isTimeZone("Mars/Olympus")).toBe(false);
     expect(isTimeZone("")).toBe(false);
+  });
+});
+
+describe("accent", () => {
+  it("is a preset, or a custom hex color stored in lowercase", () => {
+    expect(defaultScreenSettings.accent).toBe("emerald");
+    expect(screenSettingsSchema.parse({ accent: "violet" }).accent).toBe("violet");
+    expect(screenSettingsSchema.parse({ accent: "#FF6B35" }).accent).toBe("#ff6b35");
+  });
+
+  it("refuses other colors, and falls back to the default one", () => {
+    for (const accent of ["pink", "#fff", "ff6b35", "#ff6b3", "rgb(255 0 0)"]) {
+      expect(screenSettingsSchema.safeParse({ accent }).success, accent).toBe(false);
+    }
+    expect(parseScreenSettings({ accent: "#12345z", theme: "light" })).toMatchObject({
+      accent: "emerald",
+      theme: "light",
+    });
+  });
+
+  it("recognizes custom accents", () => {
+    expect(isCustomAccent("#ff6b35")).toBe(true);
+    expect(isCustomAccent("#FF6B35")).toBe(true);
+    expect(isCustomAccent("emerald")).toBe(false);
+  });
+});
+
+describe("theme, language and rotation", () => {
+  it("default to a dark screen in English showing its accounts combined", () => {
+    expect(parseScreenSettings({ currency: "eur" })).toMatchObject({
+      theme: "dark",
+      language: "en",
+      rotation: { enabled: false, seconds: 15, includeTotal: true },
+      sound: { onCustomer: true },
+    });
+  });
+
+  it("keep what screens choose", () => {
+    const settings = { theme: "light", language: "fr", rotation: { enabled: true, seconds: 30 } };
+    expect(screenSettingsSchema.parse(settings)).toMatchObject({
+      theme: "light",
+      language: "fr",
+      rotation: { enabled: true, seconds: 30, includeTotal: true },
+    });
+  });
+
+  it("refuse rotations too fast or too slow to follow", () => {
+    for (const seconds of [4, 301, 12.5]) {
+      expect(screenSettingsSchema.safeParse({ rotation: { seconds } }).success, `${seconds}`).toBe(
+        false,
+      );
+    }
   });
 });

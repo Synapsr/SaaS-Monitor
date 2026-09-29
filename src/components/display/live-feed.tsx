@@ -9,10 +9,11 @@ import {
   itemContext,
   itemOriginalAmount,
   KIND_LABELS,
+  warningText,
 } from "@/lib/display/feed";
 import type { RecurringMetric } from "@/lib/display/metric";
 import { formatFeedTime } from "@/lib/display/time";
-import type { FeedItem } from "@/lib/display/types";
+import type { DisplayWarning, FeedItem } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
 
 /** More than a screen can show: the rest fades out at the bottom. */
@@ -26,7 +27,7 @@ interface LiveFeedProps {
   timeZone: string;
   serverTime: number;
   showAccount: boolean;
-  warnings: string[];
+  warnings: DisplayWarning[];
   className?: string;
 }
 
@@ -86,7 +87,7 @@ export function LiveFeed({
       {warnings.length > 0 && (
         <p className="flex items-start gap-2.5 border-t border-(--hairline) px-8 py-4 text-base text-(--ink-3)">
           <InfoIcon aria-hidden className="mt-0.5 size-[1.1em] shrink-0" />
-          <span className="line-clamp-2">{warnings[0]}</span>
+          <span className="line-clamp-2">{warningText(warnings[0])}</span>
         </p>
       )}
     </section>

@@ -493,9 +493,7 @@ describe("display state", () => {
       amount: 625,
       original: { amount: 500, currency: "eur" },
     });
-    expect(state.warnings).toEqual([
-      "Amounts in JPY are left out: no exchange rate is available right now.",
-    ]);
+    expect(state.warnings).toEqual([{ kind: "unconverted-currency", currency: "jpy" }]);
   });
 
   it("keeps showing amounts with stale rates when the rate source fails", async () => {
@@ -554,6 +552,7 @@ describe("display state", () => {
         customerName: null,
         country: "US",
         planName: null,
+        accountId,
         accountName: "Acme",
       },
       expect.objectContaining({
@@ -674,9 +673,7 @@ describe("display state", () => {
 
     const mixed = await displayOf([working, failing]);
     expect(mixed.status).toBe("ready");
-    expect(mixed.warnings).toEqual([
-      "Failing: This Stripe key was revoked or rolled. Connect the account again with a new key.",
-    ]);
+    expect(mixed.warnings).toEqual([{ kind: "failing-account", accountName: "Failing" }]);
     expect((await displayOf([failing])).status).toBe("error");
     expect((await displayOf([working, importing])).status).toBe("importing");
   });

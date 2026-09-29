@@ -18,6 +18,7 @@ export function feedItem(overrides: Partial<FeedItem> = {}): FeedItem {
     customerName: null,
     country: "FR",
     planName: "Pro",
+    accountId: "a1",
     accountName: "Acme",
     ...overrides,
   };
@@ -38,6 +39,7 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
       activeCustomers: 95,
       trialingSubscriptions: 4,
       arpu: 10_526,
+      customersCreatedToday: 3,
       revenue: {
         today: 50_000,
         yesterday: 40_000,
@@ -60,6 +62,7 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
         { date: "2026-09-28", value: 1_000_000 },
       ],
     },
+    views: [],
     feed: [],
     testEvent: null,
     warnings: [],

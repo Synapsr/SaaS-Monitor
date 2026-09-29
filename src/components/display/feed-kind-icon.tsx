@@ -1,6 +1,7 @@
 import {
   CircleDollarSignIcon,
   RotateCcwIcon,
+  SparklesIcon,
   TrendingDownIcon,
   TrendingUpIcon,
   UserMinusIcon,
@@ -14,7 +15,8 @@ import { cn } from "@/lib/utils";
 /** One icon per kind of activity, in the feed and in the moments that announce it. */
 export const KIND_ICONS: Record<FeedItemKind, LucideIcon> = {
   payment: CircleDollarSignIcon,
-  new: UserPlusIcon,
+  customer: UserPlusIcon,
+  new: SparklesIcon,
   expansion: TrendingUpIcon,
   reactivation: RotateCcwIcon,
   contraction: TrendingDownIcon,

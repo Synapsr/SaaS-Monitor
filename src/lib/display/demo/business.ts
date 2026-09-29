@@ -3,6 +3,7 @@
  */
 
 export const BUSINESS_NAME = "Acme Analytics";
+export const DEMO_ACCOUNT_ID = "demo";
 export const DEMO_CURRENCY = "usd";
 /** The MRR goal the demo crosses within its first minutes, in major units like `settings.goal`. */
 export const DEMO_GOAL = 15_000;

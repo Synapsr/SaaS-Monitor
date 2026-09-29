@@ -3,6 +3,7 @@ import {
   AVERAGE_PRICE,
   BUSINESS_NAME,
   COMPANIES,
+  DEMO_ACCOUNT_ID,
   COUNTRIES,
   DEMO_CURRENCY,
   DEMO_GOAL,
@@ -142,6 +143,7 @@ function record(
     customerName: customer.name,
     country: customer.country,
     planName: PLANS[customer.plan].name,
+    accountId: DEMO_ACCOUNT_ID,
     accountName: BUSINESS_NAME,
   });
   if (draft.feed.length > FEED_SIZE) draft.feed.length = FEED_SIZE;

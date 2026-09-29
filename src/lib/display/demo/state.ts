@@ -6,7 +6,12 @@ import {
   displayCalendar,
   monthOf,
 } from "@/lib/display/calendar";
-import { BUSINESS_NAME, DEMO_CURRENCY, DEMO_GOAL } from "@/lib/display/demo/business";
+import {
+  BUSINESS_NAME,
+  DEMO_ACCOUNT_ID,
+  DEMO_CURRENCY,
+  DEMO_GOAL,
+} from "@/lib/display/demo/business";
 import { EMPTY_MONTH, mrrAt, type DemoWorld } from "@/lib/display/demo/simulation";
 import { recurringMetric } from "@/lib/display/metric";
 import type { DisplayState, SeriesPoint } from "@/lib/display/types";
@@ -69,7 +74,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
     },
     currency: DEMO_CURRENCY,
     status: "ready",
-    accounts: [{ id: "demo", name: BUSINESS_NAME, status: "ready", livemode: true }],
+    accounts: [{ id: DEMO_ACCOUNT_ID, name: BUSINESS_NAME, status: "ready", livemode: true }],
     metrics: {
       mrr: world.mrr,
       mrr30DaysAgo: mrrAt(world.mrrByDay, calendar.thirtyDaysAgo),
@@ -77,6 +82,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
       activeCustomers: customers,
       trialingSubscriptions: world.trials,
       arpu: customers > 0 ? Math.round(world.mrr / customers) : 0,
+      customersCreatedToday: 0,
       revenue: {
         today: revenueOn(today),
         yesterday: revenueOn(calendar.yesterday),
@@ -91,6 +97,7 @@ export function demoState(world: DemoWorld, now: Date): DisplayState {
     series: {
       mrr: mrrSeries(world.mrrByDay, chartDays(today, options.chartRange, firstDay(world))),
     },
+    views: [],
     feed: world.feed.map((item) =>
       options.showCustomerNames ? item : { ...item, customerName: null },
     ),

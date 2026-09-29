@@ -30,13 +30,33 @@ export interface DisplayState {
      */
     mrr: SeriesPoint[];
   };
-  /** Most recent activity first. */
+  /**
+   * Each ready account on its own, when the screen shows several: a screen may rotate between
+   * them (`settings.rotation`). Empty for a screen of a single account. Amounts are in the
+   * screen's currency, like the combined ones.
+   */
+  views: AccountView[];
+  /** Most recent activity first, of every account. */
   feed: FeedItem[];
   /** Present after "Send a test celebration" was clicked in the settings. */
   testEvent: { id: string } | null;
-  /** Human-readable issues worth surfacing discreetly, e.g. a currency that could not be converted. */
-  warnings: string[];
+  /** Issues worth surfacing discreetly, written by the display in the screen's language. */
+  warnings: DisplayWarning[];
 }
+
+/** The numbers of one Stripe account of the screen. */
+export interface AccountView {
+  /** As in `DisplayState.accounts`. */
+  accountId: string;
+  metrics: DisplayMetrics;
+  series: DisplayState["series"];
+}
+
+export type DisplayWarning =
+  /** Amounts in this currency are left out: no exchange rate is available right now. */
+  | { kind: "unconverted-currency"; currency: string }
+  /** This account fails to sync, e.g. its API key was revoked. The dashboard tells why. */
+  | { kind: "failing-account"; accountName: string };
 
 export interface DisplayAccount {
   id: string;
@@ -55,6 +75,8 @@ export interface DisplayMetrics {
   trialingSubscriptions: number;
   /** Average revenue per paying customer (MRR / active customers). */
   arpu: number;
+  /** Stripe customers created today (screen time zone), paying or not: often sign-ups. */
+  customersCreatedToday: number;
   revenue: {
     today: number;
     yesterday: number;
@@ -85,13 +107,17 @@ export interface SeriesPoint {
 }
 
 export type MrrMovementKind = "new" | "expansion" | "reactivation" | "contraction" | "churn";
-export type FeedItemKind = "payment" | MrrMovementKind;
+/** `customer`: a Stripe customer was created, before they pay anything, if they ever do. */
+export type FeedItemKind = "payment" | "customer" | MrrMovementKind;
 
 export interface FeedItem {
-  /** Unique across kinds and stable across polls, e.g. `payment:<uuid>` or `movement:<uuid>`. */
+  /**
+   * Unique across kinds and stable across polls: `payment:<uuid>`, `movement:<uuid>` or
+   * `customer:<uuid>`.
+   */
   id: string;
   kind: FeedItemKind;
-  /** Payment amount, or monthly MRR change (negative for contraction and churn). */
+  /** Payment amount, monthly MRR change (negative for contraction and churn), or 0 for a customer. */
   amount: number;
   /** Amount before conversion, when the payment or subscription used another currency. */
   original: { amount: number; currency: string } | null;
@@ -108,5 +134,7 @@ export interface FeedItem {
   /** ISO 3166-1 alpha-2 code, e.g. `FR`. */
   country: string | null;
   planName: string | null;
+  /** As in `DisplayState.accounts`. */
+  accountId: string;
   accountName: string;
 }
