@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { StripeEvent } from "@/server/stripe/types";
-import { JANUARY_1, stripeCharge } from "@/test/stripe-fixtures";
+import { JANUARY_1, stripeCharge, stripeCustomer } from "@/test/stripe-fixtures";
 import { digestEvents, emptyDigest } from "./events";
 
 let lastEvent = 0;
@@ -30,7 +30,8 @@ describe("event digest", () => {
     ]);
 
     expect([...digest.subscriptions.keys()]).toEqual(["sub_1"]);
-    expect([...digest.customers.keys()]).toEqual(["cus_2"]);
+    expect([...digest.customerDiscounts.keys()]).toEqual(["cus_2"]);
+    expect(digest.customers.size).toBe(0);
   });
 
   it("keeps the latest state of each charge", () => {
@@ -54,6 +55,38 @@ describe("event digest", () => {
     ]);
 
     expect(digest.charges.get("ch_1")?.charge.amountRefunded).toBe(100);
+  });
+
+  it("keeps the latest details of each customer, and whether it was created", () => {
+    const signUp = stripeCustomer({ id: "cus_new", name: null, country: null });
+    const digest = digestEvents(emptyDigest(), [
+      // The checkout names the customer a moment after creating them.
+      event("customer.updated", { ...signUp, name: "Ada Lovelace" }, JANUARY_1 + 5),
+      event("customer.created", signUp, JANUARY_1),
+      event("customer.updated", stripeCustomer({ id: "cus_old", name: "Grace Hopper" })),
+    ]);
+
+    expect(digest.customers.get("cus_new")).toMatchObject({
+      customer: { name: "Ada Lovelace" },
+      event: { created: JANUARY_1 + 5 },
+      created: true,
+    });
+    expect(digest.customers.get("cus_old")).toMatchObject({
+      customer: { name: "Grace Hopper" },
+      created: false,
+    });
+  });
+
+  it("forgets deleted customers, whatever the order of their events", () => {
+    const spam = stripeCustomer({ id: "cus_spam" });
+    const digest = digestEvents(emptyDigest(), [
+      event("customer.updated", spam),
+      event("customer.deleted", spam),
+      event("customer.created", spam),
+    ]);
+
+    expect(digest.customers.size).toBe(0);
+    expect([...digest.deletedCustomers]).toEqual(["cus_spam"]);
   });
 
   it("lists the events an earlier sync handled, without acting on them again", () => {

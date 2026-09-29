@@ -1,11 +1,20 @@
 import "server-only";
 import { readEventSignal } from "@/server/stripe/normalize";
-import type { Charge, StripeEvent, UnixTime } from "@/server/stripe/types";
+import type { Charge, Customer, StripeEvent, UnixTime } from "@/server/stripe/types";
 
 /** The event behind a change, recorded with the movement it produces. */
 export interface EventRef {
   id: string;
   created: UnixTime;
+}
+
+/** What the events of a batch say about a customer. */
+export interface CustomerChange {
+  /** Details from the latest event. */
+  customer: Customer;
+  event: EventRef;
+  /** One of the events is the customer's creation: it signed up, and may be unknown here. */
+  created: boolean;
 }
 
 /**
@@ -16,9 +25,13 @@ export interface EventDigest {
   /** Subscriptions to fetch again, with the latest event about each. */
   subscriptions: Map<string, EventRef>;
   /** Customers whose discount changed: it applies to each of their subscriptions. */
-  customers: Map<string, EventRef>;
+  customerDiscounts: Map<string, EventRef>;
   /** Latest known state of each charge. */
   charges: Map<string, { charge: Charge; event: EventRef }>;
+  /** Customers created or updated, except deleted ones. */
+  customers: Map<string, CustomerChange>;
+  /** Customers deleted: whatever else the events say about them, they are gone. */
+  deletedCustomers: Set<string>;
   /** Newest event listed, to move the cursor forward. */
   newest: EventRef | null;
   /** Every event listed, handled before or not: the next sync lists the latest ones again. */
@@ -28,8 +41,10 @@ export interface EventDigest {
 export function emptyDigest(): EventDigest {
   return {
     subscriptions: new Map(),
-    customers: new Map(),
+    customerDiscounts: new Map(),
     charges: new Map(),
+    customers: new Map(),
+    deletedCustomers: new Set(),
     newest: null,
     listed: [],
   };
@@ -56,12 +71,19 @@ export function digestEvents(
       keepLatest(digest.subscriptions, signal.subscriptionId, ref);
     } else if (signal?.kind === "discount") {
       if (signal.subscriptionId) keepLatest(digest.subscriptions, signal.subscriptionId, ref);
-      else if (signal.customerId) keepLatest(digest.customers, signal.customerId, ref);
+      else if (signal.customerId) keepLatest(digest.customerDiscounts, signal.customerId, ref);
     } else if (signal?.kind === "charge") {
       const known = digest.charges.get(signal.charge.id);
       if (!known || ref.created > known.event.created) {
         digest.charges.set(signal.charge.id, { charge: signal.charge, event: ref });
       }
+    } else if (signal?.kind === "customer") {
+      if (!digest.deletedCustomers.has(signal.customer.id)) {
+        keepCustomer(digest.customers, signal.customer, signal.created, ref);
+      }
+    } else if (signal?.kind === "deleted-customer") {
+      digest.customers.delete(signal.customerId);
+      digest.deletedCustomers.add(signal.customerId);
     }
   }
   return digest;
@@ -70,4 +92,16 @@ export function digestEvents(
 function keepLatest(refs: Map<string, EventRef>, key: string, ref: EventRef) {
   const known = refs.get(key);
   if (!known || ref.created > known.created) refs.set(key, ref);
+}
+
+/** Keeps a customer's latest details, remembering whether any event was its creation. */
+function keepCustomer(
+  changes: Map<string, CustomerChange>,
+  customer: Customer,
+  created: boolean,
+  ref: EventRef,
+) {
+  const known = changes.get(customer.id);
+  const latest = !known || ref.created > known.event.created ? { customer, event: ref } : known;
+  changes.set(customer.id, { ...latest, created: created || (known?.created ?? false) });
 }

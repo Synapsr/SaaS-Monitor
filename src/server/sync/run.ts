@@ -41,7 +41,7 @@ export interface SyncReport {
   accountId: string;
   mode: SyncMode;
   ok: boolean;
-  /** Movements and payments written. */
+  /** Movements, payments and customers written. */
   changes: number;
   /** Requests sent to Stripe, retries included. */
   requests: number;
@@ -92,10 +92,14 @@ export async function syncAccount(
     } else {
       const incremental = await runIncremental(context);
       changes += incremental.changes;
+      // The daily reconcile only checks subscriptions: Stripe changes some without any event (a
+      // repeating coupon that ends), while charges and customers always come with theirs.
       const reconcile =
         incremental.catchUp ??
         account.reconcile ??
-        (isReconcileDue(account.lastReconciledAt, now) ? newScan(now, null) : null);
+        (isReconcileDue(account.lastReconciledAt, now)
+          ? newScan(now, { paymentsSince: null, customersSince: null })
+          : null);
       if (reconcile) {
         mode = "reconcile";
         changes += await runScan(context, "reconcile", reconcile);

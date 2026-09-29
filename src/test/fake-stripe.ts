@@ -4,6 +4,7 @@ import {
   accountSchema,
   chargeSchema,
   couponSchema,
+  customerSchema,
   priceSchema,
   productSchema,
   subscriptionItemSchema,
@@ -11,6 +12,7 @@ import {
   type AccountInput,
   type ChargeInput,
   type CouponInput,
+  type CustomerInput,
   type PriceInput,
   type ProductInput,
   type SubscriptionInput,
@@ -69,6 +71,7 @@ export class FakeStripe implements StripeGateway {
   private readonly coupons = new Map<string, CouponInput>();
   private readonly deletedCoupons = new Map<string, CouponInput>();
   private readonly charges = new Map<string, ChargeInput>();
+  private readonly customers = new Map<string, CustomerInput>();
   private readonly events: StripeEvent[] = [];
 
   /** Creates or replaces a subscription (and remembers its prices, tiers included). */
@@ -111,6 +114,16 @@ export class FakeStripe implements StripeGateway {
     return charge;
   }
 
+  /** Creates or replaces a customer. Subscriptions embed their own: this one is only listed. */
+  putCustomer(customer: CustomerInput): CustomerInput {
+    this.customers.set(customer.id, customer);
+    return customer;
+  }
+
+  deleteCustomer(id: string) {
+    this.customers.delete(id);
+  }
+
   /** Records an event, as Stripe does when something happens. */
   emit(type: string, object: unknown, created: UnixTime): StripeEvent {
     const event = { id: stripeId("evt"), type, created, object };
@@ -151,6 +164,16 @@ export class FakeStripe implements StripeGateway {
     const charges = [...this.charges.values()].filter((charge) => charge.created >= createdSince);
     return mapPage(paginate(byCreatedDesc(charges), startingAfter, this.pageSize), (charge) =>
       chargeSchema.parse(charge),
+    );
+  }
+
+  async listCustomers(createdSince: UnixTime, startingAfter?: string) {
+    this.request("customers");
+    const customers = [...this.customers.values()].filter(
+      (customer) => customer.created >= createdSince,
+    );
+    return mapPage(paginate(byCreatedDesc(customers), startingAfter, this.pageSize), (customer) =>
+      customerSchema.parse(customer),
     );
   }
 

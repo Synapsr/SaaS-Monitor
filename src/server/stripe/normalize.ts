@@ -4,6 +4,7 @@ import type {
   AccountInfo,
   Charge,
   Coupon,
+  Customer,
   Discount,
   EventSignal,
   Price,
@@ -98,24 +99,34 @@ const discountSchema = z
     end: discount.end ?? null,
   }));
 
-const customerSchema = z.union([
+/** Who a customer is, wherever Stripe renders one. */
+const customerIdentity = z.object({
+  id: z.string(),
+  name: z.string().nullish(),
+  business_name: z.string().nullish(),
+  individual_name: z.string().nullish(),
+  address: z.object({ country: z.string().nullish() }).nullish(),
+});
+
+function identify(customer: z.infer<typeof customerIdentity>) {
+  return {
+    id: customer.id,
+    name: customer.name || customer.business_name || customer.individual_name || null,
+    country: customer.address?.country || null,
+  };
+}
+
+const subscriptionCustomerSchema = z.union([
   z.string().transform((id) => ({ id, name: null, country: null, discount: null })),
-  z
-    .object({
-      id: z.string(),
-      name: z.string().nullish(),
-      business_name: z.string().nullish(),
-      individual_name: z.string().nullish(),
-      address: z.object({ country: z.string().nullish() }).nullish(),
-      discount: discountSchema.nullish(),
-    })
-    .transform((customer) => ({
-      id: customer.id,
-      name: customer.name || customer.business_name || customer.individual_name || null,
-      country: customer.address?.country || null,
-      discount: customer.discount ?? null,
-    })),
+  customerIdentity
+    .extend({ discount: discountSchema.nullish() })
+    .transform((customer) => ({ ...identify(customer), discount: customer.discount ?? null })),
 ]);
+
+/** Customers come from typed listings and from event payloads: the fields read here are stable. */
+export const customerSchema = customerIdentity
+  .extend({ created: z.number() })
+  .transform((customer): Customer => ({ ...identify(customer), created: customer.created }));
 
 const tierSchema = z
   .object({
@@ -220,7 +231,7 @@ export const subscriptionItemSchema = z
 export const subscriptionSchema = z
   .object({
     id: z.string(),
-    customer: customerSchema,
+    customer: subscriptionCustomerSchema,
     status: z.string(),
     currency: currencyCode,
     start_date: z.number(),
@@ -321,7 +332,7 @@ export const eventSchema = z
     object: event.data.object,
   }));
 
-const subscriptionEventObject = z.object({ id: z.string() });
+const identifiedObject = z.object({ id: z.string() });
 const discountEventObject = z.object({
   subscription: z.string().nullish(),
   customer: reference.nullish(),
@@ -329,12 +340,23 @@ const discountEventObject = z.object({
 
 /**
  * Reads what matters in an event. Subscription and discount events are only notifications: the
- * subscription is fetched again, because payloads may use an older API version. Charges are read
- * from the payload, whose fields of interest are stable. Returns `null` for anything else.
+ * subscription is fetched again, because payloads may use an older API version. Charges and
+ * customers are read from the payload, whose fields of interest are stable. Returns `null` for
+ * anything else.
  */
 export function readEventSignal(event: StripeEvent): EventSignal | null {
+  // Matched whole: subscription and discount events share the `customer.` prefix.
+  if (event.type === "customer.created" || event.type === "customer.updated") {
+    const created = event.type === "customer.created";
+    const customer = customerSchema.safeParse(event.object);
+    return customer.success ? { kind: "customer", customer: customer.data, created } : null;
+  }
+  if (event.type === "customer.deleted") {
+    const object = identifiedObject.safeParse(event.object);
+    return object.success ? { kind: "deleted-customer", customerId: object.data.id } : null;
+  }
   if (event.type.startsWith("customer.subscription.")) {
-    const object = subscriptionEventObject.safeParse(event.object);
+    const object = identifiedObject.safeParse(event.object);
     return object.success ? { kind: "subscription", subscriptionId: object.data.id } : null;
   }
   if (event.type.startsWith("customer.discount.")) {
@@ -359,5 +381,6 @@ export type SubscriptionItemInput = z.input<typeof subscriptionItemSchema>;
 export type PriceInput = z.input<typeof priceSchema>;
 export type CouponInput = z.input<typeof couponSchema>;
 export type ChargeInput = z.input<typeof chargeSchema>;
+export type CustomerInput = z.input<typeof customerSchema>;
 export type ProductInput = z.input<typeof productSchema>;
 export type AccountInput = z.input<typeof accountSchema>;

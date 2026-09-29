@@ -1,9 +1,9 @@
 import { and, asc, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import { customers, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import { DAY_SECONDS, HOUR_SECONDS, MINUTE_SECONDS } from "@/lib/durations";
-import { chargeSchema, type SubscriptionInput } from "@/server/stripe/normalize";
+import { chargeSchema, customerSchema, type SubscriptionInput } from "@/server/stripe/normalize";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/test/stripe-fixtures";
 import { createStripeAccount, getStripeAccount, mrrTotals } from "@/test/stripe-accounts";
 import { applyCharges } from "./apply";
+import { applyCustomers } from "./customers";
 import { syncAccount } from "./run";
 
 const IMPORTED_AT = new Date("2026-03-15T12:00:00Z");
@@ -396,6 +397,136 @@ describe("live updates", () => {
     expect(reconciled).toHaveLength(51);
     expect(reconciled).toContainEqual({ subscription: "sub_lapsed", kind: "reactivation" });
     await expectLedgerToMatchMirror();
+  });
+
+  describe("customers", () => {
+    async function customerRows() {
+      return db()
+        .select({
+          id: customers.stripeCustomerId,
+          name: customers.name,
+          country: customers.country,
+          occurredAt: customers.occurredAt,
+          origin: customers.origin,
+        })
+        .from(customers)
+        .where(eq(customers.accountId, accountId))
+        .orderBy(asc(customers.occurredAt));
+    }
+
+    /** A customer Stripe creates `atSeconds` after the import, with its event. */
+    function signUp(id: string, atSeconds: number, name: string | null = "Ada Lovelace") {
+      const customer = stripe.putCustomer(stripeCustomer({ id, name, created: T0 + atSeconds }));
+      stripe.emit("customer.created", customer, T0 + atSeconds);
+      return customer;
+    }
+
+    it("records a sign-up as it happens, with the details of its latest event", async () => {
+      const customer = signUp("cus_new", MINUTE_SECONDS, null);
+      // Checkouts create the customer first, then fill in their name and address.
+      const named = { ...customer, name: "Ada Lovelace", address: { country: "GB" } };
+      stripe.emit("customer.updated", stripe.putCustomer(named), T0 + MINUTE_SECONDS + 5);
+
+      const report = await syncAt(2 * MINUTE_SECONDS);
+
+      expect(report).toMatchObject({ ok: true, mode: "incremental", changes: 1 });
+      expect(await customerRows()).toEqual([
+        {
+          id: "cus_new",
+          name: "Ada Lovelace",
+          country: "GB",
+          occurredAt: at(MINUTE_SECONDS),
+          origin: "live",
+        },
+      ]);
+    });
+
+    it("keeps customers up to date, but never takes an update for a sign-up", async () => {
+      const customer = signUp("cus_new", MINUTE_SECONDS, "Ada");
+      await syncAt(2 * MINUTE_SECONDS);
+      stripe.emit(
+        "customer.updated",
+        { ...customer, name: "Ada Lovelace" },
+        T0 + 3 * MINUTE_SECONDS,
+      );
+      // Someone who signed up long before the import changes their card.
+      const longAgo = stripeCustomer({ id: "cus_old", created: T0 - 400 * DAY_SECONDS });
+      stripe.emit("customer.updated", longAgo, T0 + 3 * MINUTE_SECONDS);
+
+      await syncAt(4 * MINUTE_SECONDS);
+
+      expect(await customerRows()).toMatchObject([
+        { id: "cus_new", name: "Ada Lovelace", origin: "live" },
+      ]);
+    });
+
+    it("records each sign-up once, however often events are replayed", async () => {
+      signUp("cus_new", MINUTE_SECONDS);
+      await syncAt(2 * MINUTE_SECONDS);
+      await syncAt(3 * MINUTE_SECONDS);
+      await db()
+        .update(stripeAccounts)
+        .set({ eventsCursor: T0 })
+        .where(eq(stripeAccounts.id, accountId));
+
+      expect(await syncAt(4 * MINUTE_SECONDS)).toMatchObject({ changes: 0 });
+      expect(await customerRows()).toMatchObject([{ id: "cus_new", origin: "live" }]);
+    });
+
+    it("removes deleted customers for good, spam and test data alike", async () => {
+      const spam = signUp("cus_spam", MINUTE_SECONDS);
+      await syncAt(2 * MINUTE_SECONDS);
+      stripe.deleteCustomer("cus_spam");
+      stripe.emit("customer.deleted", spam, T0 + 3 * MINUTE_SECONDS);
+
+      await syncAt(4 * MINUTE_SECONDS);
+      expect(await customerRows()).toEqual([]);
+
+      // Replayed, its creation does not bring it back.
+      await db()
+        .update(stripeAccounts)
+        .set({ eventsCursor: T0 })
+        .where(eq(stripeAccounts.id, accountId));
+      await syncAt(5 * MINUTE_SECONDS);
+      expect(await customerRows()).toEqual([]);
+    });
+
+    it("never celebrates a customer the import found first", async () => {
+      // Created just before the import, which found it: the first sync lists its event.
+      const customer = signUp("cus_seen", -MINUTE_SECONDS);
+      await db().transaction((tx) =>
+        applyCustomers(tx, accountId, { created: [customerSchema.parse(customer)] }, "backfill"),
+      );
+
+      await syncAt(2 * MINUTE_SECONDS);
+
+      expect(await customerRows()).toMatchObject([{ id: "cus_seen", origin: "backfill" }]);
+    });
+
+    it("records sign-ups live while a scan catches up with subscriptions", async () => {
+      for (let index = 0; index < 51; index += 1) {
+        const subscription = stripe.putSubscription(
+          stripeSubscription({ start_date: T0 + MINUTE_SECONDS }),
+        );
+        stripe.emit("customer.subscription.created", subscription, T0 + MINUTE_SECONDS);
+      }
+      signUp("cus_new", MINUTE_SECONDS);
+
+      expect(await syncAt(2 * MINUTE_SECONDS)).toMatchObject({ ok: true, mode: "reconcile" });
+      expect(await customerRows()).toMatchObject([{ id: "cus_new", origin: "live" }]);
+    });
+
+    it("imports the recent sign-ups events could no longer tell about", async () => {
+      const monthLater = 31 * DAY_SECONDS;
+      stripe.putCustomer(
+        stripeCustomer({ id: "cus_this_week", created: T0 + monthLater - 3 * DAY_SECONDS }),
+      );
+      // Too old to be worth its requests: screens show recent customers only.
+      stripe.putCustomer(stripeCustomer({ id: "cus_weeks_ago", created: T0 + 10 * DAY_SECONDS }));
+
+      expect(await syncAt(monthLater)).toMatchObject({ ok: true, mode: "reconcile" });
+      expect(await customerRows()).toMatchObject([{ id: "cus_this_week", origin: "reconcile" }]);
+    });
   });
 
   it("catches up with a scan after a month without syncing", async () => {

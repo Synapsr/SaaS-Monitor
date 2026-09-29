@@ -1,7 +1,14 @@
 import { and, asc, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import {
+  customers,
+  mrrMovements,
+  payments,
+  stripeAccounts,
+  subscriptions,
+  type ScanProgress,
+} from "@/db/schema";
 import { HOUR_SECONDS } from "@/lib/durations";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
@@ -161,6 +168,13 @@ function seedStripe(stripe: FakeStripe) {
       created: at("2026-03-02T08:00:00Z"),
     }),
   );
+
+  const signUp = (id: string, iso: string, name: string | null, country: string | null) =>
+    stripe.putCustomer(stripeCustomer({ id, name, country, created: at(iso) }));
+  signUp("cus_long_ago", "2026-02-01T00:00:00Z", "Alan Turing", "GB");
+  signUp("cus_last_week", "2026-03-09T08:00:00Z", "Grace Hopper", "US");
+  signUp("cus_yesterday", "2026-03-14T18:00:00Z", null, null);
+  signUp("cus_today", "2026-03-15T09:00:00Z", "Hedy Lamarr", "AT");
 }
 
 async function movementsOf(accountId: string) {
@@ -290,6 +304,26 @@ describe("initial import", () => {
     ]);
   });
 
+  it("imports the customers of the last week, for the feed", async () => {
+    await sync();
+
+    const imported = await db()
+      .select({
+        id: customers.stripeCustomerId,
+        name: customers.name,
+        country: customers.country,
+        origin: customers.origin,
+      })
+      .from(customers)
+      .where(eq(customers.accountId, accountId))
+      .orderBy(asc(customers.occurredAt));
+    expect(imported).toEqual([
+      { id: "cus_last_week", name: "Grace Hopper", country: "US", origin: "backfill" },
+      { id: "cus_yesterday", name: null, country: null, origin: "backfill" },
+      { id: "cus_today", name: "Hedy Lamarr", country: "AT", origin: "backfill" },
+    ]);
+  });
+
   it("resumes from its saved cursor, one page per run", async () => {
     stripe.pageSize = 2;
 
@@ -300,12 +334,13 @@ describe("initial import", () => {
       expect(runs).toBeLessThan(20);
     }
 
-    // 12 subscriptions, then 4 charges of the last year, 2 per page.
-    expect(runs).toBe(6 + 2);
+    // 12 subscriptions, 4 charges of the last year and 3 customers of the last week, 2 per page.
+    expect(runs).toBe(6 + 2 + 2);
     expect(await movementsOf(accountId)).toHaveLength(12);
     const totals = await mrrTotals(accountId);
     expect(totals.ledger).toEqual(totals.mirror);
     expect(await db().$count(payments, eq(payments.accountId, accountId))).toBe(3);
+    expect(await db().$count(customers, eq(customers.accountId, accountId))).toBe(3);
   });
 
   it("reports its progress while importing", async () => {
@@ -316,7 +351,46 @@ describe("initial import", () => {
       phase: "subscriptions",
       subscriptions: 5,
       payments: 0,
+      customers: 0,
     });
+  });
+
+  it("starts the customers phase over when its cursor was deleted between runs", async () => {
+    stripe.pageSize = 2;
+    // 6 pages of subscriptions, 2 of charges, then the first page of customers, newest first.
+    for (let run = 0; run < 6 + 2 + 1; run += 1) await sync({ scanBudgetMs: 0 });
+    expect((await getStripeAccount(accountId)).backfill).toMatchObject({
+      phase: "customers",
+      cursor: "cus_yesterday",
+      customers: 2,
+    });
+    stripe.deleteCustomer("cus_yesterday");
+
+    await sync({ scanBudgetMs: 0 });
+
+    expect(await getStripeAccount(accountId)).toMatchObject({ status: "ready", backfill: null });
+  });
+
+  it("completes an import saved before customers were imported", async () => {
+    // Older versions saved no window, count or follow-up for customers.
+    const saved: ScanProgress = {
+      phase: "payments",
+      cursor: null,
+      startedAt: NOW.toISOString(),
+      paymentsSince: at("2025-03-15T12:00:00Z"),
+      subscriptions: 12,
+      payments: 0,
+    };
+    await db()
+      .update(stripeAccounts)
+      .set({ backfill: saved })
+      .where(eq(stripeAccounts.id, accountId));
+
+    await sync();
+
+    expect(await getStripeAccount(accountId)).toMatchObject({ status: "ready", backfill: null });
+    expect(await db().$count(payments, eq(payments.accountId, accountId))).toBe(3);
+    expect(await db().$count(customers, eq(customers.accountId, accountId))).toBe(0);
   });
 
   it("does not duplicate history when a page is scanned twice", async () => {
@@ -459,6 +533,37 @@ describe("reconcile", () => {
     expect(account).toMatchObject({ reconcile: null, lastReconciledAt: time(25 * HOUR_SECONDS) });
     const totals = await mrrTotals(accountId);
     expect(totals.ledger).toEqual(totals.mirror);
+  });
+
+  it("leaves customers to their events", async () => {
+    // Stripe announces every customer created: only a catch-up would look for this one.
+    stripe.putCustomer(stripeCustomer({ id: "cus_quiet", created: T0 + HOUR_SECONDS }));
+
+    expect(await syncAt(25 * HOUR_SECONDS)).toMatchObject({ ok: true, mode: "reconcile" });
+    expect(await db().$count(customers)).toBe(0);
+  });
+
+  it("completes a reconcile saved before customers were imported, then its follow-up", async () => {
+    const saved: ScanProgress = {
+      phase: "subscriptions",
+      cursor: null,
+      startedAt: time(HOUR_SECONDS).toISOString(),
+      paymentsSince: null,
+      subscriptions: 0,
+      payments: 0,
+      followUp: { paymentsSince: null },
+    };
+    await db()
+      .update(stripeAccounts)
+      .set({ reconcile: saved })
+      .where(eq(stripeAccounts.id, accountId));
+
+    await syncAt(2 * HOUR_SECONDS);
+
+    expect(await getStripeAccount(accountId)).toMatchObject({
+      reconcile: null,
+      lastReconciledAt: time(2 * HOUR_SECONDS),
+    });
   });
 
   it("waits a day between reconciles", async () => {

@@ -17,4 +17,7 @@ export const SYNC_EVENT_TYPES = [
   "charge.succeeded",
   "charge.captured",
   "charge.refunded",
+  "customer.created",
+  "customer.updated",
+  "customer.deleted",
 ] as const satisfies readonly Stripe.WebhookEndpointCreateParams.EnabledEvent[];

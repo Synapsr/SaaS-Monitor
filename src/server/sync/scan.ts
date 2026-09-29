@@ -2,19 +2,21 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import type { Transaction } from "@/db";
 import { db } from "@/db";
-import { stripeAccounts, type ScanProgress } from "@/db/schema";
+import { stripeAccounts, type ScanProgress, type ScanWindows } from "@/db/schema";
 import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
 import { StripeAccessError } from "@/server/stripe/errors";
 import type { Page } from "@/server/stripe/gateway";
+import type { UnixTime } from "@/server/stripe/types";
 import { applyCharges, applySubscriptionUpdates, endUnlistedSubscriptions } from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
 import { couponArchive } from "./coupons";
+import { applyCustomers } from "./customers";
 import { valueSubscription } from "./movements";
 
 /*
- * A full scan reads every subscription, then the charges since a given date, one page at a time.
- * It serves two purposes:
+ * A full scan reads every subscription, then the charges and the customers created since given
+ * dates, one page at a time. It serves two purposes:
  * - the initial import (`backfill`), which rebuilds each subscription's history;
  * - the daily reconcile, which fixes drift: events missed while the app was down for too long, or
  *   changes Stripe announces with no event at all, such as a repeating coupon that ends or test
@@ -28,25 +30,45 @@ export type ScanKind = "backfill" | "reconcile";
 
 /** A year of payments covers every revenue metric and gives the feed its history. */
 const IMPORTED_PAYMENT_DAYS = 365;
+/**
+ * Customers make no metric: screens show the latest ones in their feed and count today's. A week
+ * covers today in every time zone and gives a new screen a few sign-ups to show, while every 100
+ * customers cost a request: Stripe caps reads (see policy.ts), and busy products sign up
+ * thousands a month.
+ */
+const IMPORTED_CUSTOMER_DAYS = 7;
 
-export function newScan(now: Date, paymentsSince: number | null): ScanProgress {
+export function newScan(
+  now: Date,
+  { paymentsSince, customersSince = null }: ScanWindows,
+): ScanProgress {
   return {
     phase: "subscriptions",
     cursor: null,
     startedAt: now.toISOString(),
     paymentsSince,
+    customersSince,
     subscriptions: 0,
     payments: 0,
+    customers: 0,
   };
 }
 
 export function newBackfill(now: Date): ScanProgress {
-  return newScan(now, toUnixTime(now) - IMPORTED_PAYMENT_DAYS * DAY_SECONDS);
+  return newScan(now, {
+    paymentsSince: toUnixTime(now) - IMPORTED_PAYMENT_DAYS * DAY_SECONDS,
+    customersSince: recentCustomersSince(now),
+  });
+}
+
+/** Creation time of the oldest customers worth importing (see `IMPORTED_CUSTOMER_DAYS`). */
+export function recentCustomersSince(now: Date): UnixTime {
+  return toUnixTime(now) - IMPORTED_CUSTOMER_DAYS * DAY_SECONDS;
 }
 
 /**
  * Scans pages until the scan is complete or the sync's time budget is spent. Returns the number
- * of movements and payments written.
+ * of movements, payments and customers written.
  */
 export async function runScan(
   context: SyncContext,
@@ -71,12 +93,10 @@ export async function runScan(
       const updates = subscriptions.map((subscription) =>
         valueSubscription(subscription, catalog.coupons, nowSeconds),
       );
-      const scanned = progress.subscriptions + page.data.length;
-      const next: ScanProgress | null = hasNextPage(page)
-        ? { ...progress, cursor: lastId(page.data), subscriptions: scanned }
-        : progress.paymentsSince === null
-          ? afterLastPage(progress, now)
-          : { ...progress, phase: "payments", cursor: null, subscriptions: scanned };
+      const scanned = { ...progress, subscriptions: progress.subscriptions + page.data.length };
+      const next = hasNextPage(page)
+        ? { ...scanned, cursor: lastId(page.data) }
+        : afterPhase(scanned, now);
 
       changes += await db().transaction(async (tx) => {
         let written = await applySubscriptionUpdates(tx, account.id, updates, kind, nowSeconds);
@@ -90,8 +110,8 @@ export async function runScan(
       });
       if (!next) return changes;
       progress = next;
-    } else {
-      // Scans without `paymentsSince` end with their subscriptions phase.
+    } else if (progress.phase === "payments") {
+      // Only scans with a window for payments get here (see `afterPhase`).
       const since = progress.paymentsSince ?? nowSeconds;
       const { page, restarted } = await listPage(
         (cursor) => gateway.listCharges(since, cursor),
@@ -99,13 +119,32 @@ export async function runScan(
       );
       if (restarted) progress = startedOver(progress, now);
       const collected = page.data.filter((charge) => charge.collected).length;
-      const payments = progress.payments + collected;
-      const next: ScanProgress | null = hasNextPage(page)
-        ? { ...progress, cursor: lastId(page.data), payments }
-        : afterLastPage(progress, now);
+      const scanned = { ...progress, payments: progress.payments + collected };
+      const next = hasNextPage(page)
+        ? { ...scanned, cursor: lastId(page.data) }
+        : afterPhase(scanned, now);
 
       changes += await db().transaction(async (tx) => {
         const written = await applyCharges(tx, account.id, page.data, kind);
+        await saveProgress(tx, account.id, kind, next, progress);
+        return written;
+      });
+      if (!next) return changes;
+      progress = next;
+    } else {
+      const since = progress.customersSince ?? nowSeconds;
+      const { page, restarted } = await listPage(
+        (cursor) => gateway.listCustomers(since, cursor),
+        progress.cursor,
+      );
+      if (restarted) progress = startedOver(progress, now);
+      const scanned = { ...progress, customers: (progress.customers ?? 0) + page.data.length };
+      const next = hasNextPage(page)
+        ? { ...scanned, cursor: lastId(page.data) }
+        : afterPhase(scanned, now);
+
+      changes += await db().transaction(async (tx) => {
+        const written = await applyCustomers(tx, account.id, { created: page.data }, kind);
         await saveProgress(tx, account.id, kind, next, progress);
         return written;
       });
@@ -140,9 +179,14 @@ async function listPage<T>(
  * only vouches for what it lists from now on: subscriptions it saw before may have been deleted.
  */
 function startedOver(progress: ScanProgress, now: Date): ScanProgress {
-  return progress.phase === "subscriptions"
-    ? { ...progress, cursor: null, startedAt: now.toISOString(), subscriptions: 0 }
-    : { ...progress, cursor: null, payments: 0 };
+  switch (progress.phase) {
+    case "subscriptions":
+      return { ...progress, cursor: null, startedAt: now.toISOString(), subscriptions: 0 };
+    case "payments":
+      return { ...progress, cursor: null, payments: 0 };
+    case "customers":
+      return { ...progress, cursor: null, customers: 0 };
+  }
 }
 
 /** Saves the cursor, or completes the scan when `next` is `null`. */
@@ -167,9 +211,24 @@ async function saveProgress(
     .where(eq(stripeAccounts.id, accountId));
 }
 
+/**
+ * What comes after the last page of a phase: payments, then customers, each when the scan has a
+ * window for it. Scans saved before customers were imported have none for them.
+ */
+function afterPhase(progress: ScanProgress, now: Date): ScanProgress | null {
+  const start = (phase: ScanProgress["phase"]) => ({ ...progress, phase, cursor: null });
+  if (progress.phase === "subscriptions" && progress.paymentsSince !== null) {
+    return start("payments");
+  }
+  if (progress.phase !== "customers" && (progress.customersSince ?? null) !== null) {
+    return start("customers");
+  }
+  return afterLastPage(progress, now);
+}
+
 /** What comes after the last page: nothing, or the scan a catch-up asked for meanwhile. */
 function afterLastPage(progress: ScanProgress, now: Date): ScanProgress | null {
-  return progress.followUp ? newScan(now, progress.followUp.paymentsSince) : null;
+  return progress.followUp ? newScan(now, progress.followUp) : null;
 }
 
 function hasNextPage(page: { data: readonly unknown[]; hasMore: boolean }): boolean {

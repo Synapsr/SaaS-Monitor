@@ -2,7 +2,14 @@ import { eq } from "drizzle-orm";
 import { after } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { exchangeRates, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import {
+  customers,
+  exchangeRates,
+  mrrMovements,
+  payments,
+  stripeAccounts,
+  subscriptions,
+} from "@/db/schema";
 import { decryptSecret } from "@/server/crypto";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { FakeStripe } from "@/test/fake-stripe";
@@ -283,6 +290,12 @@ describe("Stripe accounts", () => {
         occurredAt: new Date(),
         origin: "live",
       });
+      await db().insert(customers).values({
+        accountId: account.id,
+        stripeCustomerId: "cus_1",
+        occurredAt: new Date(),
+        origin: "live",
+      });
 
       const other = await createUserWithWorkspace("Grace Hopper");
       expect(await reimportStripeAccount(other.workspaceId, account.id, options)).toEqual(
@@ -300,6 +313,7 @@ describe("Stripe accounts", () => {
       });
       expect(await db().$count(payments)).toBe(0);
       expect(await db().$count(mrrMovements)).toBe(0);
+      expect(await db().$count(customers)).toBe(0);
       expect(after).toHaveBeenCalledTimes(1);
     });
 

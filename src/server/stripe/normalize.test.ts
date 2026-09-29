@@ -4,6 +4,7 @@ import {
   JANUARY_1,
   stripeCharge,
   stripeCoupon,
+  stripeCustomer,
   stripeItem,
   stripePrice,
   stripeSubscription,
@@ -11,6 +12,7 @@ import {
 import {
   chargeSchema,
   couponSchema,
+  customerSchema,
   parseDecimal,
   priceSchema,
   readEventSignal,
@@ -202,6 +204,23 @@ describe("charge normalization", () => {
   });
 });
 
+describe("customer normalization", () => {
+  it("keeps who a customer is and when they signed up, never their email", () => {
+    const customer = customerSchema.parse({
+      ...stripeCustomer({ id: "cus_1", name: null, country: "DE", created: JANUARY_1 }),
+      business_name: "Acme GmbH",
+      email: "billing@acme.example",
+    });
+    expect(customer).toEqual({ id: "cus_1", name: "Acme GmbH", country: "DE", created: JANUARY_1 });
+  });
+
+  it("accepts a customer created with an email alone", () => {
+    expect(
+      customerSchema.parse({ id: "cus_2", created: JANUARY_1, email: "ada@example.com" }),
+    ).toEqual({ id: "cus_2", name: null, country: null, created: JANUARY_1 });
+  });
+});
+
 describe("event signals", () => {
   const event = (type: string, object: unknown) => ({
     id: "evt_1",
@@ -237,11 +256,31 @@ describe("event signals", () => {
     expect(signal).toMatchObject({ kind: "charge", charge: { id: "ch_1", amountRefunded: 100 } });
   });
 
+  it("reads customers from their payload, telling their creation from a later change", () => {
+    const customer = stripeCustomer({ id: "cus_1", name: "Ada Lovelace", country: "GB" });
+
+    expect(readEventSignal(event("customer.created", customer))).toEqual({
+      kind: "customer",
+      customer: { id: "cus_1", name: "Ada Lovelace", country: "GB", created: JANUARY_1 },
+      created: true,
+    });
+    expect(readEventSignal(event("customer.updated", customer))).toMatchObject({
+      kind: "customer",
+      created: false,
+    });
+    expect(readEventSignal(event("customer.deleted", customer))).toEqual({
+      kind: "deleted-customer",
+      customerId: "cus_1",
+    });
+  });
+
   it("ignores unknown events and malformed payloads", () => {
     expect(readEventSignal(event("invoice.paid", { id: "in_1" }))).toBeNull();
+    expect(readEventSignal(event("customer.source.created", { id: "card_1" }))).toBeNull();
     expect(
       readEventSignal(event("customer.subscription.updated", { object: "subscription" })),
     ).toBeNull();
+    expect(readEventSignal(event("customer.created", { id: "cus_1" }))).toBeNull();
     expect(readEventSignal(event("charge.succeeded", { id: "ch_1" }))).toBeNull();
   });
 });

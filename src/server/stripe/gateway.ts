@@ -7,6 +7,7 @@ import {
   accountSchema,
   chargeSchema,
   couponSchema,
+  customerSchema,
   eventSchema,
   priceSchema,
   productSchema,
@@ -17,6 +18,7 @@ import type {
   AccountInfo,
   Charge,
   Coupon,
+  Customer,
   Price,
   Product,
   StripeEvent,
@@ -60,6 +62,7 @@ export interface StripeGateway {
     startingAfter?: string,
   ): Promise<Page<SubscriptionItem>>;
   listCharges(createdSince: UnixTime, startingAfter?: string): Promise<Page<Charge>>;
+  listCustomers(createdSince: UnixTime, startingAfter?: string): Promise<Page<Customer>>;
   listEvents(
     types: readonly SyncEventType[],
     createdSince: UnixTime,
@@ -219,6 +222,17 @@ export function createStripeGateway(
         }),
       );
       return { data: page.data.map((item) => chargeSchema.parse(item)), hasMore: page.has_more };
+    },
+
+    async listCustomers(createdSince, startingAfter) {
+      const page = await send(() =>
+        stripe.customers.list({
+          created: { gte: createdSince },
+          limit: PAGE_SIZE,
+          starting_after: startingAfter,
+        }),
+      );
+      return { data: page.data.map((item) => customerSchema.parse(item)), hasMore: page.has_more };
     },
 
     async listEvents(types, createdSince, startingAfter) {

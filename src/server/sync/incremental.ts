@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { AnyMySqlColumn } from "drizzle-orm/mysql-core";
 import { db } from "@/db";
-import { stripeAccounts, subscriptions, type ScanProgress } from "@/db/schema";
+import { stripeAccounts, subscriptions, type ScanProgress, type ScanWindows } from "@/db/schema";
 import { DAY_SECONDS } from "@/lib/durations";
 import { createCatalog } from "@/server/stripe/catalog";
 import { SYNC_EVENT_TYPES } from "@/server/stripe/event-types";
@@ -15,15 +15,16 @@ import {
 } from "./apply";
 import { toUnixTime, type SyncContext } from "./context";
 import { couponArchive } from "./coupons";
+import { applyCustomers, deleteCustomers } from "./customers";
 import { digestEvents, emptyDigest, type EventDigest, type EventRef } from "./events";
 import { valueSubscription } from "./movements";
-import { newScan } from "./scan";
+import { newScan, recentCustomersSince } from "./scan";
 
 /*
  * The incremental sync reads what happened since the last sync from the Events API. Subscription
  * and discount events only say which subscriptions changed: each one is fetched again and its new
- * MRR compared with the mirror, so replaying an event changes nothing. Charges are read from the
- * event payloads.
+ * MRR compared with the mirror, so replaying an event changes nothing. Charges and customers are
+ * read from the event payloads.
  */
 
 /**
@@ -42,7 +43,7 @@ const MAX_EVENT_PAGES = 20;
 const MAX_REFETCHED_SUBSCRIPTIONS = 50;
 
 export interface IncrementalResult {
-  /** Movements and payments written. */
+  /** Movements, payments and customers written. */
   changes: number;
   /** A full scan this sync should run to catch up, when events alone are not enough. */
   catchUp: ScanProgress | null;
@@ -54,24 +55,27 @@ export async function runIncremental(context: SyncContext): Promise<IncrementalR
   const cursor = account.eventsCursor;
   const since = (cursor ?? nowSeconds - MAX_CURSOR_AGE_SECONDS) - CURSOR_OVERLAP_SECONDS;
 
-  // Events may have expired, or be too many to read: scan subscriptions and charges instead, and
-  // only read the events that come next.
+  // Events may have expired, or be too many to read: scan subscriptions, charges and customers
+  // instead, and only read the events that come next. Customers older than those of an import
+  // are not worth their requests.
   const digest =
     cursor !== null && nowSeconds - cursor <= MAX_CURSOR_AGE_SECONDS
       ? await readEvents(context, since, new Set(account.recentEventIds))
       : null;
   if (!digest) {
-    return {
-      changes: 0,
-      catchUp: await startCatchUp(context, { paymentsSince: since, eventsCursor: nowSeconds }),
+    const windows = {
+      paymentsSince: since,
+      customersSince: Math.max(since, recentCustomersSince(now)),
     };
+    return { changes: 0, catchUp: await startCatchUp(context, windows, nowSeconds) };
   }
 
   const changed = await changedSubscriptions(account.id, digest);
   if (changed.size > MAX_REFETCHED_SUBSCRIPTIONS) {
-    // Charges were read from the events: the scan only needs to cover subscriptions.
+    // Charges and customers were read from the events: the scan only needs to cover subscriptions.
     const changes = await applyEvents(context, digest, [], new Map());
-    return { changes, catchUp: await startCatchUp(context, { paymentsSince: null }) };
+    const windows = { paymentsSince: null, customersSince: null };
+    return { changes, catchUp: await startCatchUp(context, windows) };
   }
 
   const fetched: Subscription[] = [];
@@ -122,7 +126,7 @@ async function changedSubscriptions(
   digest: EventDigest,
 ): Promise<Map<string, EventRef>> {
   const changed = new Map(digest.subscriptions);
-  if (!digest.customers.size) return changed;
+  if (!digest.customerDiscounts.size) return changed;
 
   const rows = await db()
     .select({ id: subscriptions.stripeSubscriptionId, customerId: subscriptions.stripeCustomerId })
@@ -130,11 +134,11 @@ async function changedSubscriptions(
     .where(
       and(
         eq(subscriptions.accountId, accountId),
-        inArray(subscriptions.stripeCustomerId, [...digest.customers.keys()]),
+        inArray(subscriptions.stripeCustomerId, [...digest.customerDiscounts.keys()]),
       ),
     );
   for (const row of rows) {
-    const event = digest.customers.get(row.customerId);
+    const event = digest.customerDiscounts.get(row.customerId);
     const known = changed.get(row.id);
     if (event && (!known || event.created > known.created)) changed.set(row.id, event);
   }
@@ -142,9 +146,9 @@ async function changedSubscriptions(
 }
 
 /**
- * Writes charges and subscription changes, then moves the cursor, in one transaction. `missing`
- * are the subscriptions Stripe no longer has, with their latest event. Every event listed counts
- * as handled, including those whose subscription a catch-up scan covers instead.
+ * Writes charges, customers and subscription changes, then moves the cursor, in one transaction.
+ * `missing` are the subscriptions Stripe no longer has, with their latest event. Every event
+ * listed counts as handled, including those whose subscription a catch-up scan covers instead.
  */
 async function applyEvents(
   context: SyncContext,
@@ -154,9 +158,14 @@ async function applyEvents(
 ): Promise<number> {
   const { account, now } = context;
   const charges = [...digest.charges.values()].map(({ charge }) => charge);
+  const customers = [...digest.customers.values()];
+  const created = customers.filter((change) => change.created).map(({ customer }) => customer);
+  const updated = customers.filter((change) => !change.created).map(({ customer }) => customer);
   return db().transaction(async (tx) => {
     const written =
       (await applyCharges(tx, account.id, charges, "live")) +
+      (await applyCustomers(tx, account.id, { created, updated }, "live")) +
+      (await deleteCustomers(tx, account.id, [...digest.deletedCustomers])) +
       (await applySubscriptionUpdates(tx, account.id, updates, "live", toUnixTime(now))) +
       (await endMissingSubscriptions(tx, account.id, missing, toUnixTime(now)));
     if (digest.newest) {
@@ -188,8 +197,9 @@ function forwardTo(column: AnyMySqlColumn, value: unknown) {
 }
 
 /**
- * Starts a reconcile covering what events could not. When events are skipped, the cursor moves to
- * now: new events are applied as usual while the scan runs.
+ * Starts a reconcile covering what events could not: every subscription, and the charges and
+ * customers `windows` ask for. When events are skipped, the cursor moves to `eventsCursor` (now):
+ * new events are applied as usual while the scan runs.
  *
  * A reconcile already under way goes on rather than restarting, or bursts of events could keep it
  * from ever completing. If it has scanned pages already, those may predate the changes to catch
@@ -197,18 +207,18 @@ function forwardTo(column: AnyMySqlColumn, value: unknown) {
  */
 async function startCatchUp(
   context: SyncContext,
-  { paymentsSince, eventsCursor }: { paymentsSince: number | null; eventsCursor?: number },
+  windows: ScanWindows,
+  eventsCursor?: number,
 ): Promise<ScanProgress> {
   const { account, now } = context;
   const current = account.reconcile;
   let scan: ScanProgress;
   if (!current) {
-    scan = newScan(now, paymentsSince);
+    scan = newScan(now, windows);
   } else if (current.phase === "subscriptions" && current.cursor === null) {
-    scan = { ...current, paymentsSince: earliest(current.paymentsSince, paymentsSince) };
+    scan = { ...current, ...widest(current, windows) };
   } else {
-    const followUp = { paymentsSince: earliest(current.followUp?.paymentsSince, paymentsSince) };
-    scan = { ...current, followUp };
+    scan = { ...current, followUp: widest(current.followUp, windows) };
   }
   await db()
     .update(stripeAccounts)
@@ -220,7 +230,16 @@ async function startCatchUp(
   return scan;
 }
 
-/** The earlier of two `paymentsSince`, where `null` means no payments to import. */
-function earliest(a: number | null | undefined, b: number | null): number | null {
-  return a === null || a === undefined ? b : b === null ? a : Math.min(a, b);
+/** Windows covering those of both scans, the first of which may not exist yet. */
+function widest(a: ScanWindows | undefined, b: ScanWindows): ScanWindows {
+  return {
+    paymentsSince: earliest(a?.paymentsSince, b.paymentsSince),
+    customersSince: earliest(a?.customersSince, b.customersSince),
+  };
+}
+
+/** The earlier of two times, where `null` (or its absence) means nothing to import. */
+function earliest(a: number | null | undefined, b: number | null | undefined): number | null {
+  if (a === null || a === undefined) return b ?? null;
+  return b === null || b === undefined ? a : Math.min(a, b);
 }

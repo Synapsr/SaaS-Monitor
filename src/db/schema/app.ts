@@ -45,23 +45,34 @@ const timestamps = {
 export const DATA_ORIGINS = ["backfill", "live", "reconcile"] as const;
 
 /**
+ * What a scan reads after every subscription. Scans are stored as JSON: fields added since the
+ * first version are optional, as scans saved before lack them.
+ */
+export interface ScanWindows {
+  /** Unix time (seconds) of the oldest charge to import; `null` skips the payments phase. */
+  paymentsSince: number | null;
+  /** Unix time (seconds) of the oldest customer to import; `null` skips the customers phase. */
+  customersSince?: number | null;
+}
+
+/**
  * Resumable state of a full scan of a Stripe account: the initial import or a reconcile. Large
  * accounts are scanned in several short runs, so a scan survives restarts and serverless limits.
  */
-export interface ScanProgress {
-  phase: "subscriptions" | "payments";
+export interface ScanProgress extends ScanWindows {
+  phase: "subscriptions" | "payments" | "customers";
   /** Stripe pagination cursor (`starting_after`) within the current phase. */
   cursor: string | null;
   startedAt: string;
-  /** Unix time (seconds) of the oldest charge to import; `null` skips the payments phase. */
-  paymentsSince: number | null;
   subscriptions: number;
   payments: number;
+  /** Optional like `customersSince`. */
+  customers?: number;
   /**
    * A catch-up that came once the scan had passed some pages, which may predate the changes to
    * catch up with: another scan runs when this one completes (see `startCatchUp`).
    */
-  followUp?: { paymentsSince: number | null };
+  followUp?: ScanWindows;
 }
 
 /** A Stripe account connected to a workspace with a (preferably restricted, read-only) API key. */
@@ -260,6 +271,36 @@ export const payments = mysqlTable(
       table.stripeChargeId,
     ),
     index("payments_account_id_occurred_at_index").on(table.accountId, table.occurredAt),
+  ],
+);
+
+/**
+ * Stripe customers created lately, often sign-ups that have not paid yet: the "new customer"
+ * moments of the feed and today's count. Only recent ones are imported (see `newBackfill`), and
+ * deleted ones are removed. Emails are never stored: screens don't show them.
+ */
+export const customers = mysqlTable(
+  "customers",
+  {
+    id: id(),
+    accountId: uuid()
+      .notNull()
+      .references(() => stripeAccounts.id, { onDelete: "cascade" }),
+    stripeCustomerId: stripeId().notNull(),
+    name: text(),
+    /** ISO 3166-1 alpha-2 country code. */
+    country: text(),
+    /** When Stripe created the customer. */
+    occurredAt: instant().notNull(),
+    origin: mysqlEnum(DATA_ORIGINS).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("customers_account_id_stripe_customer_id_index").on(
+      table.accountId,
+      table.stripeCustomerId,
+    ),
+    index("customers_account_id_occurred_at_index").on(table.accountId, table.occurredAt),
   ],
 );
 

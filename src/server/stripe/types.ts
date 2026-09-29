@@ -11,7 +11,7 @@ export type UnixTime = number;
 
 export interface Subscription {
   id: string;
-  customer: Customer;
+  customer: SubscriptionCustomer;
   /** active, past_due, trialing, canceled, unpaid, paused, incomplete or incomplete_expired. */
   status: string;
   currency: string;
@@ -28,7 +28,8 @@ export interface Subscription {
   hasMoreItems: boolean;
 }
 
-export interface Customer {
+/** The customer of a subscription, expanded or not. */
+export interface SubscriptionCustomer {
   id: string;
   /** `null` when unknown, e.g. the customer was deleted or not expanded. */
   name: string | null;
@@ -36,6 +37,15 @@ export interface Customer {
   country: string | null;
   /** Applies to the customer's subscriptions that have no discount of their own. */
   discount: Discount | null;
+}
+
+/** A customer as listed or described by its events, for the feed. Emails are not read. */
+export interface Customer {
+  id: string;
+  name: string | null;
+  /** ISO 3166-1 alpha-2 code. */
+  country: string | null;
+  created: UnixTime;
 }
 
 export interface SubscriptionItem {
@@ -162,4 +172,7 @@ export interface StripeEvent {
 export type EventSignal =
   | { kind: "subscription"; subscriptionId: string }
   | { kind: "discount"; subscriptionId: string | null; customerId: string | null }
-  | { kind: "charge"; charge: Charge };
+  | { kind: "charge"; charge: Charge }
+  /** `created` tells a new customer from a change of one who may have signed up long ago. */
+  | { kind: "customer"; customer: Customer; created: boolean }
+  | { kind: "deleted-customer"; customerId: string };

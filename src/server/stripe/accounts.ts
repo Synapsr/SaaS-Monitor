@@ -3,7 +3,7 @@ import { and, asc, eq, inArray, sum } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { isDuplicateEntry } from "@/db/errors";
-import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import { customers, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import type { ActionResult } from "@/lib/action-result";
 import { nameSchema } from "@/lib/names";
 import type { StripePermissionId } from "@/lib/stripe-permissions";
@@ -316,7 +316,7 @@ export async function disconnectStripeAccount(
       );
     }
   }
-  // Subscriptions, movements, payments and screen links go with it (cascade).
+  // Subscriptions, movements, payments, customers and screen links go with it (cascade).
   await db()
     .delete(stripeAccounts)
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
@@ -364,6 +364,7 @@ export async function reimportStripeAccount(
     await tx.delete(mrrMovements).where(eq(mrrMovements.accountId, accountId));
     await tx.delete(subscriptions).where(eq(subscriptions.accountId, accountId));
     await tx.delete(payments).where(eq(payments.accountId, accountId));
+    await tx.delete(customers).where(eq(customers.accountId, accountId));
     return true;
   });
   if (!reset) return ACCOUNT_NOT_FOUND;

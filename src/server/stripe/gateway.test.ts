@@ -40,9 +40,13 @@ describe.skipIf(!isStripeMockRunning && !process.env.CI)("Stripe gateway (stripe
     });
   });
 
-  it("lists charges and events since a date", async () => {
+  it("lists charges, customers and events since a date", async () => {
     const since = Math.floor(Date.now() / 1000) - 3600;
     expect((await gateway.listCharges(since)).data[0]).toMatchObject({ id: expect.any(String) });
+    expect((await gateway.listCustomers(since)).data[0]).toMatchObject({
+      id: expect.any(String),
+      created: expect.any(Number),
+    });
     expect((await gateway.listEvents(SYNC_EVENT_TYPES, since)).data).toBeInstanceOf(Array);
   });
 

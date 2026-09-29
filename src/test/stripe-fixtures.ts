@@ -81,11 +81,13 @@ export function stripeSubscription(fixture: SubscriptionFixture = {}): Subscript
   };
 }
 
+/** A customer, as a subscription embeds it or as Stripe lists it. */
 export function stripeCustomer(
   overrides: {
     id?: string;
     name?: string | null;
     country?: string | null;
+    created?: number;
     discount?: ReturnType<typeof stripeDiscount> | null;
   } = {},
 ) {
@@ -93,6 +95,7 @@ export function stripeCustomer(
     id: overrides.id ?? stripeId("cus"),
     name: overrides.name === undefined ? "Ada Lovelace" : overrides.name,
     address: { country: overrides.country === undefined ? "FR" : overrides.country },
+    created: overrides.created ?? JANUARY_1,
     discount: overrides.discount ?? null,
   };
 }
