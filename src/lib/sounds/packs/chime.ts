@@ -23,6 +23,19 @@ export const chime: SoundPackRecipes = {
     });
   },
 
+  customer(voice, at) {
+    // A friendly "hello": a rising third on the marimba.
+    struck(voice, MARIMBA, { at, frequency: pitch("C6"), duration: 0.8, gain: 0.2, space: 0.3 });
+    struck(voice, MARIMBA, {
+      at: at + 0.14,
+      frequency: pitch("E6"),
+      duration: 1.1,
+      gain: 0.2,
+      pan: 0.1,
+      space: 0.3,
+    });
+  },
+
   mrrUp(voice, at) {
     (["G5", "B5", "D6", "G6"] as const).forEach((note, index) => {
       struck(voice, MARIMBA, {

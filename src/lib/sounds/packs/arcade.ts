@@ -18,6 +18,24 @@ export const arcade: SoundPackRecipes = {
     tone(voice, { ...coin, at: at + 0.075, frequency: pitch("G6"), duration: 0.5, release: 0.35 });
   },
 
+  customer(voice, at) {
+    // A new player joins: three quick rising notes.
+    const wave = pulseWave(voice.context, 0.5);
+    (["E6", "G6", "E7"] as const).forEach((note, index) => {
+      const last = index === 2;
+      tone(voice, {
+        at: at + index * 0.07,
+        frequency: pitch(note),
+        duration: last ? 0.3 : 0.07,
+        release: last ? 0.2 : GATE,
+        gain: LEAD * 0.8,
+        wave,
+        cutoff: CUTOFF,
+        space: 0.08,
+      });
+    });
+  },
+
   mrrUp(voice, at) {
     // A power-up: a fast climbing arpeggio, doubled an octave below.
     const lead = pulseWave(voice.context, 0.5);

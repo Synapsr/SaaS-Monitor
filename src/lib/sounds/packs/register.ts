@@ -84,6 +84,27 @@ export const register: SoundPackRecipes = {
     tillBell(voice, at + 0.085);
   },
 
+  customer(voice, at) {
+    // The bell over the shop door: someone just walked in.
+    struck(voice, BELL, {
+      at,
+      frequency: pitch("G6"),
+      duration: 0.9,
+      gain: 0.2,
+      pan: -0.1,
+      space: 0.3,
+    });
+    struck(voice, BELL, {
+      at: at + 0.09,
+      frequency: pitch("E6"),
+      duration: 1.2,
+      gain: 0.18,
+      pan: 0.1,
+      space: 0.3,
+    });
+    noise(voice, { at, duration: 0.3, gain: 0.03, filter: "highpass", frequency: 8000 });
+  },
+
   mrrUp(voice, at) {
     coin(voice, at, "A6", 0.35, 1.3, -0.25);
     coin(voice, at + 0.075, "C#7", 0.35, 1.3);

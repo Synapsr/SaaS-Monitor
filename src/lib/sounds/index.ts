@@ -7,7 +7,7 @@ import { SOUND_RECIPES } from "@/lib/sounds/packs";
  * Safe to import on the server: nothing touches `window` until a sound is played.
  */
 
-export type SoundEvent = "payment" | "mrrUp" | "mrrDown" | "milestone";
+export type SoundEvent = "payment" | "customer" | "mrrUp" | "mrrDown" | "milestone";
 
 /** How each pack is named, in the screen settings and on the landing page. */
 export const SOUND_PACK_NAMES: Record<SoundPack, string> = {

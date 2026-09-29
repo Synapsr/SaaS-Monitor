@@ -14,6 +14,7 @@ const PACK_DESCRIPTIONS: Record<SoundPack, string> = {
 
 const EVENTS: { id: SoundEvent; label: string }[] = [
   { id: "payment", label: "Payment" },
+  { id: "customer", label: "New customer" },
   { id: "mrrUp", label: "MRR up" },
   { id: "mrrDown", label: "MRR down" },
   { id: "milestone", label: "Milestone" },
@@ -52,6 +53,8 @@ export function SoundBoard() {
                   aria-label={`Play the ${event.label} sound of the ${SOUND_PACK_NAMES[pack]} pack`}
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-(--ink-2) ring-1 ring-white/10 transition-colors outline-none hover:bg-white/[0.06] hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow)",
+                    // The fanfare gets the last row to itself.
+                    event.id === "milestone" && "col-span-2",
                     active && "bg-(--glow)/10 text-(--ink) ring-(--glow)/50",
                   )}
                 >

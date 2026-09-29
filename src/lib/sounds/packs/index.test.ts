@@ -4,7 +4,7 @@ import type { SoundEvent } from "@/lib/sounds";
 import { SOUND_RECIPES } from "@/lib/sounds/packs";
 import type { Voice } from "@/lib/sounds/synth";
 
-const EVENTS: SoundEvent[] = ["payment", "mrrUp", "mrrDown", "milestone"];
+const EVENTS: SoundEvent[] = ["payment", "customer", "mrrUp", "mrrDown", "milestone"];
 
 /** Records automation and enforces the rules browsers throw on. */
 class FakeParam {
