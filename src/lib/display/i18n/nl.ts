@@ -59,7 +59,7 @@ export const nl: DisplayText = {
       contraction: "Downgrade",
       churn: "Opzegging",
     },
-    connectPayment: "Voor een gekoppeld account",
+    connectPayment: "Connect",
     justNow: "zojuist",
     minutesAgo: (minutes) => `${minutes} min geleden`,
     hoursAgo: (hours) => `${hours} uur geleden`,

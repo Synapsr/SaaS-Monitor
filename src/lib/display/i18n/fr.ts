@@ -59,7 +59,7 @@ export const fr: DisplayText = {
       contraction: "Descente en gamme",
       churn: "Résiliation",
     },
-    connectPayment: "Pour un compte connecté",
+    connectPayment: "Connect",
     justNow: "à l’instant",
     minutesAgo: (minutes) => `il y a ${minutes} min`,
     hoursAgo: (hours) => `il y a ${hours} h`,

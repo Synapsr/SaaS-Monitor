@@ -56,7 +56,7 @@ export const pt: DisplayText = {
       contraction: "Downgrade",
       churn: "Cancelamento",
     },
-    connectPayment: "Para uma conta conectada",
+    connectPayment: "Connect",
     justNow: "agora mesmo",
     minutesAgo: (minutes) => `há ${minutes} min`,
     hoursAgo: (hours) => `há ${hours} h`,

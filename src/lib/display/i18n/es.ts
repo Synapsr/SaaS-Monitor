@@ -55,7 +55,7 @@ export const es: DisplayText = {
       contraction: "Bajada de plan",
       churn: "Cancelación",
     },
-    connectPayment: "Para una cuenta conectada",
+    connectPayment: "Connect",
     justNow: "ahora mismo",
     minutesAgo: (minutes) => `hace ${minutes} min`,
     hoursAgo: (hours) => `hace ${hours} h`,

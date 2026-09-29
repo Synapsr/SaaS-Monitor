@@ -55,7 +55,7 @@ export const de: DisplayText = {
       contraction: "Downgrade",
       churn: "Kündigung",
     },
-    connectPayment: "Für ein verbundenes Konto",
+    connectPayment: "Connect",
     justNow: "gerade eben",
     minutesAgo: (minutes) => `vor ${minutes} Min.`,
     hoursAgo: (hours) => `vor ${hours} Std.`,

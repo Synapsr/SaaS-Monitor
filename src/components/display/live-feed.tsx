@@ -4,13 +4,8 @@ import { useState } from "react";
 import { KindIcon } from "@/components/display/feed-kind-icon";
 import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { useNow } from "@/hooks/use-now";
-import {
-  isGoodNews,
-  itemAmount,
-  itemContext,
-  itemOriginalAmount,
-  warningText,
-} from "@/lib/display/feed";
+import { isGoodNews, itemAmount, itemOriginalAmount, warningText } from "@/lib/display/feed";
+import { countryFlag, countryName } from "@/lib/display/format";
 import type { RecurringMetric } from "@/lib/display/metric";
 import { formatFeedTime } from "@/lib/display/time";
 import type { DisplayWarning, FeedItem } from "@/lib/display/types";
@@ -115,10 +110,14 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
   const kind = item.connect ? text.feed.connectPayment : text.feed.kinds[item.kind];
   // A new customer has no amount: their name leads, or what they are when it is hidden.
   const headline = amount ?? item.customerName ?? kind;
-  const context = itemContext(amount === null ? { ...item, customerName: null } : item, {
-    showAccount,
-    language,
-  });
+  // The column is narrow: a flag stands for the country, and the account moves up by the time.
+  const country = item.country && countryName(item.country, language);
+  const flag = countryFlag(item.country);
+  const details = [
+    headline === kind ? null : kind,
+    amount === null ? null : item.customerName,
+    item.planName,
+  ].filter((part): part is string => Boolean(part));
   return (
     <motion.li
       layout="position"
@@ -148,10 +147,31 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
             )}
             {original && <span className="text-base text-(--ink-3)">{original}</span>}
           </p>
-          <p className="shrink-0 text-base whitespace-nowrap text-(--ink-3)">{relativeTime}</p>
+          <p className="flex shrink-0 items-baseline gap-2 text-base whitespace-nowrap text-(--ink-3)">
+            {showAccount && (
+              <>
+                <span className="max-w-[calc(var(--rem)*10)] truncate">{item.accountName}</span>
+                <span aria-hidden>·</span>
+              </>
+            )}
+            {relativeTime}
+          </p>
         </div>
         <p className="truncate text-lg text-(--ink-2)">
-          {[headline === kind ? null : kind, ...context].filter(Boolean).join(" · ")}
+          {flag && (
+            <span aria-hidden className="mr-2">
+              {flag}
+            </span>
+          )}
+          {/* Without other details, the country is worth its name. */}
+          {details.length > 0 ? (
+            <>
+              {country && <span className="sr-only">{country} · </span>}
+              {details.join(" · ")}
+            </>
+          ) : (
+            country
+          )}
         </p>
       </div>
     </motion.li>
