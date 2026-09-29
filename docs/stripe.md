@@ -16,7 +16,7 @@ endpoint).
 | Permission          | Section | Access | Why                                           |
 | ------------------- | ------- | ------ | --------------------------------------------- |
 | Subscriptions       | Billing | Read   | MRR, customers, upgrades and churn            |
-| Customers           | Core    | Read   | Customer names and countries in the live feed |
+| Customers           | Core    | Read   | New customers, with their names and countries |
 | Charges and Refunds | Core    | Read   | Revenue and payment celebrations              |
 | Events              | Core    | Read   | Detect what changed since the last check      |
 | Products            | Core    | Read   | Plan names                                    |
@@ -36,9 +36,9 @@ the same account again with a new key replaces the old key and keeps the importe
 
 ## First import
 
-After connecting, SaaS Monitor imports your subscriptions and the last 12 months of payments.
-Small accounts take a few seconds, large ones a few minutes; the dashboard shows the progress and
-screens display an "importing" state meanwhile.
+After connecting, SaaS Monitor imports your subscriptions, the last 12 months of payments and the
+customers created in the last 7 days. Small accounts take a few seconds, large ones a few minutes;
+the dashboard shows the progress and screens display an "importing" state meanwhile.
 
 Stripe doesn't keep a history of past subscription changes, so the MRR chart before the import is
 reconstructed from each subscription's start, end and current amount; an "All time" chart starts
@@ -100,6 +100,10 @@ Some limits to keep in mind:
 Revenue is what customers paid, net of refunds: today, this month, and the same number of days of
 the previous month for comparison. Days and months follow the screen's time zone.
 
+A **new customer** is a customer created in Stripe, often at sign-up, before they pay anything if
+they ever do: screens announce them and count today's. Deleting a customer in Stripe, such as spam
+or test data, removes them from the screens.
+
 ## Instant updates
 
 Stripe limits how often an app may read an account (about 500 read requests per payment over 30
@@ -107,7 +111,8 @@ days, at least 10,000 per month), and your own integration shares that allowance
 respects it:
 
 - **With a webhook** (instant updates), Stripe notifies SaaS Monitor the moment something happens:
-  payments and MRR changes show up within seconds. A safety check still runs every 30 minutes.
+  payments, new customers and MRR changes show up within seconds. A safety check still runs every
+  30 minutes.
 - **Without a webhook**, SaaS Monitor spends at most a quarter of your allowance checking Stripe:
   about every 17 minutes below 20 sales a month, every 3–4 minutes around 100 sales a month, and
   up to once a minute for busy accounts. The account page shows the current interval.
