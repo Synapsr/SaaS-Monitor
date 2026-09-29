@@ -3,3 +3,8 @@ onlyBuiltDependencies:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+overrides:
+  # drizzle-kit's old loader pins esbuild 0.18, whose dev server has a known flaw (GHSA-67mh-4wv8-2f99).
+  # The app never runs that server, but a patched version works as well.
+  "@esbuild-kit/core-utils>esbuild": ^0.25.0
