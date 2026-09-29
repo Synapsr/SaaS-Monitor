@@ -76,9 +76,11 @@ when a payment lands, and confetti flies when you cross $10K MRR.
   for a light screen in French and your color,
   [`?accounts=2`](https://saas-monitor.com/d/demo?accounts=2) for two products taking turns, or
   `?sound=arcade&voice=marius&range=all&metric=arr` for other settings.
-- **Online**: create an account on <https://saas-monitor.com>, connect Stripe with a read-only
-  key, and open your screen's link on any TV. Updates are instant.
-- **On your own server**: see [Self-hosting](#self-hosting). The demo is at `/d/demo` there too.
+- **Online**: create an account on <https://saas-monitor.com>, free during the public beta,
+  connect Stripe with a read-only key, and open your screen's link on any TV. Updates are
+  instant.
+- **On your own server**: free for good, see [Self-hosting](#self-hosting). The demo is at
+  `/d/demo` there too.
 
 ## Self-hosting
 

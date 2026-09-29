@@ -5,6 +5,7 @@ import { LandingFooter } from "@/components/marketing/landing-footer";
 import { LandingHeader } from "@/components/marketing/landing-header";
 import { LandingHero } from "@/components/marketing/landing-hero";
 import { LandingSection } from "@/components/marketing/landing-section";
+import { Pricing } from "@/components/marketing/pricing";
 import { SelfHost } from "@/components/marketing/self-host";
 import { SetupSteps } from "@/components/marketing/setup-steps";
 import { SoundBoard } from "@/components/marketing/sound-board";
@@ -33,13 +34,21 @@ export default function LandingPage() {
         <LandingSection
           id="sounds"
           title="Hear what a sale sounds like"
-          description="Three sound packs, synthesized right in the browser: nothing to install. Pick one per screen, or keep the meeting room silent."
+          description="Three sound packs, synthesized right in the browser: nothing to install. Add a voice that says what just happened, in five languages. Pick per screen, or keep the meeting room silent."
         >
           <SoundBoard />
         </LandingSection>
 
         <LandingSection id="how-it-works" title="On the wall in two minutes">
           <SetupSteps />
+        </LandingSection>
+
+        <LandingSection
+          id="pricing"
+          title="Free while in beta. Free forever on your own server."
+          description={`${siteConfig.name} is in public beta: the hosted version is free while it lasts. Self-hosted, it stays free for good.`}
+        >
+          <Pricing />
         </LandingSection>
 
         <SelfHost />

@@ -15,7 +15,7 @@ export function LandingHero() {
       <div className="relative mx-auto max-w-6xl px-5 pt-16 text-center sm:px-6 sm:pt-24">
         <p className="inline-flex animate-in items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1 text-xs text-(--ink-2) ring-1 ring-white/10 duration-700 fill-mode-both fade-in motion-reduce:animate-none">
           <span className="size-1.5 animate-pulse rounded-full bg-(--glow) shadow-[0_0_10px_var(--glow)]" />
-          Open source · Self-hosted · Free
+          Public beta · Open source · Free
         </p>
         <h1 className="mx-auto mt-6 max-w-4xl animate-in text-5xl font-semibold tracking-[-0.045em] text-balance delay-100 duration-700 fill-mode-both fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:text-7xl">
           Your MRR,{" "}
@@ -44,7 +44,7 @@ export function LandingHero() {
           </Button>
         </div>
         <p className="mt-4 text-sm text-(--ink-3)">
-          Two minutes to set up · Read-only Stripe key · Your data stays yours
+          Free during the public beta · Always free to self-host · Read-only Stripe key
         </p>
       </div>
 
