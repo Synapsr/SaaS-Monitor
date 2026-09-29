@@ -4,12 +4,15 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-29
+
 ### Added
 
 - An optional password per screen, on top of its link: each device asks for it once, in the
   screen's language, and changing it locks every device out again.
 - Stripe Connect platforms: payments made for a connected account show with their own icon, and
-  revenue only counts the application fee kept of them.
+  revenue only counts the application fee kept of them. Payments imported before are classified
+  at the next **Re-import data** of the account.
 - Voice announcements: a voice says what just happened, after the sound and on a switch of its
   own, for each kind of moment (payments for a connected account apart). Ten voices, two per
   language, in English, French, German, Spanish and Portuguese, with recorded phrases. With a
@@ -20,9 +23,13 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 - Moments stay on screen as long as each screen chooses (5 to 30 seconds, 10 by default, shorter
   when several arrive at once), in a larger card that reads from across the room.
+- The landing page says what it costs: saas-monitor.com is free during the public beta, and
+  self-hosting stays free for good.
 
 ### Fixed
 
+- Feed rows fit a narrow column: the country is a flag at the start of the details, and the
+  account sits next to the time, instead of details running past the edge.
 - In development, the database sees new columns after a schema change without a restart.
 
 ## [1.0.0] - 2026-09-29
@@ -66,5 +73,6 @@ The first public release.
 - Docker Compose with MySQL 8.4, migrations on startup, and images for amd64 and arm64 on GitHub
   Container Registry.
 
-[Unreleased]: https://github.com/Synapsr/SaaS-Monitor/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Synapsr/SaaS-Monitor/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Synapsr/SaaS-Monitor/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Synapsr/SaaS-Monitor/releases/tag/v1.0.0
