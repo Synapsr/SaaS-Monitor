@@ -95,7 +95,8 @@ function Tile({ label, value, characters, children }: TileProps) {
       >
         {value}
       </dd>
-      <dd className="truncate text-base text-(--ink-3)">{children}</dd>
+      {/* Two lines at most: some languages need more words, and currencies more letters. */}
+      <dd className="line-clamp-2 text-base text-pretty text-(--ink-3)">{children}</dd>
     </div>
   );
 }
