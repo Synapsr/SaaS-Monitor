@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
-import { Reveal } from "@/components/display/moment-card";
+import { AccountBadge, Reveal } from "@/components/display/moment-card";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { recurringMetric } from "@/lib/display/metric";
 import { nextMilestone } from "@/lib/display/milestones";
 import { formatMoney, toMajorUnits, toMinorUnits } from "@/lib/money";
@@ -11,6 +12,8 @@ interface MilestoneCelebrationProps {
   metric: Metric;
   isGoal: boolean;
   currency: string;
+  /** The account that crossed it, on a screen showing several. */
+  account: string | null;
 }
 
 /** The whole screen for a milestone: a moment worth stopping for, then the next one to chase. */
@@ -19,7 +22,10 @@ export function MilestoneCelebration({
   metric,
   isGoal,
   currency,
+  account,
 }: MilestoneCelebrationProps) {
+  const { locale, text } = useDisplayLocale();
+  const compact = (value: number) => formatMoney(value, currency, { compact: true, locale });
   const next = toMinorUnits(nextMilestone(toMajorUnits(amount, currency)), currency);
   return (
     <motion.div
@@ -37,10 +43,15 @@ export function MilestoneCelebration({
         transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
       />
       <div className="relative flex flex-col items-center gap-7 text-center">
+        {account && (
+          <Reveal delay={0.05}>
+            <AccountBadge name={account} />
+          </Reveal>
+        )}
         <Reveal delay={0.15}>
-          <p className="text-4xl font-medium text-(--glow-bright)">
+          <p className="text-4xl font-medium text-(--glow-ink)">
             <span aria-hidden>🎉 </span>
-            {isGoal ? "Goal reached" : "New milestone"}
+            {isGoal ? text.moments.goalReached : text.moments.newMilestone}
           </p>
         </Reveal>
         <motion.p
@@ -49,16 +60,14 @@ export function MilestoneCelebration({
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
           transition={{ type: "spring", duration: 1.1, bounce: 0.3, delay: 0.3 }}
         >
-          {formatMoney(amount, currency, { compact: true })}
+          {compact(amount)}
           <span className="text-[0.3em] font-medium tracking-tight text-(--ink-2)">
             {" "}
             {recurringMetric(metric).label}
           </span>
         </motion.p>
         <Reveal delay={0.75}>
-          <p className="text-3xl text-(--ink-2)">
-            Next stop: {formatMoney(next, currency, { compact: true })}. Keep going.
-          </p>
+          <p className="text-3xl text-(--ink-2)">{text.moments.nextStop(compact(next))}</p>
         </Reveal>
       </div>
     </motion.div>

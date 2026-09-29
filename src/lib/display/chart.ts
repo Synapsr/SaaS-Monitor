@@ -2,6 +2,7 @@ import { scaleLinear, scaleUtc, type ScaleLinear, type ScaleTime } from "d3-scal
 import { area, curveMonotoneX, line } from "d3-shape";
 import { utcDay, utcMonday, utcMonth, utcYear, type TimeInterval } from "d3-time";
 import { dayToUtcDate, daysBetween } from "@/lib/display/calendar";
+import type { DisplayLocale } from "@/lib/display/i18n";
 import { formatAxisDate, formatMonth, type AxisUnit } from "@/lib/display/time";
 import type { SeriesPoint } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
@@ -22,16 +23,16 @@ const TICK_INTERVALS: Record<AxisUnit, (TimeInterval | null)[]> = {
   year: [1, 2, 5, 10].map((step) => utcYear.every(step)),
 };
 
-const RANGE_LABELS: Record<Exclude<ChartRange, "all">, string> = {
-  "30d": "last 30 days",
-  "90d": "last 90 days",
-  "12m": "last 12 months",
-};
-
 /** What a chart covers: "last 90 days", or all time from its first day: "since March 2025". */
-export function chartRangeLabel(range: ChartRange, firstDay: string | undefined): string {
-  if (range !== "all") return RANGE_LABELS[range];
-  return firstDay ? `since ${formatMonth(firstDay, { year: true })}` : "all time";
+export function chartRangeLabel(
+  range: ChartRange,
+  firstDay: string | undefined,
+  { locale, text }: DisplayLocale,
+): string {
+  if (range !== "all") return text.chart.ranges[range];
+  return firstDay
+    ? text.chart.since(formatMonth(firstDay, locale, { year: true }))
+    : text.chart.allTime;
 }
 
 export interface ChartPoint {
@@ -59,6 +60,8 @@ interface LayoutOptions {
   currency: string;
   /** Next goal or milestone, in minor units. */
   target: number;
+  /** The screen's, for amounts and dates. */
+  locale: string;
   width: number;
   height: number;
   /** Font size of the labels in pixels: ticks are spaced so that labels never collide. */
@@ -70,6 +73,7 @@ export function layoutMrrChart({
   series,
   currency,
   target,
+  locale,
   width,
   height,
   fontSize,
@@ -105,11 +109,11 @@ export function layoutMrrChart({
   const unit = axisUnit(daysBetween(series[0].date, series[series.length - 1].date));
   const xTicks = dateTicks(x, TICK_INTERVALS[unit], fontSize).map((date) => ({
     x: x(date),
-    label: formatAxisDate(date.toISOString().slice(0, 10), unit),
+    label: formatAxisDate(date.toISOString().slice(0, 10), unit, locale),
   }));
   // Value labels need about three lines of room between them.
   const tickValues = y.ticks(Math.min(5, Math.max(2, Math.floor(height / (fontSize * 3.2)))));
-  const labels = valueLabels(tickValues, currency);
+  const labels = valueLabels(tickValues, currency, locale);
   const yTicks = tickValues
     .map((value, index) => ({ y: y(value), label: labels[index] }))
     // A label at the very top would touch the caption above the chart.
@@ -125,7 +129,7 @@ export function layoutMrrChart({
     xTicks,
     yTicks,
     horizon: showsTarget
-      ? { y: y(target), label: formatMoney(target, currency, { compact: true }) }
+      ? { y: y(target), label: formatMoney(target, currency, { compact: true, locale }) }
       : null,
   };
 }
@@ -152,11 +156,11 @@ export function nearestPoint(
  * Compact amounts with the fewest decimals that tell them apart: ticks $20K apart around $1M read
  * "$1.02M" and "$1.04M", not "$1M" twice.
  */
-function valueLabels(values: readonly number[], currency: string): string[] {
+function valueLabels(values: readonly number[], currency: string, locale: string): string[] {
   let labels: string[] = [];
   for (let digits = 1; digits <= 3; digits += 1) {
     labels = values.map((value) =>
-      formatMoney(value, currency, { compact: true, compactDigits: digits }),
+      formatMoney(value, currency, { compact: true, compactDigits: digits, locale }),
     );
     if (new Set(labels).size === labels.length) break;
   }

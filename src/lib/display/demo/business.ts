@@ -2,10 +2,30 @@
  * The fictional SaaS of the demo screen: its name, goal, plans and customers.
  */
 
-export const BUSINESS_NAME = "Acme Analytics";
-export const DEMO_ACCOUNT_ID = "demo";
+/** A Stripe account of the demo, simulated from its own seed. */
+export interface DemoBusiness {
+  /** Its id in the display state, like a real account's. */
+  id: string;
+  name: string;
+  seed: number;
+}
+
+/**
+ * The demo's SaaS, and a second one for a screen showing several accounts (`?accounts=2`). The
+ * first seed is picked so that the history ends about $300 below the goal, crossed a minute after
+ * loading.
+ */
+export const DEMO_BUSINESSES: readonly DemoBusiness[] = [
+  { id: "demo", name: "Acme Analytics", seed: 70 },
+  { id: "demo-mail", name: "Acme Mail", seed: 7 },
+];
+/** The name of a demo screen showing several accounts: the company behind them. */
+export const COMPANY_NAME = "Acme Inc.";
 export const DEMO_CURRENCY = "usd";
-/** The MRR goal the demo crosses within its first minutes, in major units like `settings.goal`. */
+/**
+ * The MRR goal the demo crosses within its first minutes, in major units like `settings.goal`: for
+ * each of its accounts.
+ */
 export const DEMO_GOAL = 15_000;
 
 export const PLANS = [

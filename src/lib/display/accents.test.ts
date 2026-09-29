@@ -1,36 +1,89 @@
 import { describe, expect, it } from "vitest";
 import { BRAND_COLORS } from "@/lib/brand";
-import { ACCENT_PALETTES, accentVariables } from "@/lib/display/accents";
-import { ACCENTS } from "@/lib/screens/settings";
+import {
+  ACCENT_CONTRAST,
+  accentPalette,
+  accentSwatch,
+  accentVariables,
+  derivePalette,
+  PRESET_ACCENTS,
+  SCREEN_BACKGROUNDS,
+  type AccentPalette,
+} from "@/lib/display/accents";
+import { contrastRatio, hexToOklch, mixHex } from "@/lib/display/color";
+import { ACCENTS, THEMES, type Theme } from "@/lib/screens/settings";
 
 const HEX = /^#[0-9a-f]{6}$/;
 
-/** WCAG relative luminance, to check accents stay visible on the near-black background. */
-function luminance(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map((index) => {
-    const channel = parseInt(hex.slice(index, index + 2), 16) / 255;
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+/** A palette keeps its contrast: its glow on the background, its ink on the accent's wash. */
+function expectReadable(palette: AccentPalette, theme: Theme) {
+  const background = SCREEN_BACKGROUNDS[theme];
+  const wash = mixHex(palette.glow, background, 0.14);
+  expect(contrastRatio(palette.glow, background)).toBeGreaterThanOrEqual(
+    ACCENT_CONTRAST[theme].glow,
+  );
+  expect(contrastRatio(palette.ink, wash)).toBeGreaterThanOrEqual(ACCENT_CONTRAST[theme].ink);
 }
 
-describe("accent palettes", () => {
-  it.each(ACCENTS)("defines a complete palette for %s", (accent) => {
-    const palette = ACCENT_PALETTES[accent];
-    for (const color of [palette.base, palette.bright, palette.deep, ...palette.confetti]) {
-      expect(color).toMatch(HEX);
+const CUSTOM_COLORS = ["#ff6b35", "#1e3a8a", "#635bff", "#ffff00", "#000000", "#ffffff", "#e5e7eb"];
+
+describe("preset accents", () => {
+  it.each(ACCENTS)("define complete palettes for %s", (accent) => {
+    for (const theme of THEMES) {
+      const palette = PRESET_ACCENTS[accent][theme];
+      for (const color of [palette.glow, palette.ink, palette.deep, ...palette.confetti]) {
+        expect(color).toMatch(HEX);
+      }
+      expect(palette.confetti.length).toBeGreaterThanOrEqual(3);
     }
-    expect(palette.confetti.length).toBeGreaterThanOrEqual(3);
-    expect(Object.values(accentVariables(accent))).toEqual([
-      palette.base,
-      palette.bright,
-      palette.deep,
-    ]);
   });
 
-  it.each(ACCENTS)("keeps %s readable on the display background", (accent) => {
-    const background = luminance(BRAND_COLORS.screen);
-    const contrast = (luminance(ACCENT_PALETTES[accent].base) + 0.05) / (background + 0.05);
-    expect(contrast).toBeGreaterThan(7);
+  it.each(ACCENTS)("keep %s readable on both themes", (accent) => {
+    for (const theme of THEMES) expectReadable(PRESET_ACCENTS[accent][theme], theme);
+  });
+
+  it("give the brand its color", () => {
+    expect(BRAND_COLORS.glow).toBe(PRESET_ACCENTS.emerald.dark.glow);
+    expect(BRAND_COLORS.screen).toBe(SCREEN_BACKGROUNDS.dark);
+  });
+});
+
+describe("custom accents", () => {
+  it.each(CUSTOM_COLORS)("stay readable on both themes: %s", (color) => {
+    for (const theme of THEMES) expectReadable(derivePalette(color, theme), theme);
+  });
+
+  it("keep a color that already reads well as it is", () => {
+    expect(derivePalette("#ff6b35", "dark").glow).toBe("#ff6b35");
+    expect(derivePalette("#635bff", "light").glow).toBe("#635bff");
+  });
+
+  it("only change the lightness of the others, so they still look like the color picked", () => {
+    const picked = hexToOklch("#1e3a8a");
+    const shown = hexToOklch(derivePalette("#1e3a8a", "dark").glow);
+    expect(shown.l).toBeGreaterThan(picked.l);
+    expect(shown.h).toBeCloseTo(picked.h, -1);
+  });
+});
+
+describe("accentPalette", () => {
+  it("uses the presets' palettes, and derives the others once", () => {
+    expect(accentPalette("violet", "light")).toBe(PRESET_ACCENTS.violet.light);
+    expect(accentPalette("#ff6b35", "light")).toEqual(derivePalette("#ff6b35", "light"));
+    expect(accentPalette("#ff6b35", "light")).toBe(accentPalette("#ff6b35", "light"));
+  });
+
+  it("stands for an accent with its dark glow in the settings", () => {
+    expect(accentSwatch("sky")).toBe(PRESET_ACCENTS.sky.dark.glow);
+    expect(accentSwatch("#ff6b35")).toBe("#ff6b35");
+  });
+
+  it("exposes a palette as CSS variables", () => {
+    const palette = PRESET_ACCENTS.rose.dark;
+    expect(accentVariables(palette)).toEqual({
+      "--glow": palette.glow,
+      "--glow-ink": palette.ink,
+      "--glow-deep": palette.deep,
+    });
   });
 });

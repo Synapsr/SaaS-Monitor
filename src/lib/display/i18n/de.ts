@@ -1,0 +1,106 @@
+import type { DisplayText } from "./en";
+
+export const de: DisplayText = {
+  metricNames: { mrr: "Monatlich wiederkehrender Umsatz", arr: "Jährlich wiederkehrender Umsatz" },
+  topBar: {
+    accounts: "Stripe-Konten",
+    testData: "Testdaten",
+    live: "Live",
+    reconnecting: "Verbinde neu…",
+    enterFullScreen: "Vollbild",
+    exitFullScreen: "Vollbild beenden",
+    enableSound: "Irgendwo klicken, um den Ton einzuschalten",
+  },
+  accountStatus: { ready: "importiert", importing: "wird importiert", error: "fehlerhaft" },
+  allAccounts: "Alle Konten",
+  hero: { inThirtyDays: "in 30 Tagen" },
+  goal: {
+    goal: "Ziel",
+    nextMilestone: "Nächster Meilenstein",
+    toGo: (amount) => `noch ${amount}`,
+    atThisPace: (when) => `bei diesem Tempo: ${when}`,
+    today: "heute",
+    tomorrow: "morgen",
+  },
+  chart: {
+    ranges: { "30d": "letzte 30 Tage", "90d": "letzte 90 Tage", "12m": "letzte 12 Monate" },
+    since: (month) => `seit ${month}`,
+    allTime: "gesamter Zeitraum",
+    empty: "Die Kurve erscheint nach ein paar Tagen Verlauf.",
+    goal: (amount) => `Ziel ${amount}`,
+    summary: (title, from, to) => `${title}: von ${from} auf ${to}.`,
+  },
+  tiles: {
+    revenueToday: "Umsatz heute",
+    yesterday: (amount) => `${amount} gestern`,
+    thisMonth: "Diesen Monat",
+    versus: (month) => `vs. ${month}`,
+    versusAmount: (amount, month) => `vs. ${amount} im ${month}`,
+    customers: "Kunden",
+    newThisMonth: (count) => `+${count} diesen Monat`,
+    inTrial: (count) => `${count} in Testphase`,
+    paying: "Zahlende Kunden",
+    netNew: (metric) => `Netto-Neu-${metric}`,
+    gainedLost: (gained, lost) => `${gained} gewonnen · ${lost} verloren`,
+  },
+  feed: {
+    title: "Letzte Aktivität",
+    empty: "Neue Kunden, Zahlungen und Abos erscheinen hier, sobald sie passieren.",
+    kinds: {
+      payment: "Zahlung",
+      customer: "Neuer Kunde",
+      new: "Neues Abo",
+      expansion: "Upgrade",
+      reactivation: "Reaktivierung",
+      contraction: "Downgrade",
+      churn: "Kündigung",
+    },
+    justNow: "gerade eben",
+    minutesAgo: (minutes) => `vor ${minutes} Min.`,
+    hoursAgo: (hours) => `vor ${hours} Std.`,
+    yesterday: "gestern",
+  },
+  warnings: {
+    unconvertedCurrency: (currency) =>
+      `Beträge in ${currency} fehlen: Gerade ist kein Wechselkurs verfügbar.`,
+    failingAccount: (account) => `${account}: Dieses Stripe-Konto braucht Aufmerksamkeit.`,
+  },
+  moments: {
+    titles: {
+      payment: "Zahlung erhalten",
+      customer: "Neuer Kunde",
+      new: "Neuer Abonnent",
+      expansion: "Upgrade",
+      reactivation: "Willkommen zurück",
+      contraction: "Downgrade",
+      churn: "Abo gekündigt",
+    },
+    someoneNew: "Jemand Neues",
+    customersToday: (count) =>
+      count === 1 ? "Erster neuer Kunde heute" : `${count} neue Kunden heute`,
+    catchingUp: "In der Zwischenzeit",
+    payments: (count) => (count === 1 ? "1 neue Zahlung" : `${count} neue Zahlungen`),
+    changes: (count) => (count === 1 ? "1 Abo-Änderung" : `${count} Abo-Änderungen`),
+    customers: (count) => (count === 1 ? "1 neuer Kunde" : `${count} neue Kunden`),
+    test: "Test-Feier",
+    testDetails: "So sieht und klingt deine nächste Zahlung",
+    goalReached: "Ziel erreicht",
+    milestoneReached: "Meilenstein erreicht",
+    newMilestone: "Neuer Meilenstein",
+    nextStop: (amount) => `Nächster Halt: ${amount}. Weiter so!`,
+  },
+  status: {
+    importing: "Dein Stripe-Verlauf wird importiert…",
+    importingDetails:
+      "Abos und Zahlungen sind unterwegs. Bei den meisten Konten dauert das ein, zwei Minuten, und dieser Bildschirm aktualisiert sich von selbst.",
+    failing: "Stripe-Daten können gerade nicht geladen werden",
+    failingDetails:
+      "Alle Konten dieses Bildschirms schlagen fehl, oft weil ein API-Schlüssel widerrufen wurde. Prüfe die Stripe-Verbindungen in deinem Dashboard: Der Bildschirm erholt sich von selbst.",
+    empty: "Verbinde Stripe, um diesen Bildschirm zum Leben zu erwecken",
+    emptyDetails: (screen, metric) =>
+      `Füge „${screen}“ in deinem Dashboard ein Stripe-Konto hinzu. Dein ${metric}, dein Umsatz und jede neue Zahlung erscheinen dann hier, live.`,
+    gone: "Dieser Bildschirm-Link funktioniert nicht mehr",
+    goneDetails: (app) =>
+      `Der Bildschirm wurde vielleicht gelöscht oder sein Link neu erzeugt. Öffne ihn erneut in deinem ${app}-Dashboard, um den aktuellen Link zu erhalten.`,
+  },
+};

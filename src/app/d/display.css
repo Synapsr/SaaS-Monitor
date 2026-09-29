@@ -29,6 +29,20 @@
   /* Surfaces and shadows on the wall palette (see wall-palette.css; the screen sets the accent). */
   --surface: rgb(255 255 255 / 0.028);
   --hairline: rgb(255 255 255 / 0.075);
+  /* Neutral chips and tracks, and their hover. */
+  --fill: rgb(255 255 255 / 0.06);
+  --fill-hover: rgb(255 255 255 / 0.08);
+  /* Moment cards, and the tooltip over the chart, with their edge. */
+  --card: #0c0e11;
+  --popover: #121418;
+  --edge: rgb(255 255 255 / 0.11);
+  /* What dims the numbers behind a moment, from its center to the edges. */
+  --scrim: rgb(0 0 0 / 0.55);
+  --scrim-edge: rgb(0 0 0 / 0.3);
+  --vignette: rgb(0 0 0 / 0.4);
+  /* Problems (a failing account, a lost connection) in amber, kept apart from the accent. */
+  --warn: #fcd34d;
+  --warn-ink: #fde68a;
   --glow-wash: color-mix(in oklab, var(--glow) 14%, transparent);
   --moment-shadow: 0 calc(var(--rem) * 2) calc(var(--rem) * 6) calc(var(--rem) * -1)
     rgb(0 0 0 / 0.6);
@@ -45,17 +59,43 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Cards are white on the light screen: surfaces rise above it instead of glowing. */
+.display[data-theme="light"] {
+  --surface: rgb(255 255 255 / 0.72);
+  --hairline: rgb(12 14 20 / 0.08);
+  --fill: rgb(12 14 20 / 0.05);
+  --fill-hover: rgb(12 14 20 / 0.08);
+  --card: #ffffff;
+  --popover: #ffffff;
+  --edge: rgb(12 14 20 / 0.1);
+  --scrim: rgb(244 245 247 / 0.78);
+  --scrim-edge: rgb(244 245 247 / 0.5);
+  --vignette: rgb(12 14 20 / 0.05);
+  --warn: #f59e0b;
+  --warn-ink: #b45309;
+  --moment-shadow: 0 calc(var(--rem) * 1.5) calc(var(--rem) * 5) calc(var(--rem) * -1)
+    rgb(12 14 20 / 0.16);
+
+  color-scheme: light;
+}
+
 @media (orientation: portrait) {
   .display {
     --u: min(1dvw, 0.5625dvh);
   }
 }
 
-/* Film grain: dithers the soft gradients, which band badly on large TVs. */
+/* Film grain: dithers the soft gradients, which band badly on large TVs. Dark specks on light. */
 .display-grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: 0.045;
   mix-blend-mode: overlay;
+}
+
+.display[data-theme="light"] .display-grain {
+  filter: invert(1);
+  opacity: 0.03;
+  mix-blend-mode: multiply;
 }
 
 /* The currency symbol of the hero number sits smaller and quieter than its digits. */
@@ -64,7 +104,7 @@
   font-weight: 500;
   color: var(--ink-2);
   vertical-align: 0.62em;
-  margin-right: 0.03em;
+  margin-inline: 0.03em;
 }
 
 @keyframes display-ping {
@@ -87,6 +127,16 @@
   }
   100% {
     background-color: transparent;
+  }
+}
+
+/* The time left before a rotating screen shows its next account. */
+@keyframes display-turn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 

@@ -1,8 +1,12 @@
 import type { Format } from "@number-flow/react";
 import { COUNTRY_NAMES } from "@/lib/display/countries";
 import { formatMoney, minorUnitDigits, toMajorUnits } from "@/lib/money";
+import type { Language } from "@/lib/screens/settings";
 
-/** How a screen writes amounts, percentages and countries. Dates and times: see `time.ts`. */
+/**
+ * How a screen writes amounts, percentages and countries, in its locale (`DisplayLocale`): "$12,480"
+ * in English, "12 480 $US" in French. Dates and times: see `time.ts`.
+ */
 
 const REGIONAL_INDICATOR_A = 0x1f1e6;
 
@@ -14,10 +18,11 @@ export function countryFlag(code: string | null): string | null {
   );
 }
 
-/** English name of a country code ("DE" → "Germany"), falling back to the code itself. */
-export function countryName(code: string): string {
+/** Name of a country code in `language` ("DE" → "Germany"), falling back to the code itself. */
+export function countryName(code: string, language: Language): string {
+  const names = COUNTRY_NAMES[language];
   const key = code.toUpperCase();
-  return Object.hasOwn(COUNTRY_NAMES, key) ? COUNTRY_NAMES[key] : code;
+  return Object.hasOwn(names, key) ? names[key] : code;
 }
 
 /** Relative change between two values, or `null` when there is nothing to compare with. */
@@ -27,9 +32,13 @@ export function percentChange(current: number, previous: number): number | null 
 }
 
 /** "+9.9%", "−3%", "+120%": one decimal only when it carries information. */
-export function formatPercent(ratio: number, options: { signed?: boolean } = {}): string {
+export function formatPercent(
+  ratio: number,
+  locale: string,
+  options: { signed?: boolean } = {},
+): string {
   const percent = ratio * 100;
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(locale, {
     style: "percent",
     maximumFractionDigits: Math.abs(percent) < 10 ? 1 : 0,
     signDisplay: options.signed ? "exceptZero" : "auto",
@@ -40,30 +49,37 @@ export function formatPercent(ratio: number, options: { signed?: boolean } = {})
 export function formatAmount(
   amount: number,
   currency: string,
+  locale: string,
   options: { signed?: boolean; cents?: boolean } = {},
 ): string {
   const compact = Math.abs(toMajorUnits(amount, currency)) >= 1_000_000;
-  return formatMoney(amount, currency, { ...options, compact, cents: options.cents && !compact });
+  return formatMoney(amount, currency, {
+    ...options,
+    locale,
+    compact,
+    cents: options.cents && !compact,
+  });
 }
 
 /** A payment shows its cents only when it has some: `$49` but `$49.99`. */
-export function formatPayment(amount: number, currency: string): string {
+export function formatPayment(amount: number, currency: string, locale: string): string {
   const hasCents = amount % 10 ** minorUnitDigits(currency) !== 0;
-  return formatAmount(amount, currency, { cents: hasCents });
+  return formatAmount(amount, currency, locale, { cents: hasCents });
 }
 
 /**
- * `NumberFlow` props rendering an amount exactly like `formatMoney(amount, currency)`, so the
- * animated hero number and every static amount of the screen share one format.
+ * `NumberFlow` props rendering an amount exactly like `formatMoney(amount, currency, { locale })`,
+ * so the animated hero number and every static amount of the screen share one format.
  */
 export function moneyFlow(
   amount: number,
   currency: string,
+  locale: string,
   options: { signed?: boolean } = {},
 ): { value: number; format: Format; locales: string } {
   return {
     value: toMajorUnits(amount, currency),
-    locales: "en-US",
+    locales: locale,
     format: {
       style: "currency",
       currency: currency.toUpperCase(),

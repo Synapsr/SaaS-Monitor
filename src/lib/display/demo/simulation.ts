@@ -1,15 +1,15 @@
 import { addDays, calendarDay, displayCalendar, monthOf } from "@/lib/display/calendar";
 import {
   AVERAGE_PRICE,
-  BUSINESS_NAME,
   COMPANIES,
-  DEMO_ACCOUNT_ID,
   COUNTRIES,
+  DEMO_BUSINESSES,
   DEMO_CURRENCY,
   DEMO_GOAL,
   PLAN_WEIGHTS,
   PLANS,
   TEAM_PLAN,
+  type DemoBusiness,
 } from "@/lib/display/demo/business";
 import type { DemoOptions } from "@/lib/display/demo/options";
 import {
@@ -31,9 +31,6 @@ import { toMinorUnits } from "@/lib/money";
  * and the server and the browser build the same world.
  */
 
-/** Picked so that the history ends about $300 below the goal, crossed a minute after loading. */
-const DEMO_SEED = 70;
-
 /** MRR the history steers towards (days before now → cents): a good year, a great quarter. */
 const TRAJECTORY: readonly (readonly [number, number])[] = [
   [372, 320_000],
@@ -50,6 +47,15 @@ const CHURN_MEMORY = 100;
 /** Daily probabilities, per active customer (or per churned one for reactivations). */
 const DAILY_RATES = { cancel: 0.0009, upgrade: 0.0007, downgrade: 0.0003, reactivate: 0.0015 };
 
+/*
+ * Visitors who sign up without paying yet: new Stripe customers. They come from a random sequence
+ * of their own, which leaves the rest of the world (and its seeds) as it was.
+ */
+const LEADS_PER_DAY = 3;
+/** Share of live events that come with a sign-up a moment earlier. */
+const LIVE_LEAD_CHANCE = 0.3;
+const LEADS_SALT = 0x1ead5;
+
 interface DemoCustomer {
   id: number;
   name: string;
@@ -62,8 +68,11 @@ type MonthMovements = DisplayMetrics["thisMonth"];
 
 export interface DemoWorld {
   readonly options: DemoOptions;
+  readonly business: DemoBusiness;
   /** State of the seeded generator: the world evolves identically wherever it is resumed. */
   readonly seed: number;
+  /** State of the generator of sign-ups. */
+  readonly leadSeed: number;
   readonly sequence: number;
   readonly mrr: number;
   readonly customers: readonly DemoCustomer[];
@@ -73,6 +82,8 @@ export interface DemoWorld {
   readonly mrrByDay: Readonly<Record<string, number>>;
   readonly revenueByDay: Readonly<Record<string, number>>;
   readonly movementsByMonth: Readonly<Record<string, MonthMovements>>;
+  /** Stripe customers created each day, paying or not. */
+  readonly customersByDay: Readonly<Record<string, number>>;
   /** Most recent first. */
   readonly feed: readonly FeedItem[];
   /** Events played by the simulator after the history, i.e. "live" ones. */
@@ -82,6 +93,7 @@ export interface DemoWorld {
 /** A world being changed: collections are copies, objects inside are replaced, never mutated. */
 interface Draft {
   options: DemoOptions;
+  business: DemoBusiness;
   sequence: number;
   mrr: number;
   customers: DemoCustomer[];
@@ -90,12 +102,15 @@ interface Draft {
   mrrByDay: Record<string, number>;
   revenueByDay: Record<string, number>;
   movementsByMonth: Record<string, MonthMovements>;
+  customersByDay: Record<string, number>;
   feed: FeedItem[];
 }
 
-function toDraft(world: DemoWorld): Draft {
+/** A copy of a world, or of a draft, to change. */
+function toDraft(world: DemoWorld | Draft): Draft {
   return {
     options: world.options,
+    business: world.business,
     sequence: world.sequence,
     mrr: world.mrr,
     customers: [...world.customers],
@@ -104,6 +119,7 @@ function toDraft(world: DemoWorld): Draft {
     mrrByDay: { ...world.mrrByDay },
     revenueByDay: { ...world.revenueByDay },
     movementsByMonth: { ...world.movementsByMonth },
+    customersByDay: { ...world.customersByDay },
     feed: [...world.feed],
   };
 }
@@ -132,21 +148,29 @@ function record(
   live: boolean,
 ) {
   draft.sequence += 1;
+  const source = kind === "payment" || kind === "customer" ? kind : "movement";
   draft.feed.unshift({
-    id: `${kind === "payment" ? "payment" : "movement"}:demo-${draft.sequence}`,
+    id: `${source}:${draft.business.id}-${draft.sequence}`,
     kind,
     amount,
     original: null,
     occurredAt: new Date(at).toISOString(),
     live,
-    customerKey: `demo-${customer.id}`,
+    customerKey: `${draft.business.id}-${customer.id}`,
     customerName: customer.name,
     country: customer.country,
-    planName: PLANS[customer.plan].name,
-    accountId: DEMO_ACCOUNT_ID,
-    accountName: BUSINESS_NAME,
+    planName: kind === "customer" ? null : PLANS[customer.plan].name,
+    accountId: draft.business.id,
+    accountName: draft.business.name,
   });
   if (draft.feed.length > FEED_SIZE) draft.feed.length = FEED_SIZE;
+}
+
+/** A customer created in Stripe: at sign-up, or at checkout. */
+function recordCustomer(draft: Draft, customer: DemoCustomer, at: number, live: boolean) {
+  const day = dayOf(draft, at);
+  draft.customersByDay[day] = (draft.customersByDay[day] ?? 0) + 1;
+  record(draft, "customer", 0, customer, at, live);
 }
 
 function recordPayment(draft: Draft, customer: DemoCustomer, at: number, live: boolean) {
@@ -197,9 +221,24 @@ function newCustomer(draft: Draft, random: Random, at: number, plan?: number): D
 function signUp(draft: Draft, random: Random, at: number, live: boolean, plan?: number) {
   const customer = newCustomer(draft, random, at, plan);
   draft.customers.push(customer);
-  // The subscription starts and its first invoice is paid at once, like a Stripe Checkout.
+  // The customer is created, the subscription starts and its first invoice is paid at once, like
+  // a Stripe Checkout.
+  recordCustomer(draft, customer, at, live);
   recordMovement(draft, "new", PLANS[customer.plan].price, customer, at, live);
   recordPayment(draft, customer, at, live);
+}
+
+/** A visitor signs up, without paying yet. */
+function lead(draft: Draft, leads: Random, at: number, live: boolean) {
+  draft.sequence += 1;
+  const visitor: DemoCustomer = {
+    id: draft.sequence,
+    name: pick(leads, COMPANIES),
+    country: pickWeighted(leads, COUNTRIES),
+    plan: 0,
+    renewsAt: at,
+  };
+  recordCustomer(draft, visitor, at, live);
 }
 
 function renew(draft: Draft, customerId: number, at: number, live: boolean) {
@@ -256,10 +295,17 @@ function targetMrr(daysAgo: number): number {
 
 type HistoryEvent =
   | { at: number; type: "renew"; customerId: number }
-  | { at: number; type: "signUp" | "upgrade" | "downgrade" | "cancel" | "reactivate" };
+  | { at: number; type: "signUp" | "upgrade" | "downgrade" | "cancel" | "reactivate" | "lead" };
 
 /** One day of history: renewals that fall due, then random events steered by the trajectory. */
-function simulateDay(draft: Draft, random: Random, start: number, end: number, now: number) {
+function simulateDay(
+  draft: Draft,
+  random: Random,
+  leads: Random,
+  start: number,
+  end: number,
+  now: number,
+) {
   const events: HistoryEvent[] = [];
   for (const customer of draft.customers) {
     for (let at = customer.renewsAt; at < end; at += RENEWAL_PERIOD) {
@@ -283,6 +329,10 @@ function simulateDay(draft: Draft, random: Random, start: number, end: number, n
       events.push({ at: randomBetween(random, start, end), type });
     }
   }
+  const leadCount = poisson(leads, LEADS_PER_DAY * ((end - start) / DAY_MS));
+  for (let index = 0; index < leadCount; index += 1) {
+    events.push({ at: randomBetween(leads, start, end), type: "lead" });
+  }
 
   events.sort((a, b) => a.at - b.at);
   for (const event of events) {
@@ -292,17 +342,24 @@ function simulateDay(draft: Draft, random: Random, start: number, end: number, n
     else if (event.type === "upgrade") changePlan(draft, random, 1, at, false);
     else if (event.type === "downgrade") changePlan(draft, random, -1, at, false);
     else if (event.type === "cancel") cancel(draft, random, at, false);
+    else if (event.type === "lead") lead(draft, leads, at, false);
     else reactivate(draft, random, at, false);
   }
 }
 
-/** Builds the demo's history up to `now`. Same options, time and seed: same world. */
-export function createDemoWorld(options: DemoOptions, now: Date, seed = DEMO_SEED): DemoWorld {
-  const random = createRandom(seed);
+/** Builds the history of a demo account up to `now`. Same options, time and seed: same world. */
+export function createDemoWorld(
+  options: DemoOptions,
+  now: Date,
+  business: DemoBusiness = DEMO_BUSINESSES[0],
+): DemoWorld {
+  const random = createRandom(business.seed);
+  const leads = createRandom(business.seed ^ LEADS_SALT);
   const end = now.getTime();
   const start = end - HISTORY_DAYS * DAY_MS;
   const draft: Draft = {
     options,
+    business,
     sequence: 0,
     mrr: 0,
     customers: [],
@@ -311,6 +368,7 @@ export function createDemoWorld(options: DemoOptions, now: Date, seed = DEMO_SEE
     mrrByDay: {},
     revenueByDay: {},
     movementsByMonth: {},
+    customersByDay: {},
     feed: [],
   };
 
@@ -323,10 +381,17 @@ export function createDemoWorld(options: DemoOptions, now: Date, seed = DEMO_SEE
   draft.mrrByDay[dayOf(draft, start)] = draft.mrr;
 
   for (let day = start; day < end; day += DAY_MS) {
-    simulateDay(draft, random, day, Math.min(end, day + DAY_MS), end);
+    simulateDay(draft, random, leads, day, Math.min(end, day + DAY_MS), end);
   }
   forgetOldDays(draft, dayOf(draft, end));
-  return { ...draft, seed: random.state, liveEvents: 0 };
+  return { ...draft, seed: random.state, leadSeed: leads.state, liveEvents: 0 };
+}
+
+/** The accounts of the demo screen: one, or two with `?accounts=2`. */
+export function createDemoWorlds(options: DemoOptions, now: Date): DemoWorld[] {
+  return DEMO_BUSINESSES.slice(0, options.accounts).map((business) =>
+    createDemoWorld(options, now, business),
+  );
 }
 
 type LiveEvent = "renew" | "signUp" | "upgrade" | "downgrade" | "cancel" | "reactivate";
@@ -361,6 +426,7 @@ function play(draft: Draft, random: Random, event: LiveEvent, at: number, plan?:
 /** Plays the next live event at `now`, as the sync engine would have detected it. */
 export function advanceDemo(world: DemoWorld, now: Date): DemoWorld {
   const random = createRandom(world.seed);
+  const leads = createRandom(world.leadSeed);
   const at = now.getTime();
   const goal = toMinorUnits(DEMO_GOAL, DEMO_CURRENCY);
 
@@ -369,19 +435,43 @@ export function advanceDemo(world: DemoWorld, now: Date): DemoWorld {
     world.liveEvents === 0
       ? "signUp"
       : pickWeighted(random, world.mrr < goal ? OPENING_MIX : STEADY_MIX);
-  let draft = toDraft(world);
-  play(draft, random, event, at, world.liveEvents === 0 ? TEAM_PLAN : undefined);
+  const draft = toDraft(world);
+  // Some events come with a sign-up a moment earlier: two moments in a row. Not the first one,
+  // which shows a sale on its own.
+  if (world.liveEvents > 0 && leads() < LIVE_LEAD_CHANCE) lead(draft, leads, at - 1_500, true);
+  let next = toDraft(draft);
+  play(next, random, event, at, world.liveEvents === 0 ? TEAM_PLAN : undefined);
   // Once the goal has been celebrated, the demo never falls back below it.
-  if (world.mrr >= goal && draft.mrr < goal) {
-    draft = toDraft(world);
-    play(draft, random, "renew", at);
+  if (world.mrr >= goal && next.mrr < goal) {
+    next = toDraft(draft);
+    play(next, random, "renew", at);
   }
   // Visitors keep starting trials, and some signups convert one.
-  if (event === "signUp" && draft.trials > 0 && random() < 0.4) draft.trials -= 1;
-  else if (random() < 0.1) draft.trials += 1;
+  if (event === "signUp" && next.trials > 0 && random() < 0.4) next.trials -= 1;
+  else if (random() < 0.1) next.trials += 1;
 
-  forgetOldDays(draft, dayOf(draft, at));
-  return { ...draft, seed: random.state, liveEvents: world.liveEvents + 1 };
+  forgetOldDays(next, dayOf(next, at));
+  return { ...next, seed: random.state, leadSeed: leads.state, liveEvents: world.liveEvents + 1 };
+}
+
+/**
+ * The accounts of the demo screen, a turn later: one account plays its next event, and every
+ * third turn of a screen of several, all of them at once, which the screen announces one by one.
+ */
+export function advanceDemoWorlds(
+  worlds: readonly DemoWorld[],
+  turn: number,
+  now: Date,
+): DemoWorld[] {
+  const together = worlds.length > 1 && turn % 3 === 2;
+  return worlds.map((world, index) =>
+    together || index === turn % worlds.length ? advanceDemo(world, now) : world,
+  );
+}
+
+/** Delay before the demo's next turn. */
+export function nextDemoWorldsDelay(worlds: readonly DemoWorld[], turn: number): number {
+  return nextDemoDelay(worlds[turn % worlds.length]);
 }
 
 /** Delay before the next live event: 12 to 25 seconds, and a quick first one. */

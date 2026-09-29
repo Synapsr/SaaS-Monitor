@@ -1,21 +1,25 @@
 "use client";
 
-import { CheckIcon } from "lucide-react";
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
+import { MoonIcon, SunIcon, type LucideIcon } from "lucide-react";
 import { useId } from "react";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ACCENT_PALETTES } from "@/lib/display/accents";
 import { recurringMetric } from "@/lib/display/metric";
 import {
-  ACCENTS,
   CHART_RANGES,
-  type Accent,
+  THEMES,
   type ChartRange,
   type Metric,
   type ScreenSettings,
+  type Theme,
 } from "@/lib/screens/settings";
+import { AccentPicker, accentName } from "./accent-picker";
 import { SettingRow } from "./settings-section";
+
+const THEME_OPTIONS: Record<Theme, { label: string; icon: LucideIcon }> = {
+  dark: { label: "Dark", icon: MoonIcon },
+  light: { label: "Light", icon: SunIcon },
+};
 
 const CHART_RANGE_LABELS: Record<ChartRange, string> = {
   "30d": "30 days",
@@ -26,7 +30,7 @@ const CHART_RANGE_LABELS: Record<ChartRange, string> = {
 
 type LookSettingsValue = Pick<
   ScreenSettings,
-  "accent" | "chartRange" | "celebrations" | "showCustomerNames"
+  "theme" | "accent" | "chartRange" | "celebrations" | "showCustomerNames"
 >;
 
 export function LookSettings({
@@ -43,32 +47,41 @@ export function LookSettings({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2.5">
+        <p id={`${id}-theme`} className="text-sm font-medium">
+          Theme
+        </p>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          spacing={0}
+          value={settings.theme}
+          onValueChange={(theme) => theme && onChange({ theme: theme as Theme })}
+          aria-labelledby={`${id}-theme`}
+        >
+          {THEMES.map((theme) => {
+            const { label, icon: Icon } = THEME_OPTIONS[theme];
+            return (
+              <ToggleGroupItem key={theme} value={theme} className="px-3">
+                <Icon data-icon="inline-start" />
+                {label}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
         <p className="text-sm font-medium">
           <span id={`${id}-accent`}>Accent color</span>{" "}
           <span aria-hidden="true" className="font-normal text-muted-foreground">
-            · {ACCENT_PALETTES[settings.accent].label}
+            · {accentName(settings.accent)}
           </span>
         </p>
-        <RadioGroupPrimitive.Root
-          value={settings.accent}
-          onValueChange={(accent) => onChange({ accent: accent as Accent })}
-          aria-labelledby={`${id}-accent`}
-          className="flex flex-wrap gap-3"
-        >
-          {ACCENTS.map((accent) => (
-            <RadioGroupPrimitive.Item
-              key={accent}
-              value={accent}
-              aria-label={ACCENT_PALETTES[accent].label}
-              style={{ backgroundColor: ACCENT_PALETTES[accent].base }}
-              className="relative flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-background transition-shadow outline-none after:absolute after:-inset-1 focus-visible:ring-3 focus-visible:ring-ring/60 data-[state=checked]:ring-2 data-[state=checked]:ring-foreground"
-            >
-              <RadioGroupPrimitive.Indicator>
-                <CheckIcon className="size-4 text-black/75" strokeWidth={3} />
-              </RadioGroupPrimitive.Indicator>
-            </RadioGroupPrimitive.Item>
-          ))}
-        </RadioGroupPrimitive.Root>
+        <AccentPicker
+          accent={settings.accent}
+          onChange={(accent) => onChange({ accent })}
+          labelledBy={`${id}-accent`}
+        />
       </div>
 
       <div className="flex flex-col gap-2.5">

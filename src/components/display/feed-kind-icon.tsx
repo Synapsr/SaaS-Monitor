@@ -30,7 +30,7 @@ export function KindIcon({ kind, className }: { kind: FeedItemKind; className?: 
     <span
       className={cn(
         "grid shrink-0 place-items-center rounded-full",
-        isGoodNews(kind) ? "bg-(--glow-wash) text-(--glow-bright)" : "bg-white/6 text-(--ink-2)",
+        isGoodNews(kind) ? "bg-(--glow-wash) text-(--glow-ink)" : "bg-(--fill) text-(--ink-2)",
         className,
       )}
     >

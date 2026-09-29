@@ -33,6 +33,12 @@ const EVENTS = [
     description: "Every successful charge.",
   },
   {
+    key: "onCustomer",
+    event: "customer",
+    label: () => "New customer",
+    description: "Created in Stripe, often at sign-up, before they pay.",
+  },
+  {
     key: "onMrrUp",
     event: "mrrUp",
     label: (metric) => `${metric} goes up`,

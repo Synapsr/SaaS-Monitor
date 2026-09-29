@@ -1,4 +1,4 @@
-import { ACCENT_PALETTES } from "@/lib/display/accents";
+import { PRESET_ACCENTS } from "@/lib/display/accents";
 
 /**
  * Brand colors for what stylesheets cannot reach: the logo's SVG, the social preview image and
@@ -6,7 +6,7 @@ import { ACCENT_PALETTES } from "@/lib/display/accents";
  */
 export const BRAND_COLORS = {
   /** The logo's pulse: emerald, the default accent of screens. */
-  glow: ACCENT_PALETTES.emerald.base,
+  glow: PRESET_ACCENTS.emerald.dark.glow,
   /** Background of screens and of the landing page. */
   screen: "#08090b",
   ink: "#f4f5f7",

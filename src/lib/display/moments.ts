@@ -16,6 +16,8 @@ export type Moment =
       movement: FeedItem | null;
     }
   | { id: string; kind: "movement"; movement: FeedItem }
+  /** A Stripe customer created, who has not paid (yet). */
+  | { id: string; kind: "customer"; customer: FeedItem }
   | {
       id: string;
       kind: "milestone";
@@ -23,22 +25,33 @@ export type Moment =
       amount: number;
       metric: Metric;
       isGoal: boolean;
+      /** The account that crossed it on a screen showing each on its own; `null` for the total. */
+      accountId: string | null;
     }
   | {
       id: string;
       kind: "summary";
+      /** The account whose burst it sums up: one summary per account of a screen. */
+      accountId: string;
       payments: number;
       /** Subscription changes: new, upgraded, downgraded, canceled… */
       changes: number;
+      customers: number;
       revenue: number;
       mrrChange: number;
     }
   | { id: string; kind: "test" };
 
-/** From this many fresh items at once (e.g. after a reconnection), celebrate once with a summary. */
+/**
+ * From this many moments of an account at once (e.g. after a reconnection), celebrate once with a
+ * summary.
+ */
 const BURST_SIZE = 4;
 
-/** A payment and a subscription change of the same customer within this delay are one moment. */
+/**
+ * A payment and a subscription change of the same customer within this delay are one moment, and
+ * so is the creation of the customer paying: Stripe Checkout creates all three at once.
+ */
 const SAME_CHECKOUT_MS = 10 * 60_000;
 
 export function isMrrIncrease(item: FeedItem): boolean {
@@ -49,35 +62,40 @@ export function isMrrIncrease(item: FeedItem): boolean {
  * Matches on the customer's key: a payment takes its name and country from the charge (billing
  * details, card), which may differ from the Stripe customer's, and its plan from their main one.
  */
-function sameCheckout(payment: FeedItem, movement: FeedItem): boolean {
+function sameCheckout(a: FeedItem, b: FeedItem): boolean {
   return (
-    payment.customerKey !== null &&
-    payment.customerKey === movement.customerKey &&
-    Math.abs(Date.parse(payment.occurredAt) - Date.parse(movement.occurredAt)) <= SAME_CHECKOUT_MS
+    a.customerKey !== null &&
+    a.customerKey === b.customerKey &&
+    Math.abs(Date.parse(a.occurredAt) - Date.parse(b.occurredAt)) <= SAME_CHECKOUT_MS
   );
 }
 
 /**
- * Turns fresh feed items (oldest first) into moments. A new subscription usually arrives with its
- * first payment: both become a single moment instead of two celebrations in a row.
+ * Turns fresh feed items (oldest first) into moments, played in the order things happened. Each
+ * account of a screen is planned on its own: its moments name it, and a burst of one account
+ * never swallows what another one did.
  */
 export function planMoments(fresh: readonly FeedItem[]): Moment[] {
-  const payments = fresh.filter((item) => item.kind === "payment");
-  const movements = fresh.filter((item) => item.kind !== "payment");
+  // Not `Map.groupBy`: TVs and kiosks run browsers too old for it.
+  const byAccount = new Map<string, FeedItem[]>();
+  for (const item of fresh)
+    byAccount.set(item.accountId, [...(byAccount.get(item.accountId) ?? []), item]);
+  const planned = [...byAccount.values()].flatMap((items) =>
+    planAccountMoments(items).map((moment) => ({ moment, at: momentTime(moment, items) })),
+  );
+  // Stable: the moments of one account keep their order.
+  return planned.sort((a, b) => a.at - b.at).map(({ moment }) => moment);
+}
 
-  if (fresh.length >= BURST_SIZE) {
-    const sum = (items: FeedItem[]) => items.reduce((total, item) => total + item.amount, 0);
-    return [
-      {
-        id: `summary:${fresh[fresh.length - 1].id}`,
-        kind: "summary",
-        payments: payments.length,
-        changes: movements.length,
-        revenue: sum(payments),
-        mrrChange: sum(movements),
-      },
-    ];
-  }
+/**
+ * The moments of one account. A new subscription usually arrives with its first payment, and
+ * with the creation of its customer: they become a single moment instead of celebrations in a
+ * row.
+ */
+function planAccountMoments(items: readonly FeedItem[]): Moment[] {
+  const payments = items.filter((item) => item.kind === "payment");
+  const customers = items.filter((item) => item.kind === "customer");
+  const movements = items.filter((item) => item.kind !== "payment" && item.kind !== "customer");
 
   const merged = new Map<string, FeedItem>();
   for (const movement of movements) {
@@ -87,16 +105,77 @@ export function planMoments(fresh: readonly FeedItem[]): Moment[] {
     );
     if (payment) merged.set(payment.id, movement);
   }
-  const absorbed = new Set([...merged.values()].map((movement) => movement.id));
+  const celebrated = [...payments, ...movements.filter(isMrrIncrease)];
+  const absorbed = new Set([
+    ...[...merged.values()].map((movement) => movement.id),
+    ...customers
+      .filter((customer) => celebrated.some((item) => sameCheckout(item, customer)))
+      .map((customer) => customer.id),
+  ]);
 
-  return fresh.flatMap((item): Moment[] => {
-    if (item.kind === "payment") {
-      return [
-        { id: item.id, kind: "payment", payment: item, movement: merged.get(item.id) ?? null },
-      ];
+  const moments = items.flatMap((item): Moment[] => {
+    if (absorbed.has(item.id)) return [];
+    switch (item.kind) {
+      case "payment":
+        return [
+          { id: item.id, kind: "payment", payment: item, movement: merged.get(item.id) ?? null },
+        ];
+      case "customer":
+        return [{ id: item.id, kind: "customer", customer: item }];
+      default:
+        return [{ id: item.id, kind: "movement", movement: item }];
     }
-    return absorbed.has(item.id) ? [] : [{ id: item.id, kind: "movement", movement: item }];
   });
+  if (moments.length < BURST_SIZE) return moments;
+
+  const sum = (list: FeedItem[]) => list.reduce((total, item) => total + item.amount, 0);
+  const last = items[items.length - 1];
+  return [
+    {
+      id: `summary:${last.id}`,
+      kind: "summary",
+      accountId: last.accountId,
+      payments: payments.length,
+      changes: movements.length,
+      customers: customers.length,
+      revenue: sum(payments),
+      mrrChange: sum(movements),
+    },
+  ];
+}
+
+/** When the activity a moment announces happened, to play moments in order. */
+function momentTime(moment: Moment, items: readonly FeedItem[]): number {
+  switch (moment.kind) {
+    case "payment":
+      return Date.parse(moment.payment.occurredAt);
+    case "movement":
+      return Date.parse(moment.movement.occurredAt);
+    case "customer":
+      return Date.parse(moment.customer.occurredAt);
+    default:
+      return Math.max(...items.map((item) => Date.parse(item.occurredAt)));
+  }
+}
+
+/**
+ * The account a moment comes from, which a screen rotating between its accounts brings on screen
+ * while it plays; `null` for the total, or for no account in particular.
+ */
+export function momentAccount(moment: Moment): string | null {
+  switch (moment.kind) {
+    case "payment":
+      return moment.payment.accountId;
+    case "movement":
+      return moment.movement.accountId;
+    case "customer":
+      return moment.customer.accountId;
+    case "summary":
+    case "milestone":
+      return moment.accountId;
+    case "test":
+      return null;
+  }
 }
 
 /** What a display remembers between two states to detect what just happened. */
@@ -139,28 +218,11 @@ export function trackMoments(
   const moments = planMoments(fresh);
 
   let celebrated = tracker.celebrated;
-  const { metric, goal } = state.screen.settings;
-  const { fromMrr } = recurringMetric(metric);
-  const milestone =
-    comparable && showSameMetricAndGoal(previous, state)
-      ? crossedMilestone(
-          fromMrr(previous.metrics.mrr),
-          fromMrr(state.metrics.mrr),
-          goal,
-          state.currency,
-        )
-      : null;
-  if (milestone !== null) {
-    const id = `milestone:${metric}:${milestone}`;
-    if (!celebrated.has(id)) {
-      celebrated = new Set(celebrated).add(id);
-      moments.push({
-        id,
-        kind: "milestone",
-        amount: milestone,
-        metric,
-        isGoal: goal !== null && milestone === toMinorUnits(goal, state.currency),
-      });
+  if (comparable && showSameMetricAndGoal(previous, state)) {
+    for (const moment of crossedMilestones(previous, state)) {
+      if (celebrated.has(moment.id)) continue;
+      celebrated = new Set(celebrated).add(moment.id);
+      moments.push(moment);
     }
   }
 
@@ -170,6 +232,58 @@ export function trackMoments(
   }
 
   return { tracker: { previous: state, seen, testEventId, celebrated }, moments };
+}
+
+/**
+ * The milestones crossed between two states: of the total, with the screen's goal, and of each
+ * account on a screen showing them one by one, which have no goal of their own.
+ */
+function crossedMilestones(previous: DisplayState, state: DisplayState): Moment[] {
+  const { metric, goal, rotation } = state.screen.settings;
+  const { fromMrr } = recurringMetric(metric);
+  const { currency } = state;
+  const byAccount = rotation.enabled ? state.views : [];
+  const moments: Moment[] = [];
+
+  if (byAccount.length < 2 || rotation.includeTotal) {
+    const total = crossedMilestone(
+      fromMrr(previous.metrics.mrr),
+      fromMrr(state.metrics.mrr),
+      goal,
+      currency,
+    );
+    if (total !== null) {
+      moments.push({
+        id: `milestone:${metric}:${total}`,
+        kind: "milestone",
+        amount: total,
+        metric,
+        isGoal: goal !== null && total === toMinorUnits(goal, currency),
+        accountId: null,
+      });
+    }
+  }
+
+  for (const view of byAccount) {
+    const before = previous.views.find(({ accountId }) => accountId === view.accountId);
+    if (!before) continue;
+    const crossed = crossedMilestone(
+      fromMrr(before.metrics.mrr),
+      fromMrr(view.metrics.mrr),
+      null,
+      currency,
+    );
+    if (crossed === null) continue;
+    moments.push({
+      id: `milestone:${metric}:${view.accountId}:${crossed}`,
+      kind: "milestone",
+      amount: crossed,
+      metric,
+      isGoal: false,
+      accountId: view.accountId,
+    });
+  }
+  return moments;
 }
 
 /**
@@ -202,12 +316,17 @@ export function momentSound(moment: Moment, sound: ScreenSettings["sound"]): Sou
     case "movement":
       if (isMrrIncrease(moment.movement)) return sound.onMrrUp ? "mrrUp" : null;
       return sound.onMrrDown ? "mrrDown" : null;
+    case "customer":
+      return sound.onCustomer ? "customer" : null;
     case "milestone":
       return "milestone";
     case "summary":
       if (moment.revenue > 0) return sound.onPayment ? "payment" : null;
-      if (moment.mrrChange >= 0) return sound.onMrrUp ? "mrrUp" : null;
-      return sound.onMrrDown ? "mrrDown" : null;
+      if (moment.mrrChange < 0) return sound.onMrrDown ? "mrrDown" : null;
+      if (moment.mrrChange === 0 && moment.customers > 0) {
+        return sound.onCustomer ? "customer" : null;
+      }
+      return sound.onMrrUp ? "mrrUp" : null;
     case "test":
       // The founder asked to hear it: only the master switch applies.
       return "payment";
@@ -227,12 +346,18 @@ export function momentCelebration(moment: Moment): Celebration | null {
     case "summary":
       return moment.revenue > 0 ? "payment" : null;
     case "movement":
+    case "customer":
       return null;
   }
 }
 
 /** How long a moment stays on screen; shorter when others are waiting, to never lag behind. */
 export function momentDuration(moment: Moment, waiting: number): number {
-  const base = moment.kind === "milestone" ? 6500 : moment.kind === "movement" ? 4200 : 5200;
+  const base =
+    moment.kind === "milestone"
+      ? 6500
+      : moment.kind === "movement" || moment.kind === "customer"
+        ? 4200
+        : 5200;
   return waiting > 0 ? Math.max(3200, base * 0.7) : base;
 }

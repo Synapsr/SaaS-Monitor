@@ -6,10 +6,9 @@ import type { Metric } from "@/lib/screens/settings";
  * twelve here, and nowhere else. Payments and revenue are cash received: they never change.
  */
 export interface RecurringMetric {
-  /** Written after amounts: "+$1,788 ARR". */
+  metric: Metric;
+  /** Written after amounts in every language: "+$1,788 ARR". */
   label: "MRR" | "ARR";
-  /** Title of the headline number. */
-  name: string;
   /** The metric the headline does not show, written under it. */
   other: Metric;
   /** A monthly amount (MRR, or a change of it) in this metric. */
@@ -20,14 +19,14 @@ const MONTHS_PER_YEAR = 12;
 
 const RECURRING_METRICS: Record<Metric, RecurringMetric> = {
   mrr: {
+    metric: "mrr",
     label: "MRR",
-    name: "Monthly recurring revenue",
     other: "arr",
     fromMrr: (amount) => amount,
   },
   arr: {
+    metric: "arr",
     label: "ARR",
-    name: "Annual recurring revenue",
     other: "mrr",
     fromMrr: (amount) => amount * MONTHS_PER_YEAR,
   },

@@ -1,16 +1,30 @@
 import { Maximize2Icon, Minimize2Icon } from "lucide-react";
 import { AudioPrompt } from "@/components/display/audio-prompt";
 import { LogoPulse } from "@/components/logo";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { useNow } from "@/hooks/use-now";
+import { TOTAL } from "@/lib/display/rotation";
 import { formatClock } from "@/lib/display/time";
 import type { DisplayAccount } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
+
+/** Where a screen rotating between its accounts stands (see `src/lib/display/rotation.ts`). */
+export interface RotationStatus {
+  slides: readonly string[];
+  slide: string;
+  /** Changes with every turn, restarted ones included. */
+  turn: number;
+  seconds: number;
+  /** A moment holds the slide on screen. */
+  paused: boolean;
+}
 
 interface TopBarProps {
   name: string;
   accounts: DisplayAccount[];
   /** Several combined accounts are named, once their data shows (the import screen lists them). */
   showAccounts: boolean;
+  rotation: RotationStatus | null;
   online: boolean;
   timeZone: string;
   serverTime: number;
@@ -25,6 +39,7 @@ export function TopBar({
   name,
   accounts,
   showAccounts,
+  rotation,
   online,
   timeZone,
   serverTime,
@@ -32,14 +47,19 @@ export function TopBar({
   soundPrompt,
   idle,
 }: TopBarProps) {
+  const { text } = useDisplayLocale();
   const testMode = accounts.some((account) => !account.livemode);
+  const fullscreenLabel = fullscreen?.active
+    ? text.topBar.exitFullScreen
+    : text.topBar.enterFullScreen;
   return (
     <header className="flex items-center justify-between gap-10">
       <div className="flex min-w-0 items-center gap-4">
         <LogoPulse className="h-6 text-(--glow)" />
         <h1 className="truncate text-2xl font-medium tracking-tight">{name}</h1>
-        {showAccounts && accounts.length > 1 && (
-          <ul aria-label="Stripe accounts" className="flex min-w-0 gap-2 overflow-hidden">
+        {showAccounts && rotation && <RotationPills rotation={rotation} accounts={accounts} />}
+        {showAccounts && !rotation && accounts.length > 1 && (
+          <ul aria-label={text.topBar.accounts} className="flex min-w-0 gap-2 overflow-hidden">
             {accounts.map((account) => (
               <li
                 key={account.id}
@@ -50,23 +70,21 @@ export function TopBar({
                     aria-hidden
                     className={cn(
                       "size-1.5 rounded-full",
-                      account.status === "error" ? "bg-amber-300" : "bg-(--ink-3)",
+                      account.status === "error" ? "bg-(--warn)" : "bg-(--ink-3)",
                     )}
                   />
                 )}
                 {account.name}
                 {account.status !== "ready" && (
-                  <span className="sr-only">
-                    {account.status === "error" ? " (failing)" : " (importing)"}
-                  </span>
+                  <span className="sr-only"> ({text.accountStatus[account.status]})</span>
                 )}
               </li>
             ))}
           </ul>
         )}
         {testMode && (
-          <span className="shrink-0 rounded-full px-3.5 py-1 text-base text-amber-200 ring-1 ring-amber-200/30">
-            Test data
+          <span className="shrink-0 rounded-full px-3.5 py-1 text-base text-(--warn-ink) ring-1 ring-(--warn-ink)/30">
+            {text.topBar.testData}
           </span>
         )}
       </div>
@@ -79,10 +97,10 @@ export function TopBar({
           <button
             type="button"
             onClick={fullscreen.toggle}
-            aria-label={fullscreen.active ? "Exit full screen" : "Enter full screen"}
-            title={`${fullscreen.active ? "Exit" : "Enter"} full screen (F)`}
+            aria-label={fullscreenLabel}
+            title={`${fullscreenLabel} (F)`}
             className={cn(
-              "-mr-2.5 grid size-11 place-items-center rounded-full text-(--ink-2) transition-[opacity,background-color,scale] duration-300 hover:bg-white/8 hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow) focus-visible:outline-none active:scale-[0.96]",
+              "-mr-2.5 grid size-11 place-items-center rounded-full text-(--ink-2) transition-[opacity,background-color,scale] duration-300 hover:bg-(--fill-hover) hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow) focus-visible:outline-none active:scale-[0.96]",
               idle && "pointer-events-none opacity-0",
             )}
           >
@@ -98,7 +116,52 @@ export function TopBar({
   );
 }
 
+/** The slides of the rotation, the one on screen lit, and filling up until the next turn. */
+function RotationPills({
+  rotation,
+  accounts,
+}: {
+  rotation: RotationStatus;
+  accounts: DisplayAccount[];
+}) {
+  const { text } = useDisplayLocale();
+  return (
+    <ol aria-label={text.topBar.accounts} className="flex min-w-0 gap-2 overflow-hidden">
+      {rotation.slides.map((slide) => {
+        const active = slide === rotation.slide;
+        const name =
+          slide === TOTAL
+            ? text.allAccounts
+            : accounts.find((account) => account.id === slide)?.name;
+        return (
+          <li
+            key={slide}
+            aria-current={active || undefined}
+            className={cn(
+              "relative flex shrink-0 items-center overflow-hidden rounded-full px-3.5 py-1 text-base ring-1 transition-[background-color,color,box-shadow] duration-500",
+              active
+                ? "bg-(--glow-wash) font-medium text-(--ink) ring-(--glow)/40"
+                : "bg-(--surface) text-(--ink-3) ring-(--hairline)",
+            )}
+          >
+            {name}
+            {active && !rotation.paused && (
+              <span
+                key={rotation.turn}
+                aria-hidden
+                style={{ animationDuration: `${rotation.seconds}s` }}
+                className="absolute inset-x-0 bottom-0 h-0.5 origin-left animate-[display-turn_linear_forwards] bg-(--glow)"
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function LiveIndicator({ online }: { online: boolean }) {
+  const { text } = useDisplayLocale();
   return (
     <p role="status" className="flex items-center gap-3 text-xl">
       <span className="relative flex size-2.5">
@@ -108,20 +171,21 @@ function LiveIndicator({ online }: { online: boolean }) {
         <span
           className={cn(
             "relative size-2.5 rounded-full transition-colors duration-500",
-            online ? "bg-(--glow)" : "bg-amber-300",
+            online ? "bg-(--glow)" : "bg-(--warn)",
           )}
         />
       </span>
-      <span className={online ? "text-(--ink-2)" : "text-amber-200"}>
-        {online ? "Live" : "Reconnecting…"}
+      <span className={online ? "text-(--ink-2)" : "text-(--warn-ink)"}>
+        {online ? text.topBar.live : text.topBar.reconnecting}
       </span>
     </p>
   );
 }
 
 function Clock({ timeZone, serverTime }: { timeZone: string; serverTime: number }) {
+  const { locale } = useDisplayLocale();
   const now = useNow(serverTime, 1_000);
-  const { time, date } = formatClock(new Date(now), timeZone);
+  const { time, date } = formatClock(new Date(now), timeZone, locale);
   return (
     <p className="flex items-baseline gap-4 whitespace-nowrap">
       <span className="text-xl text-(--ink-3) portrait:hidden">{date}</span>

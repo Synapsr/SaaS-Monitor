@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { addDays, chartDays } from "@/lib/display/calendar";
 import { chartRangeLabel, layoutMrrChart, nearestPoint } from "@/lib/display/chart";
+import { displayLocale } from "@/lib/display/i18n";
 
 const series = Array.from({ length: 91 }, (_, index) => ({
   date: addDays("2026-06-30", index),
   value: 900_000 + index * 6_000,
 }));
-const options = { series, currency: "usd", width: 1180, height: 260, fontSize: 16 };
+const options = {
+  series,
+  currency: "usd",
+  locale: "en-US",
+  width: 1180,
+  height: 260,
+  fontSize: 16,
+};
 
 /** A growing MRR over all time since `historyStart`, sampled like a screen's. */
 function allTime(historyStart: string) {
@@ -99,6 +107,12 @@ describe("MRR chart layout", () => {
     expect(layoutMrrChart({ ...options, target: 2_500_000 }).horizon).toBeNull();
   });
 
+  it("writes amounts and dates in the screen's locale", () => {
+    const french = layoutMrrChart({ ...options, currency: "eur", locale: "fr-FR", target: 1 });
+    expect(french.yTicks.map((tick) => tick.label)).toContain("12\u00a0k\u00a0€");
+    expect(french.xTicks[0].label).toBe("juil.");
+  });
+
   it("finds the point nearest to the pointer, however far apart points are", () => {
     // Sundays, then today: a Monday, one day after the last Sunday.
     const layout = layoutMrrChart({ ...options, series: allTime("2024-09-01"), target: 1 });
@@ -117,8 +131,10 @@ describe("MRR chart layout", () => {
 
 describe("chart range label", () => {
   it("names a range of a fixed length, or all time from its first day", () => {
-    expect(chartRangeLabel("90d", "2026-06-30")).toBe("last 90 days");
-    expect(chartRangeLabel("12m", "2025-09-28")).toBe("last 12 months");
-    expect(chartRangeLabel("all", "2022-05-08")).toBe("since May 2022");
+    const en = displayLocale("en");
+    expect(chartRangeLabel("90d", "2026-06-30", en)).toBe("last 90 days");
+    expect(chartRangeLabel("12m", "2025-09-28", en)).toBe("last 12 months");
+    expect(chartRangeLabel("all", "2022-05-08", en)).toBe("since May 2022");
+    expect(chartRangeLabel("all", "2022-05-08", displayLocale("de"))).toBe("seit Mai 2022");
   });
 });

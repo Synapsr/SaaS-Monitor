@@ -1,0 +1,111 @@
+import type { DisplayText } from "./en";
+
+export const nl: DisplayText = {
+  metricNames: { mrr: "Maandelijks terugkerende omzet", arr: "Jaarlijks terugkerende omzet" },
+  topBar: {
+    accounts: "Stripe-accounts",
+    testData: "Testgegevens",
+    live: "Live",
+    reconnecting: "Opnieuw verbinden…",
+    enterFullScreen: "Volledig scherm",
+    exitFullScreen: "Volledig scherm sluiten",
+    enableSound: "Klik ergens om het geluid aan te zetten",
+  },
+  accountStatus: { ready: "geïmporteerd", importing: "wordt geïmporteerd", error: "mislukt" },
+  allAccounts: "Alle accounts",
+  hero: { inThirtyDays: "in 30 dagen" },
+  goal: {
+    goal: "Doel",
+    nextMilestone: "Volgende mijlpaal",
+    toGo: (amount) => `nog ${amount}`,
+    atThisPace: (when) => `in dit tempo: ${when}`,
+    today: "vandaag",
+    tomorrow: "morgen",
+  },
+  chart: {
+    ranges: {
+      "30d": "afgelopen 30 dagen",
+      "90d": "afgelopen 90 dagen",
+      "12m": "afgelopen 12 maanden",
+    },
+    since: (month) => `sinds ${month}`,
+    allTime: "vanaf het begin",
+    empty: "De curve verschijnt na een paar dagen geschiedenis.",
+    goal: (amount) => `Doel ${amount}`,
+    summary: (title, from, to) => `${title}: van ${from} naar ${to}.`,
+  },
+  tiles: {
+    revenueToday: "Omzet vandaag",
+    yesterday: (amount) => `${amount} gisteren`,
+    thisMonth: "Deze maand",
+    versus: (month) => `vs. ${month}`,
+    versusAmount: (amount, month) => `vs. ${amount} in ${month}`,
+    customers: "Klanten",
+    newThisMonth: (count) => `+${count} deze maand`,
+    inTrial: (count) => `${count} in proefperiode`,
+    paying: "Betalende klanten",
+    netNew: (metric) => `Netto nieuwe ${metric}`,
+    gainedLost: (gained, lost) => `${gained} gewonnen · ${lost} verloren`,
+  },
+  feed: {
+    title: "Recente activiteit",
+    empty: "Nieuwe klanten, betalingen en abonnementen verschijnen hier zodra ze binnenkomen.",
+    kinds: {
+      payment: "Betaling",
+      customer: "Nieuwe klant",
+      new: "Nieuw abonnement",
+      expansion: "Upgrade",
+      reactivation: "Heractivering",
+      contraction: "Downgrade",
+      churn: "Opzegging",
+    },
+    justNow: "zojuist",
+    minutesAgo: (minutes) => `${minutes} min geleden`,
+    hoursAgo: (hours) => `${hours} uur geleden`,
+    yesterday: "gisteren",
+  },
+  warnings: {
+    unconvertedCurrency: (currency) =>
+      `Bedragen in ${currency} zijn weggelaten: er is nu geen wisselkoers beschikbaar.`,
+    failingAccount: (account) => `${account}: dit Stripe-account vraagt aandacht.`,
+  },
+  moments: {
+    titles: {
+      payment: "Betaling ontvangen",
+      customer: "Nieuwe klant",
+      new: "Nieuwe abonnee",
+      expansion: "Upgrade",
+      reactivation: "Welkom terug",
+      contraction: "Downgrade",
+      churn: "Abonnement opgezegd",
+    },
+    someoneNew: "Iemand nieuw",
+    customersToday: (count) =>
+      count === 1 ? "Eerste nieuwe klant vandaag" : `${count} nieuwe klanten vandaag`,
+    catchingUp: "Ondertussen",
+    payments: (count) => (count === 1 ? "1 nieuwe betaling" : `${count} nieuwe betalingen`),
+    changes: (count) =>
+      count === 1 ? "1 abonnementswijziging" : `${count} abonnementswijzigingen`,
+    customers: (count) => (count === 1 ? "1 nieuwe klant" : `${count} nieuwe klanten`),
+    test: "Testviering",
+    testDetails: "Zo ziet en klinkt je volgende betaling",
+    goalReached: "Doel bereikt",
+    milestoneReached: "Mijlpaal bereikt",
+    newMilestone: "Nieuwe mijlpaal",
+    nextStop: (amount) => `Volgende halte: ${amount}. Ga zo door!`,
+  },
+  status: {
+    importing: "Je Stripe-geschiedenis wordt geïmporteerd…",
+    importingDetails:
+      "Abonnementen en betalingen zijn onderweg. Bij de meeste accounts duurt het een minuut of twee, en dit scherm werkt zichzelf bij.",
+    failing: "Stripe-gegevens kunnen nu niet worden geladen",
+    failingDetails:
+      "Alle accounts van dit scherm mislukken, vaak omdat een API-sleutel is ingetrokken. Controleer de Stripe-koppelingen in je dashboard: het scherm herstelt zichzelf.",
+    empty: "Koppel Stripe om dit scherm tot leven te brengen",
+    emptyDetails: (screen, metric) =>
+      `Voeg in je dashboard een Stripe-account toe aan ‘${screen}’. Je ${metric}, je omzet en elke nieuwe betaling verschijnen dan hier, live.`,
+    gone: "Deze schermlink werkt niet meer",
+    goneDetails: (app) =>
+      `Het scherm is misschien verwijderd, of de link is opnieuw aangemaakt. Open het opnieuw vanuit je ${app}-dashboard om de huidige link te krijgen.`,
+  },
+};

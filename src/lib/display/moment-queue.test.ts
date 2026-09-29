@@ -9,6 +9,7 @@ const milestone = (id: string): Moment => ({
   amount: 1,
   metric: "mrr",
   isGoal: false,
+  accountId: null,
 });
 
 describe("moment queue", () => {

@@ -2,32 +2,25 @@ import { CircleAlertIcon, PlugIcon } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { ScreenMessage } from "@/components/display/screen-message";
 import { LogoPulse } from "@/components/logo";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { recurringMetric } from "@/lib/display/metric";
-import type { DisplayAccount, DisplayState } from "@/lib/display/types";
+import type { DisplayState } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
 
 const subscribeNever = () => () => {};
 const dashboardUrl = () => `${window.location.host}/app`;
 const noUrl = () => null;
 
-const ACCOUNT_STATUS: Record<DisplayAccount["status"], string> = {
-  ready: "imported",
-  importing: "importing",
-  error: "failing",
-};
-
 /** What a screen shows until it has numbers: no account yet, the first import, or broken keys. */
 export function StatusScreen({ state }: { state: DisplayState }) {
+  const { text } = useDisplayLocale();
   // Where to go from the TV: the address of this very server.
   const dashboard = useSyncExternalStore(subscribeNever, dashboardUrl, noUrl);
 
   if (state.status === "importing") {
     return (
-      <ScreenMessage icon={<ImportingIcon />} title="Importing your Stripe history…">
-        <p>
-          Subscriptions and payments are on their way. It takes a minute or two for most accounts,
-          and this screen updates by itself.
-        </p>
+      <ScreenMessage icon={<ImportingIcon />} title={text.status.importing}>
+        <p>{text.status.importingDetails}</p>
         {state.accounts.length > 0 && (
           <ul className="flex flex-wrap justify-center gap-3 text-xl">
             {state.accounts.map((account) => (
@@ -41,11 +34,11 @@ export function StatusScreen({ state }: { state: DisplayState }) {
                     "size-2 rounded-full",
                     account.status === "ready" && "bg-(--glow)",
                     account.status === "importing" && "bg-(--ink-3) motion-safe:animate-pulse",
-                    account.status === "error" && "bg-amber-300",
+                    account.status === "error" && "bg-(--warn)",
                   )}
                 />
                 {account.name}
-                <span className="text-(--ink-3)">{ACCOUNT_STATUS[account.status]}</span>
+                <span className="text-(--ink-3)">{text.accountStatus[account.status]}</span>
               </li>
             ))}
           </ul>
@@ -56,25 +49,19 @@ export function StatusScreen({ state }: { state: DisplayState }) {
 
   if (state.status === "error") {
     return (
-      <ScreenMessage
-        icon={<CircleAlertIcon />}
-        title="Stripe data can’t be loaded right now"
-        tone="neutral"
-      >
-        <p>
-          Every account of this screen is failing, often because an API key was revoked. Check the
-          Stripe connections in your dashboard: the screen will recover by itself.
-        </p>
+      <ScreenMessage icon={<CircleAlertIcon />} title={text.status.failing} tone="neutral">
+        <p>{text.status.failingDetails}</p>
       </ScreenMessage>
     );
   }
 
   return (
-    <ScreenMessage icon={<PlugIcon />} title="Connect Stripe to bring this screen to life">
+    <ScreenMessage icon={<PlugIcon />} title={text.status.empty}>
       <p>
-        Add a Stripe account to “{state.screen.name}” in your dashboard. Your{" "}
-        {recurringMetric(state.screen.settings.metric).label}, revenue and every new payment will
-        show up here, live.
+        {text.status.emptyDetails(
+          state.screen.name,
+          recurringMetric(state.screen.settings.metric).label,
+        )}
       </p>
       {dashboard && (
         <p className="rounded-full bg-(--surface) px-6 py-2.5 font-mono text-xl text-(--ink) ring-1 ring-(--hairline)">

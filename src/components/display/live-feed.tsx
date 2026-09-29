@@ -2,13 +2,13 @@ import { InfoIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { KindIcon } from "@/components/display/feed-kind-icon";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { useNow } from "@/hooks/use-now";
 import {
   isGoodNews,
   itemAmount,
   itemContext,
   itemOriginalAmount,
-  KIND_LABELS,
   warningText,
 } from "@/lib/display/feed";
 import type { RecurringMetric } from "@/lib/display/metric";
@@ -41,6 +41,8 @@ export function LiveFeed({
   warnings,
   className,
 }: LiveFeedProps) {
+  const displayLocale = useDisplayLocale();
+  const { text } = displayLocale;
   const now = useNow(serverTime, 15_000);
   // Items already there when the screen opened never glow: only what happens next does.
   const [initialIds] = useState(() => new Set(feed.map((item) => item.id)));
@@ -55,7 +57,7 @@ export function LiveFeed({
       )}
     >
       <h2 id="feed-title" className="px-8 pt-7 pb-3 text-xl font-medium text-(--ink-2)">
-        Latest activity
+        {text.feed.title}
       </h2>
       <div
         role="log"
@@ -63,9 +65,7 @@ export function LiveFeed({
         className="relative min-h-0 flex-1 overflow-hidden mask-b-from-80% mask-b-to-100%"
       >
         {items.length === 0 ? (
-          <p className="px-8 py-6 text-xl text-pretty text-(--ink-3)">
-            New payments and subscriptions will appear here the moment they happen.
-          </p>
+          <p className="px-8 py-6 text-xl text-pretty text-(--ink-3)">{text.feed.empty}</p>
         ) : (
           <ol className="flex flex-col px-4">
             <AnimatePresence initial={false}>
@@ -75,7 +75,12 @@ export function LiveFeed({
                   item={item}
                   recurring={recurring}
                   currency={currency}
-                  relativeTime={formatFeedTime(new Date(item.occurredAt), new Date(now), timeZone)}
+                  relativeTime={formatFeedTime(
+                    new Date(item.occurredAt),
+                    new Date(now),
+                    timeZone,
+                    displayLocale,
+                  )}
                   showAccount={showAccount}
                   arrived={item.live && !initialIds.has(item.id)}
                 />
@@ -87,7 +92,7 @@ export function LiveFeed({
       {warnings.length > 0 && (
         <p className="flex items-start gap-2.5 border-t border-(--hairline) px-8 py-4 text-base text-(--ink-3)">
           <InfoIcon aria-hidden className="mt-0.5 size-[1.1em] shrink-0" />
-          <span className="line-clamp-2">{warningText(warnings[0])}</span>
+          <span className="line-clamp-2">{warningText(warnings[0], text)}</span>
         </p>
       )}
     </section>
@@ -104,8 +109,16 @@ interface FeedRowProps {
 }
 
 function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived }: FeedRowProps) {
-  const payment = item.kind === "payment";
-  const original = itemOriginalAmount(item, recurring);
+  const { language, locale, text } = useDisplayLocale();
+  const amount = itemAmount(item, currency, recurring, locale);
+  const original = itemOriginalAmount(item, recurring, locale);
+  const kind = text.feed.kinds[item.kind];
+  // A new customer has no amount: their name leads, or what they are when it is hidden.
+  const headline = amount ?? item.customerName ?? kind;
+  const context = itemContext(amount === null ? { ...item, customerName: null } : item, {
+    showAccount,
+    language,
+  });
   return (
     <motion.li
       layout="position"
@@ -124,13 +137,13 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
           <p className="flex items-baseline gap-2 truncate">
             <span
               className={cn(
-                "text-2xl font-semibold tabular-nums",
+                "truncate text-2xl font-semibold tabular-nums",
                 !isGoodNews(item.kind) && "text-(--ink-2)",
               )}
             >
-              {itemAmount(item, currency, recurring)}
+              {headline}
             </span>
-            {!payment && (
+            {amount !== null && item.kind !== "payment" && (
               <span className="text-base font-medium text-(--ink-3)">{recurring.label}</span>
             )}
             {original && <span className="text-base text-(--ink-3)">{original}</span>}
@@ -138,7 +151,7 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
           <p className="shrink-0 text-base whitespace-nowrap text-(--ink-3)">{relativeTime}</p>
         </div>
         <p className="truncate text-lg text-(--ink-2)">
-          {[KIND_LABELS[item.kind], ...itemContext(item, { showAccount })].join(" · ")}
+          {[headline === kind ? null : kind, ...context].filter(Boolean).join(" · ")}
         </p>
       </div>
     </motion.li>

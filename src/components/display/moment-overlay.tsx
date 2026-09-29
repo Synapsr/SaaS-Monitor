@@ -3,11 +3,14 @@ import { AnimatePresence } from "motion/react";
 import { KIND_ICONS } from "@/components/display/feed-kind-icon";
 import { MilestoneCelebration } from "@/components/display/milestone-celebration";
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
-import { itemContext } from "@/lib/display/feed";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
+import { itemContext, itemCountry } from "@/lib/display/feed";
 import { formatAmount, formatPayment } from "@/lib/display/format";
+import type { DisplayLocale } from "@/lib/display/i18n";
 import { recurringMetric } from "@/lib/display/metric";
-import { isMrrIncrease, type Moment } from "@/lib/display/moments";
-import type { DisplayState, FeedItemKind } from "@/lib/display/types";
+import { isMrrIncrease, momentAccount, type Moment } from "@/lib/display/moments";
+import { screenView } from "@/lib/display/rotation";
+import type { DisplayState } from "@/lib/display/types";
 import { formatMoney, toMajorUnits, toMinorUnits } from "@/lib/money";
 
 interface MomentOverlayProps {
@@ -17,6 +20,7 @@ interface MomentOverlayProps {
 
 /** What is being celebrated right now: a card, or the whole screen for a milestone. */
 export function MomentOverlay({ moment, state }: MomentOverlayProps) {
+  const locale = useDisplayLocale();
   return (
     <div role="status" aria-live="polite" className="pointer-events-none absolute inset-0 z-30">
       <AnimatePresence>
@@ -27,38 +31,36 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
             metric={moment.metric}
             isGoal={moment.isGoal}
             currency={state.currency}
+            account={accountName(moment, state)}
           />
         ) : (
-          moment && <MomentCard key={moment.id} {...describe(moment, state)} />
+          moment && <MomentCard key={moment.id} {...describe(moment, state, locale)} />
         )}
       </AnimatePresence>
     </div>
   );
 }
 
-/** How each kind of activity is announced. */
-const TITLES: Record<FeedItemKind, string> = {
-  payment: "Payment received",
-  customer: "New customer",
-  new: "New subscriber",
-  expansion: "Upgrade",
-  reactivation: "Welcome back",
-  contraction: "Downgrade",
-  churn: "Subscription canceled",
-};
-
-/** "1 new payment", "3 new payments", or nothing for none. */
-function count(value: number, noun: string): string | null {
-  if (value === 0) return null;
-  return `${value} ${noun}${value > 1 ? "s" : ""}`;
+/** The account a moment comes from, named only when the screen shows several. */
+function accountName(moment: Moment, state: DisplayState): string | null {
+  if (state.accounts.length < 2) return null;
+  const id = momentAccount(moment);
+  return state.accounts.find((account) => account.id === id)?.name ?? null;
 }
 
-function describe(moment: Moment, state: DisplayState): MomentCardContent {
+function describe(
+  moment: Moment,
+  state: DisplayState,
+  { language, locale, text }: DisplayLocale,
+): MomentCardContent {
   const { currency } = state;
-  const showAccount = state.accounts.length > 1;
   const recurring = recurringMetric(state.screen.settings.metric);
+  const account = accountName(moment, state);
+  // The badge names the account: details don't repeat it.
+  const context = { showAccount: false, language };
   // Subscription changes in the screen's metric: "+$149" of MRR is "+$1,788" of ARR.
-  const change = (mrr: number) => formatAmount(recurring.fromMrr(mrr), currency, { signed: true });
+  const change = (mrr: number) =>
+    formatAmount(recurring.fromMrr(mrr), currency, locale, { signed: true });
   const labeledChange = (mrr: number) => `${change(mrr)} ${recurring.label}`;
 
   switch (moment.kind) {
@@ -67,9 +69,10 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       const kind = moment.movement?.kind ?? "payment";
       return {
         icon: KIND_ICONS[kind],
-        eyebrow: TITLES[kind],
-        amount: formatPayment(moment.payment.amount, currency),
-        details: itemContext(moment.payment, { showAccount }),
+        eyebrow: text.moments.titles[kind],
+        headline: formatPayment(moment.payment.amount, currency, locale),
+        account,
+        details: itemContext(moment.payment, context),
         footnote: moment.movement ? labeledChange(moment.movement.amount) : null,
         tone: "celebration",
       };
@@ -77,24 +80,46 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
     case "movement": {
       return {
         icon: KIND_ICONS[moment.movement.kind],
-        eyebrow: TITLES[moment.movement.kind],
-        amount: change(moment.movement.amount),
+        eyebrow: text.moments.titles[moment.movement.kind],
+        headline: change(moment.movement.amount),
         metric: recurring.label,
-        details: itemContext(moment.movement, { showAccount }),
+        account,
+        details: itemContext(moment.movement, context),
         tone: isMrrIncrease(moment.movement) ? "celebration" : "calm",
+      };
+    }
+    case "customer": {
+      // Named when the screen shows names, else by where they come from.
+      const { customer } = moment;
+      const country = itemCountry(customer, language);
+      const today = screenView(state, customer.accountId).metrics.customersCreatedToday;
+      return {
+        icon: KIND_ICONS.customer,
+        eyebrow: text.moments.titles.customer,
+        headline: customer.customerName ?? country ?? text.moments.someoneNew,
+        headlineKind: "name",
+        account,
+        details: customer.customerName && country ? [country] : [],
+        footnote: today > 0 ? text.moments.customersToday(today) : null,
+        tone: "celebration",
       };
     }
     case "summary": {
       const received = moment.revenue > 0;
+      const counts = [
+        moment.payments > 0 && text.moments.payments(moment.payments),
+        moment.changes > 0 && text.moments.changes(moment.changes),
+        moment.customers > 0 && text.moments.customers(moment.customers),
+      ];
       return {
         icon: CircleDollarSignIcon,
-        eyebrow: "Catching up",
-        amount: received ? formatPayment(moment.revenue, currency) : change(moment.mrrChange),
+        eyebrow: text.moments.catchingUp,
+        headline: received
+          ? formatPayment(moment.revenue, currency, locale)
+          : change(moment.mrrChange),
         metric: received ? undefined : recurring.label,
-        details: [
-          count(moment.payments, "new payment"),
-          count(moment.changes, "subscription change"),
-        ].filter((part): part is string => part !== null),
+        account,
+        details: counts.filter((part): part is string => Boolean(part)),
         footnote: received && moment.mrrChange !== 0 ? labeledChange(moment.mrrChange) : null,
         tone: received || moment.mrrChange >= 0 ? "celebration" : "calm",
       };
@@ -105,9 +130,9 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       const typical = arpu > 0 ? Math.max(1, Math.round(toMajorUnits(arpu, currency))) : 49;
       return {
         icon: PartyPopperIcon,
-        eyebrow: "Test celebration",
-        amount: formatPayment(toMinorUnits(typical, currency), currency),
-        details: ["This is how your next payment will look and sound"],
+        eyebrow: text.moments.test,
+        headline: formatPayment(toMinorUnits(typical, currency), currency, locale),
+        details: [text.moments.testDetails],
         tone: "celebration",
       };
     }
@@ -115,9 +140,10 @@ function describe(moment: Moment, state: DisplayState): MomentCardContent {
       // Without celebrations, a milestone is still worth a card.
       return {
         icon: PartyPopperIcon,
-        eyebrow: moment.isGoal ? "Goal reached" : "Milestone reached",
-        amount: formatMoney(moment.amount, currency, { compact: true }),
+        eyebrow: moment.isGoal ? text.moments.goalReached : text.moments.milestoneReached,
+        headline: formatMoney(moment.amount, currency, { compact: true, locale }),
         metric: recurringMetric(moment.metric).label,
+        account,
         details: [],
         tone: "celebration",
       };

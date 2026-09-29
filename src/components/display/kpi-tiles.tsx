@@ -1,6 +1,7 @@
 import NumberFlow from "@number-flow/react";
 import { ArrowDownRightIcon, ArrowUpRightIcon } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { calendarDay, displayCalendar } from "@/lib/display/calendar";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
 import type { RecurringMetric } from "@/lib/display/metric";
@@ -20,9 +21,11 @@ interface KpiTilesProps {
 
 /** The four numbers worth a glance: today, this month, customers and net new MRR (or ARR). */
 export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTilesProps) {
+  const { locale, text } = useDisplayLocale();
   const { revenue, thisMonth } = metrics;
   const calendar = displayCalendar(calendarDay(new Date(now), timeZone));
-  const previousMonth = formatMonth(calendar.previousMonthStart);
+  const previousMonth = formatMonth(calendar.previousMonthStart, locale);
+  const amount = (value: number) => formatAmount(value, currency, locale);
   const monthChange = percentChange(revenue.monthToDate, revenue.previousMonthToDate);
   const net = recurring.fromMrr(thisMonth.net);
   const gained = recurring.fromMrr(thisMonth.new + thisMonth.expansion + thisMonth.reactivation);
@@ -31,42 +34,44 @@ export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTil
   return (
     <dl className="grid grid-cols-4 gap-5 portrait:grid-cols-2">
       <Tile
-        label="Revenue today"
-        value={<NumberFlow {...moneyFlow(revenue.today, currency)} />}
-        characters={formatMoney(revenue.today, currency).length}
+        label={text.tiles.revenueToday}
+        value={<NumberFlow {...moneyFlow(revenue.today, currency, locale)} />}
+        characters={formatMoney(revenue.today, currency, { locale }).length}
       >
-        {formatAmount(revenue.yesterday, currency)} yesterday
+        {text.tiles.yesterday(amount(revenue.yesterday))}
       </Tile>
       <Tile
-        label="This month"
-        value={<NumberFlow {...moneyFlow(revenue.monthToDate, currency)} />}
-        characters={formatMoney(revenue.monthToDate, currency).length}
+        label={text.tiles.thisMonth}
+        value={<NumberFlow {...moneyFlow(revenue.monthToDate, currency, locale)} />}
+        characters={formatMoney(revenue.monthToDate, currency, { locale }).length}
       >
         {monthChange === null ? (
-          `vs ${formatAmount(0, currency)} in ${previousMonth}`
+          text.tiles.versusAmount(amount(0), previousMonth)
         ) : (
-          <Change ratio={monthChange}>vs {previousMonth}</Change>
+          <Change ratio={monthChange} locale={locale}>
+            {text.tiles.versus(previousMonth)}
+          </Change>
         )}
       </Tile>
       <Tile
-        label="Customers"
-        value={<NumberFlow value={metrics.activeCustomers} locales="en-US" />}
-        characters={metrics.activeCustomers.toLocaleString("en-US").length}
+        label={text.tiles.customers}
+        value={<NumberFlow value={metrics.activeCustomers} locales={locale} />}
+        characters={metrics.activeCustomers.toLocaleString(locale).length}
       >
         {[
-          thisMonth.newCustomers > 0 && `+${thisMonth.newCustomers} this month`,
-          metrics.trialingSubscriptions > 0 && `${metrics.trialingSubscriptions} in trial`,
+          thisMonth.newCustomers > 0 && text.tiles.newThisMonth(thisMonth.newCustomers),
+          metrics.trialingSubscriptions > 0 && text.tiles.inTrial(metrics.trialingSubscriptions),
         ]
           .filter(Boolean)
-          .join(" · ") || "Paying customers"}
+          .join(" · ") || text.tiles.paying}
       </Tile>
       <Tile
-        label={`Net new ${recurring.label}`}
-        value={<NumberFlow {...moneyFlow(net, currency, { signed: true })} />}
-        characters={formatMoney(net, currency, { signed: true }).length}
+        label={text.tiles.netNew(recurring.label)}
+        value={<NumberFlow {...moneyFlow(net, currency, locale, { signed: true })} />}
+        characters={formatMoney(net, currency, { signed: true, locale }).length}
       >
         {/* The words carry the signs: amounts twelve times larger in ARR still fit the tile. */}
-        {formatAmount(gained, currency)} gained · {formatAmount(Math.abs(lost), currency)} lost
+        {text.tiles.gainedLost(amount(gained), amount(Math.abs(lost)))}
       </Tile>
     </dl>
   );
@@ -95,18 +100,26 @@ function Tile({ label, value, characters, children }: TileProps) {
   );
 }
 
-function Change({ ratio, children }: { ratio: number; children: ReactNode }) {
+function Change({
+  ratio,
+  locale,
+  children,
+}: {
+  ratio: number;
+  locale: string;
+  children: ReactNode;
+}) {
   const Icon = ratio >= 0 ? ArrowUpRightIcon : ArrowDownRightIcon;
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
         className={cn(
           "inline-flex items-center gap-0.5 font-medium tabular-nums",
-          ratio >= 0 ? "text-(--glow-bright)" : "text-(--ink-2)",
+          ratio >= 0 ? "text-(--glow-ink)" : "text-(--ink-2)",
         )}
       >
         <Icon aria-hidden className="size-[1.15em]" />
-        {formatPercent(ratio, { signed: true })}
+        {formatPercent(ratio, locale, { signed: true })}
       </span>
       {children}
     </span>

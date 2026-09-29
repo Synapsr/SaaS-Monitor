@@ -6,6 +6,11 @@ import { recurringMetric } from "@/lib/display/metric";
 import { METRICS, type Metric } from "@/lib/screens/settings";
 import { ChoiceCard } from "./choice-card";
 
+const METRIC_NAMES: Record<Metric, string> = {
+  mrr: "Monthly recurring revenue",
+  arr: "Annual recurring revenue",
+};
+
 export function MetricSettings({
   metric,
   onChange,
@@ -24,8 +29,10 @@ export function MetricSettings({
         className="grid gap-2 sm:grid-cols-2"
       >
         {METRICS.map((option) => {
-          const { label, name } = recurringMetric(option);
-          return <ChoiceCard key={option} value={option} title={label} hint={name} />;
+          const { label } = recurringMetric(option);
+          return (
+            <ChoiceCard key={option} value={option} title={label} hint={METRIC_NAMES[option]} />
+          );
         })}
       </RadioGroupPrimitive.Root>
       <p id={`${id}-description`} className="text-sm text-pretty text-muted-foreground">

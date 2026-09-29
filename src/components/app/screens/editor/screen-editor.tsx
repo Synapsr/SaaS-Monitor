@@ -15,8 +15,10 @@ import { AccountPicker } from "./account-picker";
 import { CurrencySelect } from "./currency-select";
 import { DeleteScreen } from "./delete-screen";
 import { GoalSettings } from "./goal-settings";
+import { LanguageSelect } from "./language-select";
 import { LookSettings } from "./look-settings";
 import { MetricSettings } from "./metric-settings";
+import { RotationSettings } from "./rotation-settings";
 import { SaveStatus } from "./save-status";
 import { SettingsSection } from "./settings-section";
 import { SharePanel } from "./share-panel";
@@ -125,7 +127,33 @@ export function ScreenEditor({
             />
           </SettingsSection>
 
-          <SettingsSection title="Currency and time">
+          {draft.accountIds.length > 1 && (
+            <SettingsSection title="Several accounts">
+              <RotationSettings
+                rotation={draft.settings.rotation}
+                onChange={(patch) =>
+                  setDraft((current) => ({
+                    ...current,
+                    settings: {
+                      ...current.settings,
+                      rotation: { ...current.settings.rotation, ...patch },
+                    },
+                  }))
+                }
+              />
+            </SettingsSection>
+          )}
+
+          <SettingsSection title="Language and region">
+            <Field>
+              <FieldLabel htmlFor={`${id}-language`}>Language</FieldLabel>
+              <LanguageSelect
+                id={`${id}-language`}
+                value={draft.settings.language}
+                onChange={(language) => setSettings({ language })}
+              />
+              <FieldDescription>The screen’s words, numbers and dates.</FieldDescription>
+            </Field>
             <Field>
               <FieldLabel htmlFor={`${id}-currency`}>Currency</FieldLabel>
               <CurrencySelect

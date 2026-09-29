@@ -61,8 +61,11 @@ export function ScreenPreview({
         title={`Live preview of ${name}`}
         frameRef={frameRef}
         onLoad={requestPost}
-        placeholder={<ScreenThumbnail accent={settings.accent} />}
-        className="isolate rounded-md bg-neutral-950"
+        placeholder={<ScreenThumbnail accent={settings.accent} theme={settings.theme} />}
+        className={cn(
+          "isolate rounded-md",
+          settings.theme === "light" ? "bg-neutral-100" : "bg-neutral-950",
+        )}
       />
     </div>
   );

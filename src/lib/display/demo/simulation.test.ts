@@ -4,7 +4,9 @@ import { DEMO_CURRENCY, DEMO_GOAL } from "@/lib/display/demo/business";
 import { parseDemoOptions } from "@/lib/display/demo/options";
 import {
   advanceDemo,
+  advanceDemoWorlds,
   createDemoWorld,
+  createDemoWorlds,
   nextDemoDelay,
   type DemoWorld,
 } from "@/lib/display/demo/simulation";
@@ -25,7 +27,7 @@ function simulate(world: DemoWorld, events: number): { world: DemoWorld; states:
   for (let index = 0; index < events; index += 1) {
     time += nextDemoDelay(world);
     world = advanceDemo(world, new Date(time));
-    states.push(demoState(world, new Date(time)));
+    states.push(demoState([world], new Date(time)));
   }
   return { world, states };
 }
@@ -62,10 +64,10 @@ function expectConsistent(state: DisplayState) {
 
 describe("demo history", () => {
   const world = createDemoWorld(options, now);
-  const state = demoState(world, now);
+  const state = demoState([world], now);
 
   it("is deterministic, so the server and the browser render the same screen", () => {
-    expect(demoState(createDemoWorld(options, now), now)).toEqual(state);
+    expect(demoState([createDemoWorld(options, now)], now)).toEqual(state);
   });
 
   it("grows from about $9k to just below the $15k goal in 90 days", () => {
@@ -83,18 +85,18 @@ describe("demo history", () => {
 
   it("ends at the same MRR whatever the time of day", () => {
     const night = new Date("2026-09-28T03:10:00Z");
-    expect(demoState(createDemoWorld(options, night), night).metrics.mrr).toBe(state.metrics.mrr);
+    expect(demoState([createDemoWorld(options, night)], night).metrics.mrr).toBe(state.metrics.mrr);
   });
 
   it("covers a year for the 12-month chart", () => {
     const yearly = { ...options, chartRange: "12m" as const };
-    const series = demoState(createDemoWorld(yearly, now), now).series.mrr;
+    const series = demoState([createDemoWorld(yearly, now)], now).series.mrr;
     expect(series).toHaveLength(366);
     expect(series[0].date).toBe(addDays(calendarDay(now, options.timeZone), -365));
   });
 
   it("charts its whole history for all time, from about $3k", () => {
-    const allTime = demoState(createDemoWorld({ ...options, chartRange: "all" }, now), now);
+    const allTime = demoState([createDemoWorld({ ...options, chartRange: "all" }, now)], now);
     const today = calendarDay(now, options.timeZone);
     expect(allTime.series.mrr[0].date).toBe(addDays(today, -373));
     expect(allTime.series.mrr).toHaveLength(374);
@@ -112,7 +114,7 @@ describe("demo history", () => {
   });
 
   it("shows customer names only when asked", () => {
-    const named = demoState(createDemoWorld({ ...options, showCustomerNames: true }, now), now);
+    const named = demoState([createDemoWorld({ ...options, showCustomerNames: true }, now)], now);
     expect(named.feed.every((item) => item.customerName)).toBe(true);
   });
 });
@@ -148,10 +150,10 @@ describe("demo simulation", () => {
 
   it("shows ARR when asked, reaching its goal of $180K ARR at the same moment", () => {
     const inArr = createDemoWorld({ ...options, metric: "arr" }, now);
-    const first = demoState(inArr, now);
+    const first = demoState([inArr], now);
     expect(first.screen.settings).toMatchObject({ metric: "arr", goal: 180_000 });
     // The state stays in MRR: the screen presents it in ARR.
-    expect(first.metrics).toEqual(demoState(world, now).metrics);
+    expect(first.metrics).toEqual(demoState([world], now).metrics);
 
     let tracker = initialMomentTracker;
     const milestones = [first, ...simulate(inArr, 8).states].flatMap((state) => {
@@ -180,8 +182,79 @@ describe("demo simulation", () => {
     let current = world;
     const tomorrow = new Date(now.getTime() + 24 * 3_600_000);
     current = advanceDemo(current, tomorrow);
-    const state = demoState(current, tomorrow);
+    const state = demoState([current], tomorrow);
     expect(state.series.mrr.at(-1)?.date).toBe(calendarDay(tomorrow, options.timeZone));
     expectConsistent(state);
+  });
+});
+
+describe("demo sign-ups", () => {
+  const world = createDemoWorld(options, now);
+  const state = demoState([world], now);
+
+  it("creates customers when visitors sign up, and when they buy", () => {
+    const customers = state.feed.filter((item) => item.kind === "customer");
+    expect(customers.length).toBeGreaterThan(0);
+    expect(customers.every((item) => item.amount === 0 && item.planName === null)).toBe(true);
+    // A purchase creates its customer first, at the same instant.
+    const sale = advanceDemo(world, now).feed;
+    expect(sale.slice(0, 3).map((item) => item.kind)).toEqual(["payment", "new", "customer"]);
+  });
+
+  it("counts the customers created today", () => {
+    const later = simulate(world, 40).states.at(-1)!;
+    const today = calendarDay(new Date(later.generatedAt), options.timeZone);
+    const createdToday = later.feed.filter(
+      (item) =>
+        item.kind === "customer" &&
+        calendarDay(new Date(item.occurredAt), options.timeZone) === today,
+    );
+    expect(later.metrics.customersCreatedToday).toBeGreaterThanOrEqual(createdToday.length);
+    expect(later.metrics.customersCreatedToday).toBeGreaterThan(0);
+  });
+});
+
+describe("demo of several accounts", () => {
+  const two = parseDemoOptions({ accounts: "2" }).options;
+  const worlds = createDemoWorlds(two, now);
+  const state = demoState(worlds, now);
+
+  it("shows two products of one company, taking turns", () => {
+    expect(state.screen.name).toBe("Acme Inc.");
+    expect(state.accounts.map((account) => account.name)).toEqual(["Acme Analytics", "Acme Mail"]);
+    expect(state.screen.settings.rotation.enabled).toBe(true);
+    expect(state.views.map((view) => view.accountId)).toEqual(["demo", "demo-mail"]);
+  });
+
+  it("adds their numbers up, like the server", () => {
+    const [first, second] = state.views;
+    expect(state.metrics.mrr).toBe(first.metrics.mrr + second.metrics.mrr);
+    expect(state.metrics.revenue.monthToDate).toBe(
+      first.metrics.revenue.monthToDate + second.metrics.revenue.monthToDate,
+    );
+    expect(state.series.mrr.at(-1)?.value).toBe(state.metrics.mrr);
+    expect(first.series.mrr.at(-1)?.value).toBe(first.metrics.mrr);
+    expect(state.screen.settings.goal).toBe(DEMO_GOAL * 2);
+    expectConsistent(state);
+  });
+
+  it("keeps the first account as the demo of a single one", () => {
+    expect(state.views[0].metrics).toEqual(demoState([createDemoWorld(options, now)], now).metrics);
+  });
+
+  it("merges their activity, newest first", () => {
+    expect(new Set(state.feed.map((item) => item.accountId))).toEqual(
+      new Set(["demo", "demo-mail"]),
+    );
+    const times = state.feed.map((item) => item.occurredAt);
+    expect(times).toEqual([...times].sort().reverse());
+  });
+
+  it("lets one account play at each turn, and both at once every third turn", () => {
+    const played = (turn: number) =>
+      advanceDemoWorlds(worlds, turn, now).map((world, index) => world !== worlds[index]);
+    expect(played(0)).toEqual([true, false]);
+    expect(played(1)).toEqual([false, true]);
+    expect(played(2)).toEqual([true, true]);
   });
 });

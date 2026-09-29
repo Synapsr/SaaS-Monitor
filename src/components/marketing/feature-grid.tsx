@@ -45,7 +45,7 @@ export function FeatureGrid() {
           <span aria-hidden className="absolute top-3 -right-1 size-1 rounded-full bg-white/70" />
           <span
             aria-hidden
-            className="absolute right-10 -bottom-1.5 h-1 w-2 -rotate-12 bg-(--glow-bright)"
+            className="absolute right-10 -bottom-1.5 h-1 w-2 -rotate-12 bg-(--glow-ink)"
           />
           <span
             aria-hidden
@@ -59,7 +59,7 @@ export function FeatureGrid() {
         description="$1K, $10K, $100K MRR… or your own goal, with the date you will reach it at your current pace. Crossing one fills the screen."
       >
         <div className="flex h-full flex-col items-center justify-center rounded-xl bg-[radial-gradient(70%_80%_at_50%_50%,color-mix(in_oklab,var(--glow)_22%,transparent),transparent_75%)] py-5 text-center">
-          <p className="text-xs text-(--glow-bright)">🎉 Goal reached</p>
+          <p className="text-xs text-(--glow-ink)">🎉 Goal reached</p>
           <p className="mt-1 text-4xl font-semibold tracking-tight">
             $10K <span className="text-xl text-(--ink-2)">MRR</span>
           </p>
@@ -70,12 +70,12 @@ export function FeatureGrid() {
       <CompactFeature
         icon={MonitorIcon}
         title="Made for the wall"
-        description="Scales from a 720p monitor to a 4K TV, never sleeps, recovers from outages and updates itself. Runs great on a Raspberry Pi."
+        description="Dark or light, in your brand color and in seven languages. Scales from a 720p monitor to a 4K TV, never sleeps and recovers by itself. Runs great on a Raspberry Pi."
       />
       <CompactFeature
         icon={LayersIcon}
         title="All your products, one screen"
-        description="Combine several Stripe accounts converted to one currency, or give each product its own screen and sounds."
+        description="Add several Stripe accounts up in one currency, or let each product take its turn on screen. Every moment says which one it comes from."
       />
       <CompactFeature
         icon={ShieldCheckIcon}

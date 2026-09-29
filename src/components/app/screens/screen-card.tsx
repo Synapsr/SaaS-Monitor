@@ -12,6 +12,7 @@ export function ScreenCard({ screen, url }: { screen: Screen; url: string }) {
       <Link href={editHref} tabIndex={-1} aria-hidden="true" className="overflow-hidden rounded-sm">
         <ScreenThumbnail
           accent={screen.settings.accent}
+          theme={screen.settings.theme}
           className="rounded-sm transition-transform duration-300 group-hover/screen:scale-[1.02]"
         />
       </Link>

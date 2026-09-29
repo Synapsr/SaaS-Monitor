@@ -6,6 +6,8 @@ describe("demo options", () => {
     expect(
       parseDemoOptions({
         accent: "violet",
+        theme: "light",
+        lang: "fr",
         sound: "arcade",
         names: "1",
         range: "12m",
@@ -16,28 +18,58 @@ describe("demo options", () => {
     ).toEqual({
       options: {
         accent: "violet",
+        theme: "light",
+        language: "fr",
         soundPack: "arcade",
         showCustomerNames: true,
         chartRange: "12m",
         metric: "arr",
         timeZone: "Europe/Paris",
+        accounts: 1,
+        rotation: true,
       },
       preview: true,
     });
     expect(
-      parseDemoOptions({ accent: "pink", range: "5y", metric: "qrr", tz: "Mars/Olympus" }),
+      parseDemoOptions({
+        accent: "pink",
+        theme: "sepia",
+        lang: "tlh",
+        range: "5y",
+        metric: "qrr",
+        tz: "Mars/Olympus",
+      }),
     ).toEqual({
       options: {
         accent: "emerald",
+        theme: "dark",
+        language: "en",
         soundPack: "register",
         showCustomerNames: false,
         chartRange: "90d",
         metric: "mrr",
         timeZone: "America/New_York",
+        accounts: 1,
+        rotation: true,
       },
       preview: false,
     });
     expect(parseDemoOptions({ sound: "off" }).options.soundPack).toBeNull();
+  });
+
+  it("takes custom accents as hex colors, with or without their #", () => {
+    expect(parseDemoOptions({ accent: "#FF6B35" }).options.accent).toBe("#ff6b35");
+    expect(parseDemoOptions({ accent: "ff6b35" }).options.accent).toBe("#ff6b35");
+    expect(parseDemoOptions({ accent: "#ff6b3" }).options.accent).toBe("emerald");
+  });
+
+  it("shows two accounts taking turns with ?accounts=2, or added up with ?rotate=0", () => {
+    expect(parseDemoOptions({ accounts: "2" }).options).toMatchObject({
+      accounts: 2,
+      rotation: true,
+    });
+    expect(parseDemoOptions({ accounts: "2", rotate: "0" }).options.rotation).toBe(false);
+    expect(parseDemoOptions({ accounts: "7" }).options.accounts).toBe(1);
   });
 
   it("shows the whole simulated history with ?range=all", () => {

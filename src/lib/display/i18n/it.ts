@@ -1,0 +1,107 @@
+import type { DisplayText } from "./en";
+
+export const it: DisplayText = {
+  metricNames: { mrr: "Ricavi ricorrenti mensili", arr: "Ricavi ricorrenti annuali" },
+  topBar: {
+    accounts: "Account Stripe",
+    testData: "Dati di test",
+    live: "In diretta",
+    reconnecting: "Riconnessione…",
+    enterFullScreen: "Schermo intero",
+    exitFullScreen: "Esci dallo schermo intero",
+    enableSound: "Fai clic in un punto qualsiasi per attivare l’audio",
+  },
+  accountStatus: { ready: "importato", importing: "importazione in corso", error: "in errore" },
+  allAccounts: "Tutti gli account",
+  hero: { inThirtyDays: "in 30 giorni" },
+  goal: {
+    goal: "Obiettivo",
+    nextMilestone: "Prossimo traguardo",
+    toGo: (amount) => `mancano ${amount}`,
+    atThisPace: (when) => `a questo ritmo: ${when}`,
+    today: "oggi",
+    tomorrow: "domani",
+  },
+  chart: {
+    ranges: { "30d": "ultimi 30 giorni", "90d": "ultimi 90 giorni", "12m": "ultimi 12 mesi" },
+    since: (month) => `da ${month}`,
+    allTime: "dall’inizio",
+    empty: "La curva compare dopo qualche giorno di storico.",
+    goal: (amount) => `Obiettivo ${amount}`,
+    summary: (title, from, to) => `${title}: da ${from} a ${to}.`,
+  },
+  tiles: {
+    revenueToday: "Ricavi di oggi",
+    yesterday: (amount) => `${amount} ieri`,
+    thisMonth: "Questo mese",
+    versus: (month) => `vs ${month}`,
+    versusAmount: (amount, month) => `vs ${amount} a ${month}`,
+    customers: "Clienti",
+    newThisMonth: (count) => `+${count} questo mese`,
+    inTrial: (count) => `${count} in prova`,
+    paying: "Clienti paganti",
+    netNew: (metric) => `Nuovo ${metric} netto`,
+    gainedLost: (gained, lost) => `${gained} guadagnati · ${lost} persi`,
+  },
+  feed: {
+    title: "Attività recenti",
+    empty: "Nuovi clienti, pagamenti e abbonamenti appariranno qui non appena arrivano.",
+    kinds: {
+      payment: "Pagamento",
+      customer: "Nuovo cliente",
+      new: "Nuovo abbonamento",
+      expansion: "Upgrade",
+      reactivation: "Riattivazione",
+      contraction: "Downgrade",
+      churn: "Disdetta",
+    },
+    justNow: "proprio ora",
+    minutesAgo: (minutes) => `${minutes} min fa`,
+    hoursAgo: (hours) => `${hours} h fa`,
+    yesterday: "ieri",
+  },
+  warnings: {
+    unconvertedCurrency: (currency) =>
+      `Gli importi in ${currency} sono esclusi: al momento non è disponibile alcun tasso di cambio.`,
+    failingAccount: (account) => `${account}: questo account Stripe richiede attenzione.`,
+  },
+  moments: {
+    titles: {
+      payment: "Pagamento ricevuto",
+      customer: "Nuovo cliente",
+      new: "Nuovo abbonato",
+      expansion: "Upgrade",
+      reactivation: "Bentornato!",
+      contraction: "Downgrade",
+      churn: "Abbonamento annullato",
+    },
+    someoneNew: "Qualcuno di nuovo",
+    customersToday: (count) =>
+      count === 1 ? "Primo nuovo cliente di oggi" : `${count} nuovi clienti oggi`,
+    catchingUp: "Nel frattempo",
+    payments: (count) => (count === 1 ? "1 nuovo pagamento" : `${count} nuovi pagamenti`),
+    changes: (count) =>
+      count === 1 ? "1 modifica di abbonamento" : `${count} modifiche di abbonamento`,
+    customers: (count) => (count === 1 ? "1 nuovo cliente" : `${count} nuovi clienti`),
+    test: "Celebrazione di prova",
+    testDetails: "Ecco come apparirà e suonerà il tuo prossimo pagamento",
+    goalReached: "Obiettivo raggiunto",
+    milestoneReached: "Traguardo raggiunto",
+    newMilestone: "Nuovo traguardo",
+    nextStop: (amount) => `Prossima tappa: ${amount}. Continua così!`,
+  },
+  status: {
+    importing: "Importazione del tuo storico Stripe…",
+    importingDetails:
+      "Abbonamenti e pagamenti stanno arrivando. Per la maggior parte degli account serve un paio di minuti, e questo schermo si aggiorna da solo.",
+    failing: "Al momento non è possibile caricare i dati di Stripe",
+    failingDetails:
+      "Tutti gli account di questo schermo sono in errore, spesso perché una chiave API è stata revocata. Controlla le connessioni Stripe nella tua dashboard: lo schermo si riprenderà da solo.",
+    empty: "Collega Stripe per dare vita a questo schermo",
+    emptyDetails: (screen, metric) =>
+      `Aggiungi un account Stripe a «${screen}» nella tua dashboard. Il tuo ${metric}, i ricavi e ogni nuovo pagamento appariranno qui, in diretta.`,
+    gone: "Questo link allo schermo non funziona più",
+    goneDetails: (app) =>
+      `Lo schermo potrebbe essere stato eliminato o il suo link rigenerato. Aprilo di nuovo dalla tua dashboard di ${app} per ottenere il link attuale.`,
+  },
+};

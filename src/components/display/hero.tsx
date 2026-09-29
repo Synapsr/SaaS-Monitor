@@ -1,6 +1,7 @@
 import NumberFlow from "@number-flow/react";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import type { CSSProperties } from "react";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { formatAmount, formatPercent, moneyFlow, percentChange } from "@/lib/display/format";
 import { recurringMetric, type RecurringMetric } from "@/lib/display/metric";
 import type { DisplayMetrics } from "@/lib/display/types";
@@ -15,19 +16,30 @@ interface HeroProps {
   /** MRR or ARR in large, the other one under it. */
   recurring: RecurringMetric;
   currency: string;
+  /** The account whose numbers these are, on a screen rotating between its accounts. */
+  account: string | null;
   /** Lights up (or gently dims) the number while an MRR change is being celebrated. */
   highlight: "up" | "down" | null;
 }
 
-export function Hero({ metrics, recurring, currency, highlight }: HeroProps) {
+export function Hero({ metrics, recurring, currency, account, highlight }: HeroProps) {
+  const { locale, text } = useDisplayLocale();
   const value = recurring.fromMrr(metrics.mrr);
   const other = recurringMetric(recurring.other);
   // Sized from the column width and the number of characters, so that any amount fits on one line.
-  const characters = formatMoney(value, currency).length;
+  const characters = formatMoney(value, currency, { locale }).length;
   return (
     <section aria-labelledby="metric-title" className="@container relative flex flex-col gap-4">
-      <h2 id="metric-title" className="text-2xl font-medium text-(--ink-2)">
-        {recurring.name}
+      <h2 id="metric-title" className="truncate text-2xl font-medium text-(--ink-2)">
+        {account && (
+          <>
+            <span className="font-semibold text-(--ink)">{account}</span>
+            <span aria-hidden className="text-(--ink-3)">
+              {" · "}
+            </span>
+          </>
+        )}
+        {text.metricNames[recurring.metric]}
       </h2>
       <div className="relative">
         <div
@@ -38,7 +50,7 @@ export function Hero({ metrics, recurring, currency, highlight }: HeroProps) {
           )}
         />
         <NumberFlow
-          {...moneyFlow(value, currency)}
+          {...moneyFlow(value, currency, locale)}
           transformTiming={ROLL}
           spinTiming={ROLL}
           willChange
@@ -58,7 +70,7 @@ export function Hero({ metrics, recurring, currency, highlight }: HeroProps) {
         <p className="text-(--ink-3)">
           {other.label}{" "}
           <span className="font-medium text-(--ink-2) tabular-nums">
-            {formatAmount(other.fromMrr(metrics.mrr), currency)}
+            {formatAmount(other.fromMrr(metrics.mrr), currency, locale)}
           </span>
         </p>
       </div>
@@ -67,6 +79,7 @@ export function Hero({ metrics, recurring, currency, highlight }: HeroProps) {
 }
 
 function Growth({ value, before, currency }: { value: number; before: number; currency: string }) {
+  const { locale, text } = useDisplayLocale();
   const change = value - before;
   const ratio = percentChange(value, before);
   const growing = change >= 0;
@@ -76,21 +89,21 @@ function Growth({ value, before, currency }: { value: number; before: number; cu
       <span
         className={cn(
           "inline-flex items-center gap-2.5 rounded-full py-1.5 pr-4 pl-3.5 font-medium tabular-nums",
-          growing ? "bg-(--glow-wash) text-(--glow-bright)" : "bg-white/6 text-(--ink-2)",
+          growing ? "bg-(--glow-wash) text-(--glow-ink)" : "bg-(--fill) text-(--ink-2)",
         )}
       >
         <Icon aria-hidden className="size-[1.1em]" strokeWidth={2.25} />
-        {formatAmount(change, currency, { signed: true })}
+        {formatAmount(change, currency, locale, { signed: true })}
         {ratio !== null && (
           <>
             <span aria-hidden className="opacity-50">
               ·
             </span>
-            {formatPercent(ratio, { signed: true })}
+            {formatPercent(ratio, locale, { signed: true })}
           </>
         )}
       </span>
-      <span className="text-(--ink-3)">in 30 days</span>
+      <span className="text-(--ink-3)">{text.hero.inThirtyDays}</span>
     </p>
   );
 }

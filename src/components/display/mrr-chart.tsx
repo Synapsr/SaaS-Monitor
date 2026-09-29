@@ -1,6 +1,7 @@
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useId, useMemo, useState, type PointerEvent } from "react";
+import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { useElementSize } from "@/hooks/use-element-size";
 import { chartRangeLabel, layoutMrrChart, nearestPoint } from "@/lib/display/chart";
 import { formatAmount, formatPercent, percentChange } from "@/lib/display/format";
@@ -36,6 +37,8 @@ export function MrrChart({
   target,
   className,
 }: MrrChartProps) {
+  const displayLocale = useDisplayLocale();
+  const { locale, text } = displayLocale;
   const [plotRef, size] = useElementSize<HTMLDivElement>();
   const series = useMemo(
     () => mrrSeries.map(({ date, value }) => ({ date, value: recurring.fromMrr(value) })),
@@ -43,7 +46,7 @@ export function MrrChart({
   );
   const first = series[0];
   const last = series.at(-1);
-  const rangeLabel = chartRangeLabel(range, first?.date);
+  const rangeLabel = chartRangeLabel(range, first?.date, displayLocale);
   const change = first && last ? last.value - first.value : 0;
   // Since the very first day, a percentage mostly tells how small that day was.
   const ratio = first && last && range !== "all" ? percentChange(last.value, first.value) : null;
@@ -61,9 +64,11 @@ export function MrrChart({
               aria-hidden
               className={cn("size-[1.1em]", change >= 0 ? "text-(--glow)" : "text-(--ink-3)")}
             />
-            {formatAmount(change, currency, { signed: true })}
+            {formatAmount(change, currency, locale, { signed: true })}
             {ratio !== null && (
-              <span className="text-(--ink-3)">· {formatPercent(ratio, { signed: true })}</span>
+              <span className="text-(--ink-3)">
+                · {formatPercent(ratio, locale, { signed: true })}
+              </span>
             )}
           </span>
         )}
@@ -71,7 +76,7 @@ export function MrrChart({
       <div ref={plotRef} className="relative min-h-0 flex-1">
         {series.length < 2 ? (
           <p className="absolute inset-0 grid place-items-center text-xl text-(--ink-3)">
-            The curve appears after a few days of history.
+            {text.chart.empty}
           </p>
         ) : (
           size.width > 0 &&
@@ -103,19 +108,24 @@ interface PlotProps {
 }
 
 function Plot({ series, title, currency, target, width, height, fontSize }: PlotProps) {
+  const { locale, text } = useDisplayLocale();
   const gradientId = useId();
   const reducedMotion = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
   const chart = useMemo(
-    () => layoutMrrChart({ series, currency, target, width, height, fontSize }),
-    [series, currency, target, width, height, fontSize],
+    () => layoutMrrChart({ series, currency, target, locale, width, height, fontSize }),
+    [series, currency, target, locale, width, height, fontSize],
   );
 
   const start = chart.points[0];
   const end = chart.points[chart.points.length - 1];
   const draw = reducedMotion ? { duration: 0 } : { duration: 1.6, ease: EASE_OUT };
   const morph = reducedMotion ? { duration: 0 } : { duration: 1.1, ease: EASE_OUT };
-  const summary = `${title}: from ${formatMoney(start.value, currency)} to ${formatMoney(end.value, currency)}.`;
+  const summary = text.chart.summary(
+    title,
+    formatMoney(start.value, currency, { locale }),
+    formatMoney(end.value, currency, { locale }),
+  );
 
   // The crosshair snaps to the nearest point: readers aim at a date, not at a thin line.
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -236,9 +246,9 @@ function Plot({ series, title, currency, target, width, height, fontSize }: Plot
         {chart.horizon && (
           <span
             style={{ top: chart.horizon.y }}
-            className="absolute right-0 -translate-y-[125%] text-base font-medium text-(--glow-bright)"
+            className="absolute right-0 -translate-y-[125%] text-base font-medium text-(--glow-ink)"
           >
-            Goal {chart.horizon.label}
+            {text.chart.goal(chart.horizon.label)}
           </span>
         )}
         <div className="absolute inset-x-0 top-full h-8">
@@ -258,15 +268,15 @@ function Plot({ series, title, currency, target, width, height, fontSize }: Plot
         <div
           style={{ left: chart.x(hoveredPoint.date), top: chart.y(hoveredPoint.value) }}
           className={cn(
-            "pointer-events-none absolute -translate-y-[calc(100%+var(--rem))] rounded-xl bg-[#121418] px-4 py-2.5 whitespace-nowrap shadow-(--moment-shadow) ring-1 ring-white/10",
+            "pointer-events-none absolute -translate-y-[calc(100%+var(--rem))] rounded-xl bg-(--popover) px-4 py-2.5 whitespace-nowrap shadow-(--moment-shadow) ring-1 ring-(--edge)",
             chart.x(hoveredPoint.date) > width / 2 ? "-translate-x-full" : "translate-x-0",
           )}
         >
           <p className="text-xl font-semibold tabular-nums">
-            {formatMoney(hoveredPoint.value, currency)}
+            {formatMoney(hoveredPoint.value, currency, { locale })}
           </p>
           <p className="text-base text-(--ink-3)">
-            {formatChartDay(hoveredPoint.day, series[series.length - 1].date)}
+            {formatChartDay(hoveredPoint.day, series[series.length - 1].date, locale)}
           </p>
         </div>
       )}

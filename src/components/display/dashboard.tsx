@@ -7,10 +7,13 @@ import { useNow } from "@/hooks/use-now";
 import { recurringMetric } from "@/lib/display/metric";
 import { goalProgress } from "@/lib/display/milestones";
 import { isMrrIncrease, type Moment } from "@/lib/display/moments";
+import type { ScreenView } from "@/lib/display/rotation";
 import type { DisplayState } from "@/lib/display/types";
 
 interface DashboardProps {
   state: DisplayState;
+  /** The numbers on screen: the total, or one account's on a screen rotating between them. */
+  view: ScreenView;
   /** The moment being celebrated, which the numbers echo. */
   moment: Moment | null;
   serverTime: number;
@@ -20,8 +23,9 @@ interface DashboardProps {
  * The numbers of a ready screen. Landscape: MRR (or ARR), goal, chart and tiles on the left, the
  * live feed on the right. Portrait: everything stacked, the feed last.
  */
-export function Dashboard({ state, moment, serverTime }: DashboardProps) {
-  const { metrics, currency, series } = state;
+export function Dashboard({ state, view, moment, serverTime }: DashboardProps) {
+  const { currency } = state;
+  const { metrics, series } = view;
   const { settings } = state.screen;
   const now = useNow(serverTime, 60_000);
   const recurring = recurringMetric(settings.metric);
@@ -30,7 +34,7 @@ export function Dashboard({ state, moment, serverTime }: DashboardProps) {
       current: recurring.fromMrr(metrics.mrr),
       thirtyDaysAgo: recurring.fromMrr(metrics.mrr30DaysAgo),
     },
-    settings.goal,
+    view.goal,
     currency,
     new Date(now),
   );
@@ -43,6 +47,7 @@ export function Dashboard({ state, moment, serverTime }: DashboardProps) {
             metrics={metrics}
             recurring={recurring}
             currency={currency}
+            account={view.account?.name ?? null}
             highlight={mrrHighlight(moment)}
           />
           <GoalProgress
@@ -73,12 +78,13 @@ export function Dashboard({ state, moment, serverTime }: DashboardProps) {
       <LiveFeed
         // Another set of accounts brings its history at once: none of it just arrived.
         key={state.accounts.map((account) => account.id).join()}
-        feed={state.feed}
+        feed={view.feed}
         recurring={recurring}
         currency={currency}
         timeZone={settings.timeZone}
         serverTime={serverTime}
-        showAccount={state.accounts.length > 1}
+        // An account's own feed needs no name: the screen says whose it is.
+        showAccount={view.account === null && state.accounts.length > 1}
         warnings={state.warnings}
       />
     </main>

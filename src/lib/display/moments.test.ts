@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   initialMomentTracker,
+  momentAccount,
   momentCelebration,
   momentDuration,
   momentSound,
@@ -74,20 +75,83 @@ describe("moment planning", () => {
 
   it("summarizes a burst in a single moment", () => {
     const burst = [
-      feedItem({ kind: "payment", amount: 4_900 }),
-      feedItem({ kind: "payment", amount: 19_900 }),
-      feedItem({ kind: "new", amount: 7_900 }),
-      feedItem({ kind: "churn", amount: -2_900 }),
+      feedItem({ kind: "payment", amount: 4_900, customerKey: "customer_1" }),
+      feedItem({ kind: "payment", amount: 19_900, customerKey: "customer_2" }),
+      feedItem({ kind: "new", amount: 7_900, customerKey: "customer_3" }),
+      feedItem({ kind: "churn", amount: -2_900, customerKey: "customer_4" }),
     ];
     expect(planMoments(burst)).toEqual([
       expect.objectContaining({
         kind: "summary",
+        accountId: "a1",
         payments: 2,
         changes: 2,
+        customers: 0,
         revenue: 24_800,
         mrrChange: 5_000,
       }),
     ]);
+  });
+
+  it("counts moments, not items, towards a burst: a checkout and a sign-up are two", () => {
+    const checkout = [
+      feedItem({ kind: "customer", amount: 0, customerKey: "customer_1" }),
+      feedItem({ kind: "new", customerKey: "customer_1" }),
+      feedItem({ kind: "payment", customerKey: "customer_1" }),
+    ];
+    const signUp = feedItem({ kind: "customer", amount: 0, customerKey: "customer_2" });
+    expect(planMoments([signUp, ...checkout]).map((moment) => moment.kind)).toEqual([
+      "customer",
+      "payment",
+    ]);
+  });
+
+  it("announces a new customer who has not paid yet", () => {
+    const customer = feedItem({ id: "customer:1", kind: "customer", amount: 0, planName: null });
+    expect(planMoments([customer])).toEqual([{ id: "customer:1", kind: "customer", customer }]);
+  });
+
+  it("announces a customer created at checkout with what they bought", () => {
+    // Stripe Checkout creates the customer, the subscription and the payment at once.
+    const customer = feedItem({ kind: "customer", amount: 0 });
+    const movement = feedItem({ kind: "new", amount: 19_900 });
+    const payment = feedItem({ kind: "payment", amount: 19_900 });
+    expect(planMoments([customer, movement, payment])).toEqual([
+      { id: payment.id, kind: "payment", payment, movement },
+    ]);
+  });
+
+  it("keeps apart new customers and what others paid", () => {
+    const customer = feedItem({ kind: "customer", amount: 0, customerKey: "customer_2" });
+    const payment = feedItem({ kind: "payment", customerKey: "customer_1" });
+    expect(planMoments([customer, payment]).map((moment) => moment.kind)).toEqual([
+      "customer",
+      "payment",
+    ]);
+  });
+
+  it("plans each account on its own, and plays everything in the order it happened", () => {
+    const at = (minute: number) => `2026-09-28T12:0${minute}:00.000Z`;
+    const acme = (minute: number) => feedItem({ accountId: "a1", occurredAt: at(minute) });
+    const beta = (minute: number) =>
+      feedItem({ accountId: "b1", accountName: "Beta", occurredAt: at(minute) });
+    // Acme has a burst while Beta makes two sales around it.
+    const fresh = [acme(1), beta(2), acme(3), acme(4), acme(5), beta(6)];
+
+    const moments = planMoments(fresh);
+
+    expect(moments.map((moment) => [moment.kind, momentAccount(moment)])).toEqual([
+      ["payment", "b1"],
+      ["summary", "a1"],
+      ["payment", "b1"],
+    ]);
+    expect(moments[1]).toMatchObject({ payments: 4 });
+  });
+
+  it("tells which account each moment comes from", () => {
+    const payment = feedItem({ accountId: "b1" });
+    expect(momentAccount({ id: "p", kind: "payment", payment, movement: null })).toBe("b1");
+    expect(momentAccount({ id: "t", kind: "test" })).toBeNull();
   });
 });
 
@@ -133,6 +197,7 @@ describe("moment tracking", () => {
       amount: 25_000_000,
       metric: "arr",
       isGoal: false,
+      accountId: null,
     });
   });
 
@@ -208,6 +273,57 @@ describe("moment tracking", () => {
     ]);
   });
 
+  it("celebrates the milestones of each account on a screen rotating between them", () => {
+    const view = (accountId: string, mrr: number) => ({
+      accountId,
+      metrics: { ...displayState().metrics, mrr },
+      series: displayState().series,
+    });
+    const acme = displayState().accounts[0];
+    const beta = { ...acme, id: "b1", name: "Beta" };
+    const before = withSettings(
+      displayState({ accounts: [acme, beta], views: [view("a1", 95_000), view("b1", 480_000)] }),
+      { rotation: { enabled: true, seconds: 15, includeTotal: true } },
+    );
+    // Beta crosses $5K of MRR; the total ($10K) and Acme cross nothing.
+    const after = { ...before, views: [view("a1", 95_000), view("b1", 510_000)] };
+
+    const [, moments] = track([before, after]);
+    expect(moments).toEqual([
+      {
+        id: "milestone:mrr:b1:500000",
+        kind: "milestone",
+        amount: 500_000,
+        metric: "mrr",
+        isGoal: false,
+        accountId: "b1",
+      },
+    ]);
+
+    // Combined, the accounts are not shown on their own: neither are their milestones.
+    const combined = withSettings(before, {
+      rotation: { ...before.screen.settings.rotation, enabled: false },
+    });
+    expect(track([combined, { ...combined, views: after.views }])).toEqual([[], []]);
+  });
+
+  it("leaves the total's milestones out when a rotation never shows the total", () => {
+    const acme = displayState().accounts[0];
+    const state = withSettings(
+      displayState({ accounts: [acme, { ...acme, id: "b1" }], views: [] }),
+      { rotation: { enabled: true, seconds: 15, includeTotal: false } },
+    );
+    const views = (mrr: number) =>
+      ["a1", "b1"].map((accountId) => ({
+        accountId,
+        metrics: { ...state.metrics, mrr },
+        series: state.series,
+      }));
+    const before = { ...state, views: views(400_000), metrics: { ...state.metrics, mrr: 990_000 } };
+    const after = { ...before, metrics: { ...state.metrics, mrr: 1_010_000 } };
+    expect(track([before, after])).toEqual([[], []]);
+  });
+
   it("plays a test celebration when a new test event arrives", () => {
     const state = displayState({ testEvent: { id: "t1" } });
     const moments = track([
@@ -228,18 +344,46 @@ describe("moment sounds", () => {
     movement: feedItem({ kind: "churn", amount: -4_900 }),
   };
 
+  const customer: Moment = { id: "n", kind: "customer", customer: feedItem({ kind: "customer" }) };
+  const summary = (fields: { revenue: number; mrrChange: number; customers: number }): Moment => ({
+    id: "s",
+    kind: "summary",
+    accountId: "a1",
+    payments: 0,
+    changes: 0,
+    ...fields,
+  });
+
   it("maps moments to sounds", () => {
     expect(momentSound(payment, sound)).toBe("payment");
     expect(momentSound(churn, sound)).toBe("mrrDown");
+    expect(momentSound(customer, sound)).toBe("customer");
     expect(
-      momentSound({ id: "m", kind: "milestone", amount: 1, metric: "mrr", isGoal: false }, sound),
+      momentSound(
+        { id: "m", kind: "milestone", amount: 1, metric: "mrr", isGoal: false, accountId: null },
+        sound,
+      ),
     ).toBe("milestone");
+  });
+
+  it("sounds a summary like the best news it brings", () => {
+    expect(momentSound(summary({ revenue: 4_900, mrrChange: -900, customers: 2 }), sound)).toBe(
+      "payment",
+    );
+    expect(momentSound(summary({ revenue: 0, mrrChange: 900, customers: 2 }), sound)).toBe("mrrUp");
+    expect(momentSound(summary({ revenue: 0, mrrChange: 0, customers: 2 }), sound)).toBe(
+      "customer",
+    );
+    expect(momentSound(summary({ revenue: 0, mrrChange: -900, customers: 2 }), sound)).toBe(
+      "mrrDown",
+    );
   });
 
   it("respects the master switch and each event's toggle", () => {
     expect(momentSound(payment, { ...sound, enabled: false })).toBeNull();
     expect(momentSound(payment, { ...sound, onPayment: false })).toBeNull();
     expect(momentSound(churn, { ...sound, onMrrDown: false })).toBeNull();
+    expect(momentSound(customer, { ...sound, onCustomer: false })).toBeNull();
     expect(momentSound({ id: "t", kind: "test" }, { ...sound, onPayment: false })).toBe("payment");
   });
 
@@ -253,8 +397,10 @@ describe("moment celebrations", () => {
     const summary = (revenue: number): Moment => ({
       id: "s",
       kind: "summary",
+      accountId: "a1",
       payments: 1,
       changes: 3,
+      customers: 0,
       revenue,
       mrrChange: -9_000,
     });
@@ -262,12 +408,21 @@ describe("moment celebrations", () => {
       momentCelebration({ id: "p", kind: "payment", payment: feedItem(), movement: null }),
     ).toBe("payment");
     expect(
-      momentCelebration({ id: "m", kind: "milestone", amount: 1, metric: "mrr", isGoal: true }),
+      momentCelebration({
+        id: "m",
+        kind: "milestone",
+        amount: 1,
+        metric: "mrr",
+        isGoal: true,
+        accountId: null,
+      }),
     ).toBe("milestone");
     expect(momentCelebration({ id: "t", kind: "test" })).toBe("payment");
     expect(momentCelebration(summary(4_900))).toBe("payment");
     expect(momentCelebration(summary(0))).toBeNull();
     const churn = feedItem({ kind: "churn", amount: -4_900 });
     expect(momentCelebration({ id: "c", kind: "movement", movement: churn })).toBeNull();
+    const customer = feedItem({ kind: "customer" });
+    expect(momentCelebration({ id: "n", kind: "customer", customer })).toBeNull();
   });
 });

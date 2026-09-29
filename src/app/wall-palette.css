@@ -1,12 +1,13 @@
 /*
  * The wall display's palette, shared by the landing page, which stages its live demo. The accent
- * (`--glow…`) is emerald, the brand color, until a screen sets its own. What stylesheets cannot
- * reach (the logo, the social image, the browser theme) uses `BRAND_COLORS` (src/lib/brand.ts).
+ * (`--glow…`) is emerald, the brand color, until a screen sets its own (`src/lib/display/accents.ts`,
+ * whose backgrounds match these). What stylesheets cannot reach (the logo, the social image, the
+ * browser theme) uses `BRAND_COLORS` (src/lib/brand.ts).
  */
 .display,
 .landing {
   --glow: #34d399;
-  --glow-bright: #6ee7b7;
+  --glow-ink: #6ee7b7;
   --glow-deep: #059669;
 
   /* Inks on the near-black background: all pass WCAG AA for their smallest use. */
@@ -16,8 +17,21 @@
   --ink-3: #80858e;
 }
 
-/* No white flash around these pages (overscroll, resizing), whatever the dashboard theme. */
+/* Screens may be light, for bright rooms. Inks pass WCAG AA here too. */
+.display[data-theme="light"] {
+  --screen: #f4f5f7;
+  --ink: #0b0d10;
+  --ink-2: #4a505a;
+  --ink-3: #646b76;
+}
+
+/* No flash of another color around these pages (overscroll, resizing), whatever the dashboard theme. */
 html:has(.display, .landing) {
   background: #08090b;
   color-scheme: dark;
+}
+
+html:has(.display[data-theme="light"]) {
+  background: #f4f5f7;
+  color-scheme: light;
 }
