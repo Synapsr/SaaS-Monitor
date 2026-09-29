@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  customers,
   mrrMovements,
   payments,
   screenAccounts,
@@ -24,13 +25,14 @@ import {
   subscriptions,
 } from "@/db/schema";
 import { dayToUtcDate } from "@/lib/display/calendar";
-import type { MrrMovementKind } from "@/lib/display/types";
+import type { FeedItemKind } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 
 /*
  * The few queries behind a display. Days are bucketed by MySQL in the screen's time zone
  * (`CONVERT_TZ`, whose time zone tables know daylight saving); the coarse timestamp bounds keep
- * them on the `(account_id, occurred_at)` indexes.
+ * them on the `(account_id, occurred_at)` indexes. Figures are grouped by account: a screen shows
+ * each of its accounts on its own too.
  */
 
 /**
@@ -69,29 +71,38 @@ export function linkedAccounts(screenId: string) {
     .orderBy(asc(stripeAccounts.createdAt));
 }
 
-/** Current MRR and trials per currency. */
+/**
+ * Counts per account. A customer belongs to a single account: counts of several accounts add up.
+ */
+function countsByAccount(rows: readonly { accountId: string; count: number }[]) {
+  return new Map(rows.map((row) => [row.accountId, row.count]));
+}
+
+/** Current MRR and trials per account and currency. */
 export function subscriptionTotals(accountIds: string[]) {
   return db()
     .select({
+      accountId: subscriptions.accountId,
       currency: subscriptions.currency,
       mrr: sum(subscriptions.mrr).mapWith(Number),
       trialing: count(sql`case when ${subscriptions.status} = 'trialing' then 1 end`),
     })
     .from(subscriptions)
     .where(inArray(subscriptions.accountId, accountIds))
-    .groupBy(subscriptions.currency);
+    .groupBy(subscriptions.accountId, subscriptions.currency);
 }
 
-/** Customers with at least one paying subscription. */
-export async function payingCustomerCount(accountIds: string[]): Promise<number> {
-  const [row] = await db()
+/** Customers with at least one paying subscription, per account. */
+export async function payingCustomerCounts(accountIds: string[]): Promise<Map<string, number>> {
+  const rows = await db()
     .select({
-      // A customer is identified by their account and Stripe id.
-      count: countDistinct(sql`${subscriptions.accountId}, ${subscriptions.stripeCustomerId}`),
+      accountId: subscriptions.accountId,
+      count: countDistinct(subscriptions.stripeCustomerId),
     })
     .from(subscriptions)
-    .where(and(inArray(subscriptions.accountId, accountIds), gt(subscriptions.mrr, 0)));
-  return row?.count ?? 0;
+    .where(and(inArray(subscriptions.accountId, accountIds), gt(subscriptions.mrr, 0)))
+    .groupBy(subscriptions.accountId);
+  return countsByAccount(rows);
 }
 
 /** The calendar day of an instant (stored in UTC) in the screen's time zone. */
@@ -105,8 +116,8 @@ function dayText(day: SQL.Aliased<string>) {
 }
 
 /**
- * Net MRR change per currency, kind and local day, from `from` on, or since the first movement
- * when `from` is `null`: all time, whose chart starts with it.
+ * Net MRR change per account, currency, kind and local day, from `from` on, or since the first
+ * movement when `from` is `null`: all time, whose chart starts with it.
  */
 export function movementsByDay(accountIds: string[], timeZone: string, from: string | null) {
   const local = db()
@@ -114,6 +125,7 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
     .as(
       db()
         .select({
+          accountId: mrrMovements.accountId,
           currency: mrrMovements.currency,
           kind: mrrMovements.kind,
           amount: mrrMovements.amount,
@@ -130,6 +142,7 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
   return db()
     .with(local)
     .select({
+      accountId: local.accountId,
       currency: local.currency,
       kind: local.kind,
       day: dayText(local.day),
@@ -137,16 +150,17 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
     })
     .from(local)
     .where(from === null ? undefined : gte(local.day, from))
-    .groupBy(local.currency, local.kind, local.day);
+    .groupBy(local.accountId, local.currency, local.kind, local.day);
 }
 
-/** Net revenue (payments minus refunds) per currency and local day, from `from` on. */
+/** Net revenue (payments minus refunds) per account, currency and local day, from `from` on. */
 export function revenueByDay(accountIds: string[], timeZone: string, from: string) {
   const local = db()
     .$with("local_payments")
     .as(
       db()
         .select({
+          accountId: payments.accountId,
           currency: payments.currency,
           net: sql<number>`${payments.amount} - ${payments.amountRefunded}`.as("net"),
           day: localDay(payments.occurredAt, timeZone).as("day"),
@@ -162,24 +176,25 @@ export function revenueByDay(accountIds: string[], timeZone: string, from: strin
   return db()
     .with(local)
     .select({
+      accountId: local.accountId,
       currency: local.currency,
       day: dayText(local.day),
       amount: sql<number>`sum(${local.net})`.mapWith(Number),
     })
     .from(local)
     .where(gte(local.day, from))
-    .groupBy(local.currency, local.day);
+    .groupBy(local.accountId, local.currency, local.day);
 }
 
 /**
- * Customers who started paying this month: a new subscription, while they paid nothing when the
- * month began. A customer adding a second subscription is not a new customer.
+ * Customers who started paying this month, per account: a new subscription, while they paid
+ * nothing when the month began. A customer adding a second subscription is not a new customer.
  */
-export async function newCustomerCount(
+export async function newCustomerCounts(
   accountIds: string[],
   timeZone: string,
   monthStart: string,
-): Promise<number> {
+): Promise<Map<string, number>> {
   const { accountId, stripeCustomerId, amount, kind, occurredAt } = mrrMovements;
   const thisMonth = gte(localDay(occurredAt, timeZone), monthStart);
 
@@ -202,11 +217,12 @@ export async function newCustomerCount(
         ),
     );
   // Their MRR when the month began, and whether they started a subscription since.
-  const customers = db()
-    .$with("customers")
+  const months = db()
+    .$with("customer_months")
     .as(
       db()
         .select({
+          accountId,
           mrrBefore: sql<number>`sum(if(${thisMonth}, 0, ${amount}))`.as("mrr_before"),
           // Conditions are 0 or 1 in MySQL: the largest says whether any of them holds.
           started: sql<boolean>`max(${kind} = 'new' and ${thisMonth})`.as("started"),
@@ -219,21 +235,47 @@ export async function newCustomerCount(
         .groupBy(accountId, stripeCustomerId),
     );
 
-  const [row] = await db()
-    .with(touched, customers)
-    .select({ count: count() })
-    .from(customers)
-    .where(sql`${customers.started} and ${customers.mrrBefore} = 0`);
-  return row?.count ?? 0;
+  const rows = await db()
+    .with(touched, months)
+    .select({ accountId: months.accountId, count: count() })
+    .from(months)
+    .where(sql`${months.started} and ${months.mrrBefore} = 0`)
+    .groupBy(months.accountId);
+  return countsByAccount(rows);
 }
 
-/** A movement or payment of the feed, before conversion to the screen's currency. */
+/**
+ * Customers created per account since the local day `day` began: today's sign-ups. Later days
+ * only hold customers dated ahead by Stripe's clock, which count today like movements do.
+ */
+export async function customersCreatedSince(
+  accountIds: string[],
+  timeZone: string,
+  day: string,
+): Promise<Map<string, number>> {
+  const rows = await db()
+    .select({ accountId: customers.accountId, count: count() })
+    .from(customers)
+    .where(
+      and(
+        inArray(customers.accountId, accountIds),
+        gte(customers.occurredAt, instantBefore(day)),
+        gte(localDay(customers.occurredAt, timeZone), day),
+      ),
+    )
+    .groupBy(customers.accountId);
+  return countsByAccount(rows);
+}
+
+/** A movement, payment or new customer of the feed, before conversion to the screen's currency. */
 export interface ActivityRow {
-  source: "movement" | "payment";
+  source: "movement" | "payment" | "customer";
   id: string;
-  kind: MrrMovementKind | "payment";
+  kind: FeedItemKind;
+  /** 0 for a customer, who pays nothing by signing up. */
   amount: number;
-  currency: string;
+  /** `null` for a customer: there is no amount to convert. */
+  currency: string | null;
   occurredAt: Date;
   origin: "backfill" | "live" | "reconcile";
   accountId: string;
@@ -294,6 +336,24 @@ function latestPayments(accountId: string, limit: number) {
     .limit(limit);
 }
 
+/** An account's latest customers, newest first. */
+function latestCustomers(accountId: string, limit: number) {
+  return db()
+    .select({
+      id: customers.id,
+      occurredAt: customers.occurredAt,
+      origin: customers.origin,
+      accountId: customers.accountId,
+      customerId: customers.stripeCustomerId,
+      customerName: customers.name,
+      country: customers.country,
+    })
+    .from(customers)
+    .where(eq(customers.accountId, accountId))
+    .orderBy(desc(customers.occurredAt), desc(customers.id))
+    .limit(limit);
+}
+
 /**
  * The `limit` newest rows of the screen's accounts, read with one query per account: each one's
  * come from the end of its `(account_id, occurred_at)` index, while a condition on several
@@ -308,11 +368,12 @@ async function newestOfEachAccount<Row extends { occurredAt: Date; id: string }>
   return rows.flat().sort(newestFirst).slice(0, limit);
 }
 
-/** The latest movements and payments, newest first. */
+/** The latest movements, payments and new customers, newest first. */
 export async function latestActivity(accountIds: string[], limit: number): Promise<ActivityRow[]> {
-  const [movementRows, paymentRows] = await Promise.all([
+  const [movementRows, paymentRows, customerRows] = await Promise.all([
     newestOfEachAccount(accountIds, limit, latestMovements),
     newestOfEachAccount(accountIds, limit, latestPayments),
+    newestOfEachAccount(accountIds, limit, latestCustomers),
   ]);
 
   const profiles = await customerProfiles(
@@ -334,6 +395,14 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
         country: profile?.country ?? row.country,
       };
     }),
+    ...customerRows.map((row) => ({
+      ...row,
+      source: "customer" as const,
+      kind: "customer" as const,
+      amount: 0,
+      currency: null,
+      planName: null,
+    })),
   ];
   return rows.sort(newestFirst).slice(0, limit);
 }

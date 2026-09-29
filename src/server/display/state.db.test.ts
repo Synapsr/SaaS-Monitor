@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import { customers, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import { calendarDay, chartDays, daysBetween } from "@/lib/display/calendar";
 import type { MrrMovementKind } from "@/lib/display/types";
 import { isTimeZone, type ScreenSettingsInput } from "@/lib/screens/settings";
@@ -111,6 +111,24 @@ async function addPayment(
     })
     .$returningId();
   return payment.id;
+}
+
+async function addCustomer(
+  accountId: string,
+  row: { customer: string; at: string; origin?: "backfill" | "live" | "reconcile" },
+) {
+  const [customer] = await db()
+    .insert(customers)
+    .values({
+      accountId,
+      stripeCustomerId: row.customer,
+      name: "Ada Lovelace",
+      country: "GB",
+      occurredAt: new Date(row.at),
+      origin: row.origin ?? "backfill",
+    })
+    .$returningId();
+  return customer.id;
 }
 
 async function displayOf(
@@ -653,6 +671,66 @@ describe("display state", () => {
     expect(JSON.stringify(feed)).not.toContain("cus_");
   });
 
+  it("introduces new customers in the feed, keyed like the rest of their activity", async () => {
+    const accountId = await readyAccount();
+    const signUp = await addCustomer(accountId, {
+      customer: "cus_ada",
+      at: "2026-03-15T09:00:00Z",
+      origin: "live",
+    });
+    await addMovement(accountId, {
+      subscription: "sub_1",
+      customer: "cus_ada",
+      kind: "new",
+      amount: 4900,
+      at: "2026-03-15T09:01:00Z",
+    });
+    // A screen in euros converts the subscription in dollars; a sign-up has nothing to convert.
+    const rateSource: RateSource = async () => ({ usd: 1.25 });
+
+    const { feed } = await displayOf([accountId], { currency: "eur" }, { rateSource });
+
+    expect(feed).toEqual([
+      expect.objectContaining({
+        kind: "new",
+        amount: 3920,
+        original: { amount: 4900, currency: "usd" },
+      }),
+      {
+        id: `customer:${signUp}`,
+        kind: "customer",
+        amount: 0,
+        original: null,
+        occurredAt: "2026-03-15T09:00:00.000Z",
+        live: true,
+        customerKey: feed[0].customerKey,
+        customerName: null,
+        country: "GB",
+        planName: null,
+        accountId,
+        accountName: "Acme",
+      },
+    ]);
+    expect(feed[1].customerKey).toEqual(expect.any(String));
+    const named = await displayOf([accountId], { showCustomerNames: true });
+    expect(named.feed[1].customerName).toBe("Ada Lovelace");
+  });
+
+  it("counts the customers created today in the screen's time zone", async () => {
+    const accountId = await readyAccount();
+    // 23:30 and 00:30 on each side of midnight in Paris (UTC+1), both on March 14 in UTC.
+    await addCustomer(accountId, { customer: "cus_1", at: "2026-03-14T22:30:00Z" });
+    await addCustomer(accountId, { customer: "cus_2", at: "2026-03-14T23:30:00Z" });
+    await addCustomer(accountId, { customer: "cus_3", at: "2026-03-15T08:00:00Z" });
+    const today = async (timeZone: string) =>
+      (await displayOf([accountId], { timeZone })).metrics.customersCreatedToday;
+
+    expect(await today("Europe/Paris")).toBe(2);
+    expect(await today("UTC")).toBe(1);
+    // Already March 16 in Auckland (UTC+13).
+    expect(await today("Pacific/Auckland")).toBe(0);
+  });
+
   it("only shows customer names when the screen allows it", async () => {
     const accountId = await readyAccount();
     await addPayment(accountId, { amount: 4900, at: "2026-03-14T10:00:00Z" });
@@ -661,6 +739,86 @@ describe("display state", () => {
     expect((await displayOf([accountId], { showCustomerNames: true })).feed[0].customerName).toBe(
       "Grace Hopper",
     );
+  });
+
+  it("gives each account of a screen its own numbers, which add up to the screen's", async () => {
+    const acme = await readyAccount("Acme");
+    const euros = await readyAccount("Euro shop", { defaultCurrency: "eur" });
+    await addSubscription(acme, { id: "sub_acme", mrr: 3000, customer: "cus_acme" });
+    await addMovement(acme, {
+      subscription: "sub_acme",
+      customer: "cus_acme",
+      kind: "new",
+      amount: 3000,
+      at: "2026-03-02T10:00:00Z",
+    });
+    await addSubscription(euros, {
+      id: "sub_eur",
+      mrr: 1000,
+      currency: "eur",
+      customer: "cus_eur",
+    });
+    await addMovement(euros, {
+      subscription: "sub_eur",
+      customer: "cus_eur",
+      kind: "new",
+      amount: 1000,
+      currency: "eur",
+      at: "2026-02-01T10:00:00Z",
+    });
+    await addPayment(euros, { amount: 800, currency: "eur", at: "2026-03-15T08:00:00Z" });
+    await addCustomer(euros, { customer: "cus_signup", at: "2026-03-15T09:00:00Z" });
+    // One dollar buys 0.8 euro: one euro is worth 1.25 dollars.
+    const rateSource: RateSource = async () => ({ eur: 0.8 });
+
+    // Whether the screen rotates between its accounts or not.
+    const state = await displayOf([acme, euros], { currency: "usd" }, { rateSource });
+
+    expect(state.views.map((view) => view.accountId)).toEqual([acme, euros]);
+    const [acmeView, eurosView] = state.views;
+    expect(acmeView.metrics).toMatchObject({
+      mrr: 3000,
+      mrr30DaysAgo: 0,
+      activeCustomers: 1,
+      customersCreatedToday: 0,
+      revenue: { today: 0 },
+      thisMonth: { new: 3000, newCustomers: 1 },
+    });
+    expect(eurosView.metrics).toMatchObject({
+      mrr: 1250,
+      mrr30DaysAgo: 1250,
+      activeCustomers: 1,
+      customersCreatedToday: 1,
+      revenue: { today: 1000 },
+      thisMonth: { new: 0, newCustomers: 0 },
+    });
+    expect(state.metrics).toMatchObject({
+      mrr: 4250,
+      mrr30DaysAgo: 1250,
+      activeCustomers: 2,
+      customersCreatedToday: 1,
+      revenue: { today: 1000 },
+      thisMonth: { new: 3000, newCustomers: 1 },
+    });
+    expect(state.series.mrr).toEqual(
+      acmeView.series.mrr.map(({ date, value }, index) => ({
+        date,
+        value: value + eurosView.series.mrr[index].value,
+      })),
+    );
+  });
+
+  it("only has views of the ready accounts of a screen that shows several", async () => {
+    const working = await readyAccount("Working");
+    const importing = await readyAccount("New", { status: "importing" });
+    const failing = await readyAccount("Failing", { status: "error" });
+
+    const views = async (accountIds: string[]) =>
+      (await displayOf(accountIds)).views.map((view) => view.accountId);
+
+    expect(await views([working, importing, failing])).toEqual([working]);
+    // A single account's numbers are the screen's own.
+    expect(await views([working])).toEqual([]);
   });
 
   it("is in error only when every account fails", async () => {

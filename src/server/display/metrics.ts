@@ -1,11 +1,13 @@
 import "server-only";
-import type { DisplayCalendar } from "@/lib/display/calendar";
+import { chartDays, daysInRange, type DisplayCalendar } from "@/lib/display/calendar";
 import type {
+  AccountView,
   DisplayMetrics,
   DisplayState,
   MrrMovementKind,
   SeriesPoint,
 } from "@/lib/display/types";
+import type { ChartRange } from "@/lib/screens/settings";
 
 /** An amount in the screen currency, on a calendar day of the screen's time zone. */
 export interface DayAmount {
@@ -15,6 +17,84 @@ export interface DayAmount {
 
 export interface MovementAmount extends DayAmount {
   kind: MrrMovementKind;
+}
+
+interface OfAccount {
+  accountId: string;
+}
+
+/**
+ * What the numbers of a screen are made of, account by account, amounts in the screen currency.
+ * Counts are keyed by account.
+ */
+export interface AccountFigures {
+  /** Current MRR and trials. */
+  subscriptions: readonly (OfAccount & { mrr: number; trialing: number })[];
+  movements: readonly (OfAccount & MovementAmount)[];
+  revenue: readonly (OfAccount & DayAmount)[];
+  /** Customers with a paying subscription. */
+  payingCustomers: ReadonlyMap<string, number>;
+  /** Customers who started paying this month. */
+  newCustomers: ReadonlyMap<string, number>;
+  customersCreatedToday: ReadonlyMap<string, number>;
+}
+
+/**
+ * The metrics and chart of the accounts `includes` accepts: all of a screen's, or one of them for
+ * its view of that account. Every figure but ARPU adds up across accounts, so the screen's are
+ * the sums of its accounts'.
+ */
+export function metricsOf(
+  figures: AccountFigures,
+  includes: (accountId: string) => boolean,
+  calendar: DisplayCalendar,
+  chartRange: ChartRange,
+): Pick<AccountView, "metrics" | "series"> {
+  const rows = <Row extends OfAccount>(all: readonly Row[]) =>
+    all.filter((row) => includes(row.accountId));
+  const total = (counts: ReadonlyMap<string, number>) =>
+    [...counts].reduce((sum, [accountId, count]) => (includes(accountId) ? sum + count : sum), 0);
+
+  const subscriptions = rows(figures.subscriptions);
+  const mrrChanges = rows(figures.movements);
+  const mrr = subscriptions.reduce((sum, row) => sum + row.mrr, 0);
+  const chart = chartDays(
+    calendar.today,
+    chartRange,
+    chartRange === "all" ? firstDay(mrrChanges) : null,
+  );
+  const historyStart = earliestDay(chart[0], calendar.thirtyDaysAgo);
+  const history = new Map(
+    mrrHistory(mrr, mrrChanges, daysInRange(historyStart, calendar.today)).map((point) => [
+      point.date,
+      point.value,
+    ]),
+  );
+  const payingCustomers = total(figures.payingCustomers);
+
+  return {
+    metrics: {
+      mrr,
+      mrr30DaysAgo: history.get(calendar.thirtyDaysAgo) ?? mrr,
+      arr: mrr * 12,
+      activeCustomers: payingCustomers,
+      trialingSubscriptions: subscriptions.reduce((sum, row) => sum + row.trialing, 0),
+      arpu: payingCustomers ? Math.round(mrr / payingCustomers) : 0,
+      customersCreatedToday: total(figures.customersCreatedToday),
+      revenue: revenueMetrics(rows(figures.revenue), calendar),
+      thisMonth: {
+        ...movementTotals(mrrChanges, calendar.monthStart),
+        newCustomers: total(figures.newCustomers),
+      },
+    },
+    series: {
+      mrr: chart.map((date) => ({ date, value: history.get(date) ?? mrr })),
+    },
+  };
+}
+
+export function earliestDay(a: string, b: string): string {
+  return a < b ? a : b;
 }
 
 /** The first day with an amount, e.g. the day an all-time chart starts: its first movement. */

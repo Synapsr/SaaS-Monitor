@@ -2,25 +2,20 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { BUILD_ID } from "@/lib/build-id";
-import {
-  calendarDay,
-  chartDays,
-  chartStart,
-  daysInRange,
-  displayCalendar,
-} from "@/lib/display/calendar";
+import { calendarDay, chartStart, displayCalendar } from "@/lib/display/calendar";
 import type { DisplayState, DisplayWarning, FeedItem } from "@/lib/display/types";
 import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
-import { displayStatus, firstDay, movementTotals, mrrHistory, revenueMetrics } from "./metrics";
+import { displayStatus, earliestDay, metricsOf, type AccountFigures } from "./metrics";
 import {
+  customersCreatedSince,
   findScreen,
   latestActivity,
   linkedAccounts,
   movementsByDay,
-  newCustomerCount,
-  payingCustomerCount,
+  newCustomerCounts,
+  payingCustomerCounts,
   revenueByDay,
   subscriptionTotals,
   type ActivityRow,
@@ -44,8 +39,6 @@ const FEED_LENGTH = 20;
 /** How long a "Send a test celebration" request stays visible to displays that poll. */
 const TEST_EVENT_TTL_MS = 10 * MINUTE_MS;
 
-const earliest = (a: string, b: string) => (a < b ? a : b);
-
 /**
  * Everything a wall display shows, or `null` when no screen uses this token. The token comes
  * straight from a public URL: it is validated here, for the page and the polling endpoint alike.
@@ -65,40 +58,44 @@ export async function getDisplayStateByToken(
   const calendar = displayCalendar(calendarDay(now, timeZone));
   // MRR history covers the chart and "30 days ago": all time reads the whole ledger, since the
   // first movement starts the chart. Revenue covers this month and the previous one.
-  const allTime = chartRange === "all";
-  const movementsFrom = allTime
-    ? null
-    : earliest(chartStart(calendar.today, chartRange), calendar.thirtyDaysAgo);
+  const movementsFrom =
+    chartRange === "all"
+      ? null
+      : earliestDay(chartStart(calendar.today, chartRange), calendar.thirtyDaysAgo);
 
-  const [totals, payingCustomers, movements, revenue, newCustomers, activity] = accountIds.length
-    ? await Promise.all([
-        subscriptionTotals(accountIds),
-        payingCustomerCount(accountIds),
-        movementsByDay(accountIds, timeZone, movementsFrom),
-        revenueByDay(accountIds, timeZone, calendar.previousMonthStart),
-        newCustomerCount(accountIds, timeZone, calendar.monthStart),
-        latestActivity(accountIds, FEED_LENGTH),
-      ])
-    : [[], 0, [], [], 0, []];
+  const [totals, payingCustomers, movements, revenue, newCustomers, createdToday, activity] =
+    accountIds.length
+      ? await Promise.all([
+          subscriptionTotals(accountIds),
+          payingCustomerCounts(accountIds),
+          movementsByDay(accountIds, timeZone, movementsFrom),
+          revenueByDay(accountIds, timeZone, calendar.previousMonthStart),
+          newCustomerCounts(accountIds, timeZone, calendar.monthStart),
+          customersCreatedSince(accountIds, timeZone, calendar.today),
+          latestActivity(accountIds, FEED_LENGTH),
+        ])
+      : [[], new Map(), [], [], new Map(), new Map(), []];
 
   const converter = await createCurrencyConverter(
     currency,
-    [...totals, ...movements, ...revenue, ...activity].map((row) => row.currency),
+    // New customers bring no amount, hence no currency.
+    [...totals, ...movements, ...revenue, ...activity].flatMap((row) => row.currency ?? []),
     { now, source: rateSource },
   );
-  const mrr = totals.reduce(
-    (total, row) => total + (converter.convert(row.mrr, row.currency) ?? 0),
-    0,
-  );
-  const mrrChanges = convertDaily(movements, converter, calendar.today);
-  const chart = chartDays(calendar.today, chartRange, allTime ? firstDay(mrrChanges) : null);
-  const historyStart = earliest(chart[0], calendar.thirtyDaysAgo);
-  const history = new Map(
-    mrrHistory(mrr, mrrChanges, daysInRange(historyStart, calendar.today)).map((point) => [
-      point.date,
-      point.value,
-    ]),
-  );
+  const figures: AccountFigures = {
+    subscriptions: totals.map((row) => ({
+      accountId: row.accountId,
+      mrr: converter.convert(row.mrr, row.currency) ?? 0,
+      trialing: row.trialing,
+    })),
+    movements: convertDaily(movements, converter, calendar.today),
+    revenue: convertDaily(revenue, converter, calendar.today),
+    payingCustomers,
+    newCustomers,
+    customersCreatedToday: createdToday,
+  };
+  const metricsOfAccounts = (includes: (accountId: string) => boolean) =>
+    metricsOf(figures, includes, calendar, chartRange);
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]));
 
   return {
@@ -108,21 +105,18 @@ export async function getDisplayStateByToken(
     currency,
     status: displayStatus(accounts.map((account) => account.status)),
     accounts: accounts.map(({ id, name, status, livemode }) => ({ id, name, status, livemode })),
-    metrics: {
-      mrr,
-      mrr30DaysAgo: history.get(calendar.thirtyDaysAgo) ?? mrr,
-      arr: mrr * 12,
-      activeCustomers: payingCustomers,
-      trialingSubscriptions: totals.reduce((total, row) => total + row.trialing, 0),
-      arpu: payingCustomers ? Math.round(mrr / payingCustomers) : 0,
-      customersCreatedToday: 0,
-      revenue: revenueMetrics(convertDaily(revenue, converter, calendar.today), calendar),
-      thisMonth: { ...movementTotals(mrrChanges, calendar.monthStart), newCustomers },
-    },
-    series: {
-      mrr: chart.map((date) => ({ date, value: history.get(date) ?? mrr })),
-    },
-    views: [],
+    ...metricsOfAccounts(() => true),
+    // Filled whether the screen rotates or not, so that its editor previews either at once. A
+    // single account's numbers are the screen's own.
+    views:
+      accounts.length > 1
+        ? accounts
+            .filter((account) => account.status === "ready")
+            .map((account) => ({
+              accountId: account.id,
+              ...metricsOfAccounts((accountId) => accountId === account.id),
+            }))
+        : [],
     feed: activity.flatMap((row) => {
       const item = toFeedItem(row, converter, settings, accountNames.get(row.accountId) ?? "");
       return item ? [item] : [];
@@ -174,14 +168,17 @@ function toFeedItem(
   settings: ScreenSettings,
   accountName: string,
 ): FeedItem | null {
-  const amount = converter.convert(row.amount, row.currency);
+  // A new customer has no amount to convert.
+  const amount = row.currency === null ? 0 : converter.convert(row.amount, row.currency);
   if (amount === null) return null;
   return {
     id: `${row.source}:${row.id}`,
     kind: row.kind,
     amount,
     original:
-      row.currency === settings.currency ? null : { amount: row.amount, currency: row.currency },
+      row.currency === null || row.currency === settings.currency
+        ? null
+        : { amount: row.amount, currency: row.currency },
     occurredAt: row.occurredAt.toISOString(),
     live: row.origin === "live",
     customerKey: row.customerId && customerKey(row.accountId, row.customerId),
