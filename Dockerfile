@@ -33,6 +33,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --chown=nextjs:nodejs LICENSE ./
 USER nextjs
 EXPOSE 3000
+# On the port the server listens on: hosts such as EasyPanel set their own PORT.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
-    CMD node -e "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+    CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "server.js"]
