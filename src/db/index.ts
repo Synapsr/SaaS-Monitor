@@ -1,6 +1,6 @@
 import "server-only";
 import { drizzle } from "drizzle-orm/mysql2";
-import { createPool } from "mysql2";
+import { createPool, type Pool } from "mysql2";
 import { env } from "@/env";
 import * as schema from "./schema";
 
@@ -14,7 +14,7 @@ import * as schema from "./schema";
  */
 const SESSION_SETTINGS = "set time_zone = '+00:00', transaction_isolation = 'READ-COMMITTED'";
 
-function createDatabase() {
+function connect(): Pool {
   const pool = createPool({
     uri: env().DATABASE_URL,
     connectionLimit: 10,
@@ -31,16 +31,22 @@ function createDatabase() {
       if (error) console.error("[db] Could not set up a new connection:", error.message);
     });
   });
+  return pool;
+}
+
+function createDatabase(pool: Pool) {
   return drizzle({ client: pool, schema, casing: "snake_case", mode: "default" });
 }
 
 export type Database = ReturnType<typeof createDatabase>;
 export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
-// One pool per process, reused across hot reloads in development. Created on first use so that
-// builds never need a database.
-const globalForDb = globalThis as typeof globalThis & { saasMonitorDb?: Database };
+// One pool per process, reused across hot reloads in development. The database object is not:
+// it caches the column names of each table, and a reload after a schema change must see the new
+// columns. Both are created on first use, so that builds never need a database.
+const globalForDb = globalThis as typeof globalThis & { saasMonitorPool?: Pool };
+let database: Database | undefined;
 
 export function db(): Database {
-  return (globalForDb.saasMonitorDb ??= createDatabase());
+  return (database ??= createDatabase((globalForDb.saasMonitorPool ??= connect())));
 }
