@@ -10,6 +10,11 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   screen's language, and changing it locks every device out again.
 - Stripe Connect platforms: payments made for a connected account show with their own icon, and
   revenue only counts the application fee kept of them.
+- Voice announcements: a voice says what just happened, after the sound and on a switch of its
+  own, for each kind of moment (payments for a connected account apart). Ten voices, two per
+  language, in English, French, German, Spanish and Portuguese, with recorded phrases. With a
+  Gradium API key (`GRADIUM_API_KEY`), screens say their own phrases, with the customer's name,
+  the amount or the plan, and variations picked at random.
 
 ### Changed
 

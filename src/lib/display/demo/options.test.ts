@@ -9,6 +9,7 @@ describe("demo options", () => {
         theme: "light",
         lang: "fr",
         sound: "arcade",
+        voice: "marius",
         names: "1",
         range: "12m",
         metric: "arr",
@@ -21,6 +22,7 @@ describe("demo options", () => {
         theme: "light",
         language: "fr",
         soundPack: "arcade",
+        voice: { enabled: true, voiceId: "marius" },
         showCustomerNames: true,
         chartRange: "12m",
         metric: "arr",
@@ -45,6 +47,7 @@ describe("demo options", () => {
         theme: "dark",
         language: "en",
         soundPack: "register",
+        voice: { enabled: true, voiceId: null },
         showCustomerNames: false,
         chartRange: "90d",
         metric: "mrr",
@@ -55,6 +58,7 @@ describe("demo options", () => {
       preview: false,
     });
     expect(parseDemoOptions({ sound: "off" }).options.soundPack).toBeNull();
+    expect(parseDemoOptions({ voice: "off" }).options.voice.enabled).toBe(false);
   });
 
   it("takes custom accents as hex colors, with or without their #", () => {

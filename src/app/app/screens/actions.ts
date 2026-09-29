@@ -16,6 +16,7 @@ import {
   updateScreen,
 } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
+import { phrasePreviewSchema, previewPhrase } from "@/server/voice/preview";
 
 const screenIdSchema = z.uuid();
 
@@ -83,6 +84,17 @@ export async function sendTestCelebrationAction(screenId: string): Promise<Actio
   if (!parsed.success) return invalidInput(parsed.error);
 
   return sendTestEvent(workspace.id, parsed.data);
+}
+
+/** Says a phrase of the voice settings with sample details, before the founder keeps it. */
+export async function previewPhraseAction(
+  input: z.input<typeof phrasePreviewSchema>,
+): Promise<ActionResult<{ audio: string; contentType: string }>> {
+  const { workspace } = await requireWorkspace();
+  const parsed = phrasePreviewSchema.safeParse(input);
+  if (!parsed.success) return invalidInput(parsed.error);
+
+  return previewPhrase(workspace.id, parsed.data);
 }
 
 export async function deleteScreenAction(screenId: string): Promise<ActionResult> {

@@ -21,6 +21,12 @@ export function LiveDisplay({ token, initialState, preview }: LiveDisplayProps) 
     return <ScreenLock token={token} language={language} theme={theme} accent={accent} />;
   }
   return (
-    <Display state={state} online={connection === "online"} preview={preview} followServerVersion />
+    <Display
+      state={state}
+      online={connection === "online"}
+      preview={preview}
+      followServerVersion
+      announcementEndpoint={`/api/screens/${encodeURIComponent(token)}/announcement`}
+    />
   );
 }

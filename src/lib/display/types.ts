@@ -40,6 +40,11 @@ export interface DisplayState {
   feed: FeedItem[];
   /** Present after "Send a test celebration" was clicked in the settings. */
   testEvent: { id: string } | null;
+  /**
+   * The screen's server says its own phrases (`settings.voice.personalized`): it has a Gradium API
+   * key to synthesize them. Otherwise voices say recorded phrases.
+   */
+  personalizedVoice: boolean;
   /** Issues worth surfacing discreetly, written by the display in the screen's language. */
   warnings: DisplayWarning[];
 }

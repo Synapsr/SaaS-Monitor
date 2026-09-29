@@ -30,6 +30,13 @@ const schema = z
       .url()
       .default("https://api.frankfurter.dev/v1")
       .transform((url) => url.replace(/\/+$/, "")),
+    /** Lets screens say their own phrases, with names and amounts (Gradium text-to-speech). */
+    GRADIUM_API_KEY: z.string().optional(),
+    /** `https://eu.api.gradium.ai/api` or `https://us.api.gradium.ai/api` pin a region. */
+    GRADIUM_API_URL: z
+      .url()
+      .default("https://api.gradium.ai/api")
+      .transform((url) => url.replace(/\/+$/, "")),
   })
   .superRefine((values, context) => {
     for (const provider of ["GITHUB", "GOOGLE"] as const) {

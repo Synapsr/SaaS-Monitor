@@ -8,10 +8,15 @@ import { itemContext, itemCountry } from "@/lib/display/feed";
 import { formatAmount, formatPayment } from "@/lib/display/format";
 import type { DisplayLocale } from "@/lib/display/i18n";
 import { recurringMetric } from "@/lib/display/metric";
-import { isMrrIncrease, momentAccount, type Moment } from "@/lib/display/moments";
+import {
+  isMrrIncrease,
+  momentAccount,
+  testPaymentAmount,
+  type Moment,
+} from "@/lib/display/moments";
 import { screenView } from "@/lib/display/rotation";
 import type { DisplayState } from "@/lib/display/types";
-import { formatMoney, toMajorUnits, toMinorUnits } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 
 interface MomentOverlayProps {
   moment: Moment | null;
@@ -139,18 +144,14 @@ function describe(
         tone: received || moment.mrrChange >= 0 ? "celebration" : "calm",
       };
     }
-    case "test": {
-      // A typical payment of this business, rounded: it reads as a sample, not as real money.
-      const { arpu } = state.metrics;
-      const typical = arpu > 0 ? Math.max(1, Math.round(toMajorUnits(arpu, currency))) : 49;
+    case "test":
       return {
         icon: PartyPopperIcon,
         eyebrow: text.moments.test,
-        headline: formatPayment(toMinorUnits(typical, currency), currency, locale),
+        headline: formatPayment(testPaymentAmount(state), currency, locale),
         details: [text.moments.testDetails],
         tone: "celebration",
       };
-    }
     case "milestone":
       // Without celebrations, a milestone is still worth a card.
       return {

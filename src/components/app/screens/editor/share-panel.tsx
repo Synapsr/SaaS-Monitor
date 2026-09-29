@@ -72,8 +72,8 @@ export function SharePanel({
           </Button>
         </div>
         <p className="text-sm text-pretty text-muted-foreground">
-          Plays a fake sale, with sound and confetti, on every open copy of this screen. The easiest
-          way to check the sound on your TV.
+          Plays a fake sale, with its sound, voice and confetti, on every open copy of this screen.
+          The easiest way to check the sound on your TV.
         </p>
       </div>
 

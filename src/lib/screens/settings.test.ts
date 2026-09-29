@@ -120,3 +120,48 @@ describe("theme, language and rotation", () => {
     }
   });
 });
+
+describe("voice", () => {
+  it("is off by default, and quiet about losses once on", () => {
+    expect(defaultScreenSettings.voice).toMatchObject({
+      enabled: false,
+      voiceId: null,
+      personalized: false,
+      phrases: {},
+    });
+    expect(defaultScreenSettings.voice.announce).toMatchObject({
+      payment: true,
+      connectPayment: true,
+      subscription: true,
+      downgrade: false,
+      cancellation: false,
+    });
+  });
+
+  it("keeps a screen's own phrases, per announcement", () => {
+    const { voice } = screenSettingsSchema.parse({
+      voice: {
+        enabled: true,
+        voiceId: "marius",
+        phrases: { payment: ["{name} a payé {amount} !"] },
+      },
+    });
+    expect(voice).toMatchObject({ enabled: true, voiceId: "marius" });
+    expect(voice.phrases).toEqual({ payment: ["{name} a payé {amount} !"] });
+  });
+
+  it("forgets a voice that no longer exists, but not the rest of the voice settings", () => {
+    expect(parseScreenSettings({ voice: { enabled: true, voiceId: "hal" } }).voice).toMatchObject({
+      enabled: true,
+      voiceId: null,
+    });
+  });
+
+  it("refuses phrases too long to say, or too many of them", () => {
+    const phrases = (list: string[]) =>
+      screenSettingsSchema.safeParse({ voice: { phrases: { payment: list } } }).success;
+    expect(phrases(["x".repeat(160)])).toBe(true);
+    expect(phrases(["x".repeat(161)])).toBe(false);
+    expect(phrases(Array.from({ length: 6 }, () => "Ka-ching!"))).toBe(false);
+  });
+});

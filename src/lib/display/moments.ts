@@ -2,7 +2,7 @@ import { diffFeed } from "@/lib/display/feed-diff";
 import { recurringMetric } from "@/lib/display/metric";
 import { crossedMilestone } from "@/lib/display/milestones";
 import type { DisplayState, FeedItem } from "@/lib/display/types";
-import { toMinorUnits } from "@/lib/money";
+import { toMajorUnits, toMinorUnits } from "@/lib/money";
 import type { Metric, ScreenSettings } from "@/lib/screens/settings";
 import type { SoundEvent } from "@/lib/sounds";
 
@@ -365,6 +365,16 @@ export function momentCelebration(moment: Moment): Celebration | null {
     case "customer":
       return null;
   }
+}
+
+/**
+ * The amount of a test celebration: a typical payment of this business, rounded, so that it reads
+ * as a sample rather than as real money.
+ */
+export function testPaymentAmount(state: DisplayState): number {
+  const { arpu } = state.metrics;
+  const typical = arpu > 0 ? Math.max(1, Math.round(toMajorUnits(arpu, state.currency))) : 49;
+  return toMinorUnits(typical, state.currency);
 }
 
 /** A milestone takes over the whole screen: it deserves its full show, whatever the setting. */

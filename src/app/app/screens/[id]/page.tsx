@@ -5,6 +5,7 @@ import { ScreenEditor } from "@/components/app/screens/editor/screen-editor";
 import { env } from "@/env";
 import { getScreen, listAccountOptions } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
+import { canSynthesize } from "@/server/voice/gradium";
 
 /** Shared by the metadata and the page, which render in the same request. */
 const loadScreen = cache(async (id: string) => {
@@ -27,5 +28,12 @@ export default async function ScreenPage({ params }: PageProps<"/app/screens/[id
   ]);
   if (!screen) notFound();
 
-  return <ScreenEditor screen={screen} accounts={accounts} appUrl={env().APP_URL} />;
+  return (
+    <ScreenEditor
+      screen={screen}
+      accounts={accounts}
+      appUrl={env().APP_URL}
+      canPersonalizeVoice={canSynthesize()}
+    />
+  );
 }

@@ -43,6 +43,8 @@ All settings are environment variables, documented in [`.env.example`](../.env.e
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables "Continue with Google".                                                                      |
 | `MIGRATE_ON_START`                         | no       | Apply migrations at startup (default `true`).                                                        |
 | `FX_RATES_URL`                             | no       | Exchange-rate API used to combine currencies (default: Frankfurter, ECB rates).                      |
+| `GRADIUM_API_KEY`                          | no       | Lets screens say [their own phrases](wall-display.md#voice), synthesized by Gradium.                 |
+| `GRADIUM_API_URL`                          | no       | Gradium's API (default `https://api.gradium.ai/api`; `eu.` or `us.` hosts keep data in a region).    |
 
 After your team has signed up, set `DISABLE_SIGNUPS=true` and restart: nobody else can create an
 account on your instance, while invitations keep working.

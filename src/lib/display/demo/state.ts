@@ -137,6 +137,7 @@ export function demoState(worlds: readonly DemoWorld[], now: Date): DisplayState
           enabled: options.soundPack !== null,
           pack: options.soundPack ?? defaultScreenSettings.sound.pack,
         },
+        voice: { ...defaultScreenSettings.voice, ...options.voice },
         showCustomerNames: options.showCustomerNames,
         chartRange: options.chartRange,
         accent: options.accent,
@@ -165,6 +166,8 @@ export function demoState(worlds: readonly DemoWorld[], now: Date): DisplayState
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
       .map((item) => (options.showCustomerNames ? item : { ...item, customerName: null })),
     testEvent: null,
+    // The demo runs in the browser alone: its voice says recorded phrases.
+    personalizedVoice: false,
     warnings: [],
   };
 }

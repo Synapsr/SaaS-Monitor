@@ -46,6 +46,9 @@ when a payment lands, and confetti flies when you cross $10K MRR.
   its horizon.
 - **Sounds for every event**: payments, new customers, MRR up, MRR down and milestones, in three
   packs (cash register, chime, arcade) synthesized in the browser.
+- **A voice that announces them**: "New subscriber!", in five languages, each announcement on its
+  own switch. With a [Gradium](https://gradium.ai) key, in your own words, with the customer's
+  name, the amount and the plan.
 - **Celebrations and goals**: confetti, a full-screen moment for each milestone ($1K, $10K MRR…,
   $1M ARR) or your own goal, with the date you'll reach it at your current pace.
 - **Made for the wall**: scales from a 720p monitor to a 4K TV and portrait screens, never sleeps,
@@ -72,7 +75,7 @@ when a payment lands, and confetti flies when you cross $10K MRR.
   [`?theme=light&lang=fr&accent=ff6b35`](https://saas-monitor.com/d/demo?theme=light&lang=fr&accent=ff6b35)
   for a light screen in French and your color,
   [`?accounts=2`](https://saas-monitor.com/d/demo?accounts=2) for two products taking turns, or
-  `?sound=arcade&range=all&metric=arr` for other settings.
+  `?sound=arcade&voice=marius&range=all&metric=arr` for other settings.
 - **Online**: create an account on <https://saas-monitor.com>, connect Stripe with a read-only
   key, and open your screen's link on any TV. Updates are instant.
 - **On your own server**: see [Self-hosting](#self-hosting). The demo is at `/d/demo` there too.

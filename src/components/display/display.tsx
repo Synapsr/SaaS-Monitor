@@ -25,6 +25,7 @@ import { rotationSlides, screenView, TOTAL } from "@/lib/display/rotation";
 import { resolveDisplayState } from "@/lib/display/state";
 import type { DisplayState } from "@/lib/display/types";
 import { playSound } from "@/lib/sounds";
+import { announceMoment } from "@/lib/voice/announce";
 import { cn } from "@/lib/utils";
 
 export interface DisplayProps {
@@ -38,13 +39,24 @@ export interface DisplayProps {
   preview: boolean;
   /** Reload when the server runs another build. Off for the demo, which has no server. */
   followServerVersion: boolean;
+  /**
+   * Where the screen's voice asks for its own phrases, synthesized by the server; `null` for the
+   * demo, whose voice says recorded ones.
+   */
+  announcementEndpoint: string | null;
 }
 
 /**
  * A wall display: the screen's numbers, the moments that celebrate what just happened, and
  * everything that keeps a kiosk healthy for weeks (wake lock, hidden cursor, pixel shift, updates).
  */
-export function Display({ state: fetched, online, preview, followServerVersion }: DisplayProps) {
+export function Display({
+  state: fetched,
+  online,
+  preview,
+  followServerVersion,
+  announcementEndpoint,
+}: DisplayProps) {
   const override = usePreviewOverride(preview);
   const state = useMemo(() => resolveDisplayState(fetched, override), [fetched, override]);
   const { settings } = state.screen;
@@ -55,6 +67,7 @@ export function Display({ state: fetched, online, preview, followServerVersion }
   const { moment, idle: quiet } = useMoments(state, (started) => {
     const sound = preview ? null : momentSound(started, settings.sound);
     if (sound) playSound(sound, { pack: settings.sound.pack, volume: settings.sound.volume });
+    if (!preview) announceMoment(started, state, { endpoint: announcementEndpoint, sound });
     const celebration = momentCelebration(started);
     if (celebration && settings.celebrations) {
       fireConfetti(celebration, palette.confetti);
@@ -73,7 +86,8 @@ export function Display({ state: fetched, online, preview, followServerVersion }
   const kiosk = !preview;
   const idle = useIdle(kiosk);
   const fullscreen = useFullscreen();
-  const audioUnlocked = useAudioUnlock(kiosk && settings.sound.enabled);
+  const audible = settings.sound.enabled || settings.voice.enabled;
+  const audioUnlocked = useAudioUnlock(kiosk && audible);
   const content = useRef<HTMLDivElement>(null);
   useWakeLock(kiosk);
   usePixelShift(content, kiosk);
@@ -113,7 +127,7 @@ export function Display({ state: fetched, online, preview, followServerVersion }
               timeZone={settings.timeZone}
               serverTime={serverTime}
               fullscreen={kiosk ? fullscreen : null}
-              soundPrompt={kiosk && settings.sound.enabled && !audioUnlocked}
+              soundPrompt={kiosk && audible && !audioUnlocked}
               idle={idle}
             />
             {state.status === "ready" ? (

@@ -14,5 +14,13 @@ interface DemoDisplayProps {
 /** The demo screen of "Acme Analytics": a live simulation, no database involved. */
 export function DemoDisplay({ options, startedAt, preview }: DemoDisplayProps) {
   const state = useDemoSimulation(options, startedAt);
-  return <Display state={state} online preview={preview} followServerVersion={false} />;
+  return (
+    <Display
+      state={state}
+      online
+      preview={preview}
+      followServerVersion={false}
+      announcementEndpoint={null}
+    />
+  );
 }

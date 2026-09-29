@@ -86,6 +86,10 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   and locale from `useDisplayLocale()`, and every language of `src/lib/display/i18n` defines every
   string (the type of `en.ts` enforces it). Numbers and dates go through the locale too. The
   dashboard is in English.
+- **Voices** (`src/lib/voice`) say moments in the screen's language, if Gradium speaks it. Their
+  recorded phrases (`RECORDED_PHRASES`) ship as clips in `public/voices`: after changing one, run
+  `pnpm tsx scripts/generate-voices.ts` with `GRADIUM_API_KEY` set. A screen's own phrases are
+  synthesized by its server from the moment's items, never from text a display sends.
 - **Screen colors are tokens** (`wall-palette.css`, `d/display.css`), redefined by the light theme:
   never hard-code a white or black on a screen. Accents come from `accentPalette`, which keeps
   custom colors readable on both themes.

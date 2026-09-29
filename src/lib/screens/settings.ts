@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ANNOUNCEMENTS } from "@/lib/voice/announcements";
+import { VOICE_IDS } from "@/lib/voice/voices";
 
 export const SOUND_PACKS = ["register", "chime", "arcade"] as const;
 /** Preset accents. A screen may also use a custom color (`#rrggbb`). */
@@ -17,6 +19,10 @@ export const MAX_GOAL = 1_000_000_000;
 export const ROTATION_SECONDS = { min: 5, max: 300 } as const;
 /** How long a moment (a sale, a new customer…) may stay on screen, in seconds. */
 export const MOMENT_SECONDS = { min: 3, max: 60 } as const;
+/** Longest phrase a founder may write for a voice: a sentence, said in a few seconds. */
+export const PHRASE_MAX_LENGTH = 160;
+/** Phrases a founder may write for an announcement, one of them said at random. */
+export const MAX_PHRASES = 5;
 
 export type SoundPack = (typeof SOUND_PACKS)[number];
 export type PresetAccent = (typeof ACCENTS)[number];
@@ -88,6 +94,45 @@ export const screenSettingsSchema = z.object({
       onMrrDown: z.boolean().default(true),
       /** A Stripe customer created, paying or not: often a sign-up. */
       onCustomer: z.boolean().default(true),
+    })
+    .prefault({}),
+  /**
+   * A voice saying what just happened, after the sound: on its own switch, so a screen may speak
+   * without playing sounds. Recorded phrases by default; the screen's own ones, with names and
+   * amounts, when the server has a Gradium API key.
+   */
+  voice: z
+    .object({
+      enabled: z.boolean().default(false),
+      /** One of `VOICES`. `null`, or a voice of another language: the screen's language's first. */
+      voiceId: z.enum(VOICE_IDS).nullable().default(null).catch(null),
+      volume: z.number().min(0).max(1).default(0.8),
+      /** Say the screen's phrases, synthesized as moments happen, rather than recorded ones. */
+      personalized: z.boolean().default(false),
+      /** Which announcements are said. Losses stay quiet unless asked for. */
+      announce: z
+        .object({
+          payment: z.boolean().default(true),
+          connectPayment: z.boolean().default(true),
+          subscription: z.boolean().default(true),
+          upgrade: z.boolean().default(true),
+          reactivation: z.boolean().default(true),
+          downgrade: z.boolean().default(false),
+          cancellation: z.boolean().default(false),
+          customer: z.boolean().default(true),
+          milestone: z.boolean().default(true),
+        })
+        .prefault({}),
+      /**
+       * The screen's own phrases for an announcement, with `{variables}`: one of them is said at
+       * random. None: the default phrases of the screen's language.
+       */
+      phrases: z
+        .partialRecord(
+          z.enum(ANNOUNCEMENTS),
+          z.array(z.string().max(PHRASE_MAX_LENGTH)).max(MAX_PHRASES),
+        )
+        .default({}),
     })
     .prefault({}),
   /** Confetti on new revenue and a full-screen moment when a milestone is crossed. */

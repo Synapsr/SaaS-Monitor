@@ -66,6 +66,7 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
     views: [],
     feed: [],
     testEvent: null,
+    personalizedVoice: false,
     warnings: [],
     ...overrides,
   };

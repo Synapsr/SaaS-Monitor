@@ -1,9 +1,7 @@
 "use client";
 
-import { PlayIcon } from "lucide-react";
-import { RadioGroup as RadioGroupPrimitive, Slider as SliderPrimitive } from "radix-ui";
+import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 import { useId } from "react";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { recurringMetric, type RecurringMetric } from "@/lib/display/metric";
 import {
@@ -14,7 +12,9 @@ import {
 } from "@/lib/screens/settings";
 import { playSound, SOUND_PACK_NAMES, unlockAudio, type SoundEvent } from "@/lib/sounds";
 import { ChoiceCard } from "./choice-card";
+import { PreviewButton } from "./preview-button";
 import { SettingRow } from "./settings-section";
+import { VolumeSlider } from "./volume-slider";
 
 type Sound = ScreenSettings["sound"];
 
@@ -62,31 +62,6 @@ function preview(event: SoundEvent, pack: SoundPack, volume: number) {
   void unlockAudio().then(() => playSound(event, { pack, volume }));
 }
 
-function PreviewButton({
-  label,
-  onClick,
-  disabled,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label={`Play ${label}`}
-      onClick={onClick}
-      disabled={disabled}
-      className="text-muted-foreground"
-    >
-      {/* The triangle's visual center sits right of its box: nudge it. */}
-      <PlayIcon className="size-3.5 translate-x-px fill-current" />
-    </Button>
-  );
-}
-
 export function SoundSettings({
   sound,
   metric,
@@ -98,7 +73,6 @@ export function SoundSettings({
 }) {
   const id = useId();
   const metricLabel = recurringMetric(metric).label;
-  const volumePercent = Math.round(sound.volume * 100);
 
   return (
     <div className="flex flex-col gap-6">
@@ -151,36 +125,12 @@ export function SoundSettings({
           </RadioGroupPrimitive.Root>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span id={`${id}-volume`} className="text-sm font-medium">
-              Volume
-            </span>
-            <span className="text-sm text-muted-foreground tabular-nums">{volumePercent}%</span>
-          </div>
-          <SliderPrimitive.Root
-            name="volume"
-            min={0}
-            max={100}
-            step={5}
-            value={[volumePercent]}
-            disabled={!sound.enabled}
-            onValueChange={([percent]) => onChange({ volume: percent / 100 })}
-            // Letting go of the slider plays a sample at the new volume.
-            onValueCommit={([percent]) => preview("payment", sound.pack, percent / 100)}
-            className="relative flex h-5 w-full touch-none items-center select-none data-disabled:opacity-50"
-          >
-            <SliderPrimitive.Track className="relative h-1 grow overflow-hidden rounded-full bg-muted">
-              <SliderPrimitive.Range className="absolute h-full bg-primary" />
-            </SliderPrimitive.Track>
-            {/* Radix gives the slider role to the thumb: that's where its name goes. */}
-            <SliderPrimitive.Thumb
-              aria-labelledby={`${id}-volume`}
-              aria-valuetext={`${volumePercent}%`}
-              className="relative block size-4 rounded-full border border-ring bg-white shadow-sm ring-ring/50 transition-[box-shadow] after:absolute after:-inset-3 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden"
-            />
-          </SliderPrimitive.Root>
-        </div>
+        <VolumeSlider
+          volume={sound.volume}
+          disabled={!sound.enabled}
+          onChange={(volume) => onChange({ volume })}
+          onCommit={(volume) => preview("payment", sound.pack, volume)}
+        />
 
         <div className="flex flex-col gap-4">
           <p className="text-sm font-medium">Play a sound when</p>

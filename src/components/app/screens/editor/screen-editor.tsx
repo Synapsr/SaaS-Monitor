@@ -24,6 +24,7 @@ import { SettingsSection } from "./settings-section";
 import { SharePanel } from "./share-panel";
 import { SoundSettings } from "./sound-settings";
 import { TimeZonePicker } from "./time-zone-picker";
+import { VoiceSettings } from "./voice-settings";
 
 interface Draft {
   name: string;
@@ -39,10 +40,13 @@ export function ScreenEditor({
   screen,
   accounts,
   appUrl,
+  canPersonalizeVoice,
 }: {
   screen: Screen;
   accounts: AccountOption[];
   appUrl: string;
+  /** The server has a Gradium API key: voices can say the screen's own phrases. */
+  canPersonalizeVoice: boolean;
 }) {
   const id = useId();
   // Initialized once: server re-renders after each save must not overwrite what is being typed.
@@ -62,6 +66,7 @@ export function ScreenEditor({
     setDraft((current) => ({ ...current, settings: { ...current.settings, ...patch } }));
   const url = screenUrl(appUrl, publicToken);
   const accountCurrencies = accounts.flatMap((account) => account.currency ?? []);
+  const selectedAccounts = accounts.filter((account) => draft.accountIds.includes(account.id));
 
   return (
     <div className="flex flex-col gap-8">
@@ -204,6 +209,25 @@ export function ScreenEditor({
                 setDraft((current) => ({
                   ...current,
                   settings: { ...current.settings, sound: { ...current.settings.sound, ...patch } },
+                }))
+              }
+            />
+          </SettingsSection>
+
+          <SettingsSection title="Voice">
+            <VoiceSettings
+              voice={draft.settings.voice}
+              language={draft.settings.language}
+              metric={draft.settings.metric}
+              showCustomerNames={draft.settings.showCustomerNames}
+              currency={draft.settings.currency}
+              product={selectedAccounts[0]?.name ?? (draft.name.trim() || "Acme")}
+              severalProducts={selectedAccounts.length > 1}
+              canPersonalize={canPersonalizeVoice}
+              onChange={(patch) =>
+                setDraft((current) => ({
+                  ...current,
+                  settings: { ...current.settings, voice: { ...current.settings.voice, ...patch } },
                 }))
               }
             />

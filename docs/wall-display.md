@@ -33,6 +33,37 @@ and sound works without any click.
 To check everything end to end, open the screen settings in the dashboard and click **Send a
 test celebration**: every open screen plays a sample payment within a few seconds.
 
+## Voice
+
+A screen can also say what just happened, out loud, right after the sound: "New subscriber!",
+"Payment received!". Turn on **Announce out loud** in the screen settings, pick a voice (two per
+language) and choose what it announces: payments, payments made for a
+[Stripe Connect account](stripe.md#stripe-connect-platforms) (apart from your own), new
+subscribers, upgrades, reactivations, downgrades, cancellations, new customers and milestones.
+Voice has its own switch and volume, so a screen can speak without playing sounds. Voices speak
+English, French, German, Spanish and Portuguese, the screen's language.
+
+Out of the box, voices say recorded phrases that ship with SaaS Monitor: nothing is sent anywhere.
+
+**Your own phrases.** With a [Gradium](https://gradium.ai) API key on the server
+(`GRADIUM_API_KEY`, see [Self-hosting](self-hosting.md)), turn on **Your own phrases**: the voice
+then says what you write, with the details of each moment:
+
+| Variable    | Says                                                      |
+| ----------- | --------------------------------------------------------- |
+| `{name}`    | the customer's name, when the screen shows customer names |
+| `{amount}`  | the amount on the card: a payment, or the change of MRR   |
+| `{plan}`    | the plan's name                                           |
+| `{country}` | the customer's country                                    |
+| `{product}` | the Stripe account's name, for screens with several       |
+| `{fee}`     | your fee, on a payment for a connected account            |
+
+For example `{name} just joined {plan}, for {amount}!` says "Ada Lovelace just joined Pro, for
+$49!". Write up to five variations per announcement: one is picked at random each time, among
+those whose details are known, so a phrase with `{name}` gives way to another one when the name is
+hidden. Each announcement is synthesized by Gradium when it happens (the text, customer's name
+included, is sent to Gradium), and every open copy of the screen says the same phrase.
+
 ## Raspberry Pi (recommended)
 
 Any Raspberry Pi 4 or 5 connected to a TV over HDMI does the job. With Raspberry Pi OS (desktop):
@@ -87,6 +118,7 @@ In the screen settings, pick a dark or a light theme (light suits bright rooms a
 an accent color, or your own color pasted as hex: the screen makes it lighter or darker if it
 needs to, so that it stays readable. The screen speaks English, French, German, Spanish,
 Italian, Portuguese or Dutch, and writes numbers and dates the local way (`12 480 €` in French).
+Its [voice](#voice) speaks the same language.
 The dashboard itself stays in English.
 
 ## Several screens
