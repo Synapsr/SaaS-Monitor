@@ -54,6 +54,14 @@ const BURST_SIZE = 4;
  */
 const SAME_CHECKOUT_MS = 10 * 60_000;
 
+/**
+ * What an item brings the account: a payment's amount, or only the fee of one made for a Stripe
+ * Connect account, whose money is theirs.
+ */
+export function ownRevenue(item: FeedItem): number {
+  return item.connect ? (item.connect.applicationFee ?? 0) : item.amount;
+}
+
 export function isMrrIncrease(item: FeedItem): boolean {
   return item.kind === "new" || item.kind === "expansion" || item.kind === "reactivation";
 }
@@ -100,8 +108,12 @@ function planAccountMoments(items: readonly FeedItem[]): Moment[] {
   const merged = new Map<string, FeedItem>();
   for (const movement of movements) {
     if (!isMrrIncrease(movement)) continue;
+    // A payment made for a Stripe Connect account never pays for the account's subscriptions.
     const payment = payments.find(
-      (candidate) => !merged.has(candidate.id) && sameCheckout(candidate, movement),
+      (candidate) =>
+        candidate.connect === null &&
+        !merged.has(candidate.id) &&
+        sameCheckout(candidate, movement),
     );
     if (payment) merged.set(payment.id, movement);
   }
@@ -128,7 +140,7 @@ function planAccountMoments(items: readonly FeedItem[]): Moment[] {
   });
   if (moments.length < BURST_SIZE) return moments;
 
-  const sum = (list: FeedItem[]) => list.reduce((total, item) => total + item.amount, 0);
+  const sum = (list: FeedItem[]) => list.reduce((total, item) => total + ownRevenue(item), 0);
   const last = items[items.length - 1];
   return [
     {
@@ -333,7 +345,10 @@ export function momentSound(moment: Moment, sound: ScreenSettings["sound"]): Sou
   }
 }
 
-/** Confetti for money coming in, a bigger show for milestones, nothing for losses. */
+/**
+ * Confetti for money coming in, a bigger show for milestones, nothing for losses, nor for money
+ * that only passes through for a Stripe Connect account.
+ */
 export type Celebration = "payment" | "milestone";
 
 export function momentCelebration(moment: Moment): Celebration | null {
@@ -341,6 +356,7 @@ export function momentCelebration(moment: Moment): Celebration | null {
     case "milestone":
       return "milestone";
     case "payment":
+      return moment.payment.connect ? null : "payment";
     case "test":
       return "payment";
     case "summary":

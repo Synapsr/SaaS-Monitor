@@ -142,6 +142,13 @@ export interface Charge {
   description: string | null;
   customerName: string | null;
   country: string | null;
+  /**
+   * The Stripe Connect account a destination charge was made for: the money goes to it, and the
+   * account only keeps `applicationFee`. `null` for the account's own charges.
+   */
+  connectedAccountId: string | null;
+  /** What the account keeps of a destination charge, when it takes a fee. */
+  applicationFee: number | null;
 }
 
 export interface Product {

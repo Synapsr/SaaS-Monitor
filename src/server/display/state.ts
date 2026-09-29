@@ -186,6 +186,15 @@ function toFeedItem(
     customerName: settings.showCustomerNames ? row.customerName : null,
     country: row.country,
     planName: row.planName,
+    connect:
+      row.connectedAccountId === null || row.currency === null
+        ? null
+        : {
+            applicationFee:
+              row.applicationFee === null
+                ? null
+                : converter.convert(row.applicationFee, row.currency),
+          },
     accountId: row.accountId,
     accountName,
   };

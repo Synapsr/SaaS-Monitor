@@ -134,6 +134,12 @@ export interface FeedItem {
   /** ISO 3166-1 alpha-2 code, e.g. `FR`. */
   country: string | null;
   planName: string | null;
+  /**
+   * A payment collected for one of the account's Stripe Connect accounts (a destination charge):
+   * the money is theirs, and the account keeps `applicationFee`, converted, when it takes one.
+   * `null` for everything else.
+   */
+  connect: { applicationFee: number | null } | null;
   /** As in `DisplayState.accounts`. */
   accountId: string;
   accountName: string;

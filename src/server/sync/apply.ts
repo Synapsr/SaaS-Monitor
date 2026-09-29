@@ -274,8 +274,9 @@ function hasChanged(row: SubscriptionRow, values: SubscriptionValues): boolean {
 
 /**
  * Records collected charges and returns how many payments were added or changed. A charge seen
- * again (replayed event, refund) only updates its amounts: it keeps its origin, so a payment is
- * never celebrated twice. Stored rows are locked first, like subscriptions.
+ * again (replayed event, refund) only updates its amounts and who it was for: it keeps its
+ * origin, so a payment is never celebrated twice. Stored rows are locked first, like
+ * subscriptions.
  */
 export async function applyCharges(
   tx: Transaction,
@@ -293,6 +294,8 @@ export async function applyCharges(
       chargeId: payments.stripeChargeId,
       amount: payments.amount,
       amountRefunded: payments.amountRefunded,
+      connectedAccountId: payments.connectedAccountId,
+      applicationFee: payments.applicationFee,
     })
     .from(payments)
     .where(and(eq(payments.accountId, accountId), inArray(payments.stripeChargeId, chargeIds)))
@@ -307,11 +310,18 @@ export async function applyCharges(
       added.push(charge);
     } else if (
       previous.amount !== charge.amount ||
-      previous.amountRefunded !== charge.amountRefunded
+      previous.amountRefunded !== charge.amountRefunded ||
+      previous.connectedAccountId !== charge.connectedAccountId ||
+      previous.applicationFee !== charge.applicationFee
     ) {
       await tx
         .update(payments)
-        .set({ amount: charge.amount, amountRefunded: charge.amountRefunded })
+        .set({
+          amount: charge.amount,
+          amountRefunded: charge.amountRefunded,
+          connectedAccountId: charge.connectedAccountId,
+          applicationFee: charge.applicationFee,
+        })
         .where(eq(payments.id, previous.id));
       changed += 1;
     }
@@ -349,6 +359,8 @@ async function newPayments(
       amount: charge.amount,
       amountRefunded: charge.amountRefunded,
       currency: charge.currency,
+      connectedAccountId: charge.connectedAccountId,
+      applicationFee: charge.applicationFee,
       occurredAt: toDate(charge.created),
       origin,
     };

@@ -93,6 +93,8 @@ async function addPayment(
     currency?: string;
     origin?: "backfill" | "live" | "reconcile";
     customer?: string;
+    /** Made for this Stripe Connect account, which pays the fee. */
+    connect?: { account: string; fee: number | null };
   },
 ) {
   const [payment] = await db()
@@ -106,6 +108,8 @@ async function addPayment(
       amount: row.amount,
       amountRefunded: row.refunded ?? 0,
       currency: row.currency ?? "usd",
+      connectedAccountId: row.connect?.account ?? null,
+      applicationFee: row.connect?.fee ?? null,
       occurredAt: new Date(row.at),
       origin: row.origin ?? "backfill",
     })
@@ -479,6 +483,40 @@ describe("display state", () => {
     });
   });
 
+  it("counts only the fee of payments made for Stripe Connect accounts, and marks them", async () => {
+    const accountId = await readyAccount();
+    await addPayment(accountId, { amount: 4900, at: "2026-03-15T08:00:00Z" });
+    const photo = await addPayment(accountId, {
+      amount: 10_000,
+      at: "2026-03-15T09:00:00Z",
+      connect: { account: "acct_photo", fee: 300 },
+    });
+    await addPayment(accountId, {
+      amount: 5000,
+      at: "2026-03-15T10:00:00Z",
+      connect: { account: "acct_photo", fee: null },
+    });
+    // Refunded in full: the fee goes back too.
+    await addPayment(accountId, {
+      amount: 8000,
+      refunded: 8000,
+      at: "2026-03-15T11:00:00Z",
+      connect: { account: "acct_photo", fee: 200 },
+    });
+
+    const { metrics, feed } = await displayOf([accountId]);
+
+    expect(metrics.revenue.today).toBe(4900 + 300);
+    expect(feed.map((item) => [item.amount, item.connect])).toEqual([
+      [5000, { applicationFee: null }],
+      [10_000, { applicationFee: 300 }],
+      [4900, null],
+    ]);
+    expect(feed.find((item) => item.id === `payment:${photo}`)?.connect).toEqual({
+      applicationFee: 300,
+    });
+  });
+
   it("converts other currencies at today's rate and says which ones it cannot", async () => {
     const euros = await readyAccount("Euro shop", { defaultCurrency: "eur" });
     const yen = await readyAccount("Tokyo shop", { defaultCurrency: "jpy" });
@@ -570,6 +608,7 @@ describe("display state", () => {
         customerName: null,
         country: "US",
         planName: null,
+        connect: null,
         accountId,
         accountName: "Acme",
       },
@@ -707,6 +746,7 @@ describe("display state", () => {
         customerName: null,
         country: "GB",
         planName: null,
+        connect: null,
         accountId,
         accountName: "Acme",
       },

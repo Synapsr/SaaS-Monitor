@@ -1,4 +1,5 @@
 import {
+  CircleArrowOutUpRightIcon,
   CircleDollarSignIcon,
   RotateCcwIcon,
   SparklesIcon,
@@ -23,14 +24,32 @@ export const KIND_ICONS: Record<FeedItemKind, LucideIcon> = {
   churn: UserMinusIcon,
 };
 
-/** The icon of a kind of activity on a disc, in the accent for good news. */
-export function KindIcon({ kind, className }: { kind: FeedItemKind; className?: string }) {
-  const Icon = KIND_ICONS[kind];
+/** A payment made for one of the account's Stripe Connect accounts: money passing on. */
+export const CONNECT_PAYMENT_ICON = CircleArrowOutUpRightIcon;
+
+/**
+ * The icon of a kind of activity on a disc, in the accent for good news. A payment made for a
+ * Stripe Connect account (`connect`) has its own icon, on a quieter disc: the money isn't yours.
+ */
+export function KindIcon({
+  kind,
+  connect = false,
+  className,
+}: {
+  kind: FeedItemKind;
+  connect?: boolean;
+  className?: string;
+}) {
+  const Icon = connect ? CONNECT_PAYMENT_ICON : KIND_ICONS[kind];
   return (
     <span
       className={cn(
         "grid shrink-0 place-items-center rounded-full",
-        isGoodNews(kind) ? "bg-(--glow-wash) text-(--glow-ink)" : "bg-(--fill) text-(--ink-2)",
+        !isGoodNews(kind)
+          ? "bg-(--fill) text-(--ink-2)"
+          : connect
+            ? "bg-(--fill) text-(--glow-ink)"
+            : "bg-(--glow-wash) text-(--glow-ink)",
         className,
       )}
     >

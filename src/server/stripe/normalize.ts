@@ -261,6 +261,9 @@ export const subscriptionSchema = z
  * Charges come from typed listings and from event payloads of any API version: only fields that
  * have been stable for years are read, and `amount_captured` (2020) falls back to `amount`.
  */
+const connectedAccount = (destination: z.infer<typeof reference> | null | undefined) =>
+  destination ? idOf(destination) : null;
+
 export const chargeSchema = z
   .object({
     id: z.string(),
@@ -282,6 +285,10 @@ export const chargeSchema = z
     payment_method_details: z
       .object({ card: z.object({ country: z.string().nullish() }).nullish() })
       .nullish(),
+    // Destination charges name their connected account; before 2017, `destination` did.
+    transfer_data: z.object({ destination: reference }).nullish(),
+    destination: reference.nullish(),
+    application_fee_amount: z.number().int().nullish(),
   })
   .transform((charge): Charge => ({
     id: charge.id,
@@ -297,6 +304,8 @@ export const chargeSchema = z
       charge.billing_details?.address?.country ||
       charge.payment_method_details?.card?.country ||
       null,
+    connectedAccountId: connectedAccount(charge.transfer_data?.destination ?? charge.destination),
+    applicationFee: charge.application_fee_amount ?? null,
   }));
 
 export const productSchema = z

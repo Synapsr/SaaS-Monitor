@@ -97,12 +97,21 @@ Some limits to keep in mind:
   what Stripe showed that day. Amounts in a currency without a rate are left out, and the screen
   says so.
 
-Revenue is what customers paid, net of refunds: today, this month, and the same number of days of
-the previous month for comparison. Days and months follow the screen's time zone.
+Revenue is what customers paid, net of refunds (and only your fee of the payments made for
+[connected accounts](#stripe-connect-platforms)): today, this month, and the same number of days
+of the previous month for comparison. Days and months follow the screen's time zone.
 
 A **new customer** is a customer created in Stripe, often at sign-up, before they pay anything if
 they ever do: screens announce them and count today's. Deleting a customer in Stripe, such as spam
 or test data, removes them from the screens.
+
+## Stripe Connect platforms
+
+If your account is a Connect platform, the destination charges it makes for its connected
+accounts (`transfer_data.destination`) appear in the feed with their own icon, as payments for a
+connected account: the money is theirs. Your revenue only counts the application fee you keep
+of them, and they ring without confetti. Charges imported before this was known are classified
+at the next **Re-import data** of the account.
 
 ## Instant updates
 

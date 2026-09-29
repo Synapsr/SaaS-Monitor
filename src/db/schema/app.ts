@@ -261,6 +261,12 @@ export const payments = mysqlTable(
     amount: money().notNull(),
     amountRefunded: money().notNull().default(0),
     currency: currency().notNull(),
+    /**
+     * The Stripe Connect account a destination charge was made for: the money is theirs, and
+     * the account's revenue is `applicationFee`. `null` for the account's own payments.
+     */
+    connectedAccountId: stripeId(),
+    applicationFee: money(),
     occurredAt: instant().notNull(),
     origin: mysqlEnum(DATA_ORIGINS).notNull(),
     ...timestamps,

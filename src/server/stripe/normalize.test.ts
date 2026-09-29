@@ -193,6 +193,26 @@ describe("charge normalization", () => {
     });
   });
 
+  it("tells the charges made for a Stripe Connect account, and the fee kept of them", () => {
+    expect(chargeSchema.parse(stripeCharge())).toMatchObject({
+      connectedAccountId: null,
+      applicationFee: null,
+    });
+    expect(
+      chargeSchema.parse(
+        stripeCharge({ transfer_data: { destination: "acct_photo" }, application_fee_amount: 240 }),
+      ),
+    ).toMatchObject({ connectedAccountId: "acct_photo", applicationFee: 240 });
+    // Expanded, or named by the `destination` of charges created before 2017.
+    expect(
+      chargeSchema.parse(stripeCharge({ transfer_data: { destination: { id: "acct_photo" } } }))
+        .connectedAccountId,
+    ).toBe("acct_photo");
+    expect(chargeSchema.parse(stripeCharge({ destination: "acct_old" })).connectedAccountId).toBe(
+      "acct_old",
+    );
+  });
+
   it("finds the country on the card when the billing address has none", () => {
     const charge = chargeSchema.parse(
       stripeCharge({

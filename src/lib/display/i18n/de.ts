@@ -55,6 +55,7 @@ export const de: DisplayText = {
       contraction: "Downgrade",
       churn: "Kündigung",
     },
+    connectPayment: "Für ein verbundenes Konto",
     justNow: "gerade eben",
     minutesAgo: (minutes) => `vor ${minutes} Min.`,
     hoursAgo: (hours) => `vor ${hours} Std.`,
@@ -75,6 +76,8 @@ export const de: DisplayText = {
       contraction: "Downgrade",
       churn: "Abo gekündigt",
     },
+    connectPayment: "Zahlung für ein verbundenes Konto",
+    connectFee: (amount) => `Deine Gebühr: ${amount}`,
     someoneNew: "Jemand Neues",
     customersToday: (count) =>
       count === 1 ? "Erster neuer Kunde heute" : `${count} neue Kunden heute`,

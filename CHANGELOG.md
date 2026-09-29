@@ -8,6 +8,8 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 - An optional password per screen, on top of its link: each device asks for it once, in the
   screen's language, and changing it locks every device out again.
+- Stripe Connect platforms: payments made for a connected account show with their own icon, and
+  revenue only counts the application fee kept of them.
 
 ### Fixed
 

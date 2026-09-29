@@ -106,6 +106,37 @@ describe("moment planning", () => {
     ]);
   });
 
+  it("never merges a payment made for a Stripe Connect account with a subscription", () => {
+    const movement = feedItem({ kind: "new", amount: 19_900 });
+    const payment = feedItem({ kind: "payment", amount: 19_900, connect: { applicationFee: 500 } });
+    expect(planMoments([movement, payment]).map((moment) => moment.kind)).toEqual([
+      "movement",
+      "payment",
+    ]);
+  });
+
+  it("sums up only the fees of payments made for Stripe Connect accounts", () => {
+    const burst = [
+      feedItem({ kind: "payment", amount: 4_900, customerKey: "c1" }),
+      feedItem({
+        kind: "payment",
+        amount: 10_000,
+        customerKey: "c2",
+        connect: { applicationFee: 300 },
+      }),
+      feedItem({
+        kind: "payment",
+        amount: 8_000,
+        customerKey: "c3",
+        connect: { applicationFee: null },
+      }),
+      feedItem({ kind: "payment", amount: 2_900, customerKey: "c4" }),
+    ];
+    expect(planMoments(burst)).toEqual([
+      expect.objectContaining({ kind: "summary", payments: 4, revenue: 4_900 + 300 + 2_900 }),
+    ]);
+  });
+
   it("announces a new customer who has not paid yet", () => {
     const customer = feedItem({ id: "customer:1", kind: "customer", amount: 0, planName: null });
     expect(planMoments([customer])).toEqual([{ id: "customer:1", kind: "customer", customer }]);
@@ -424,5 +455,10 @@ describe("moment celebrations", () => {
     expect(momentCelebration({ id: "c", kind: "movement", movement: churn })).toBeNull();
     const customer = feedItem({ kind: "customer" });
     expect(momentCelebration({ id: "n", kind: "customer", customer })).toBeNull();
+    // Money for a Stripe Connect account passes through: it rings, without confetti.
+    const connect = feedItem({ connect: { applicationFee: 300 } });
+    expect(
+      momentCelebration({ id: "c", kind: "payment", payment: connect, movement: null }),
+    ).toBeNull();
   });
 });

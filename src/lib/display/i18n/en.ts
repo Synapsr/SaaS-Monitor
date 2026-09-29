@@ -55,6 +55,8 @@ export const en = {
       contraction: "Downgrade",
       churn: "Cancellation",
     },
+    /** A payment made for one of the account's Stripe Connect accounts. */
+    connectPayment: "For a connected account",
     justNow: "just now",
     minutesAgo: (minutes: number) => `${minutes} min ago`,
     hoursAgo: (hours: number) => `${hours} h ago`,
@@ -75,6 +77,8 @@ export const en = {
       contraction: "Downgrade",
       churn: "Subscription canceled",
     },
+    connectPayment: "Payment for a connected account",
+    connectFee: (amount: string) => `Your fee: ${amount}`,
     /** A new customer whose name is hidden and country unknown. */
     someoneNew: "Someone new",
     customersToday: (count: number) =>

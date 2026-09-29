@@ -1,6 +1,6 @@
 import { CircleDollarSignIcon, PartyPopperIcon } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { KIND_ICONS } from "@/components/display/feed-kind-icon";
+import { CONNECT_PAYMENT_ICON, KIND_ICONS } from "@/components/display/feed-kind-icon";
 import { MilestoneCelebration } from "@/components/display/milestone-celebration";
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
 import { useDisplayLocale } from "@/hooks/use-display-locale";
@@ -65,6 +65,21 @@ function describe(
 
   switch (moment.kind) {
     case "payment": {
+      const { connect } = moment.payment;
+      if (connect) {
+        // Money for a Stripe Connect account: the account's share is its fee.
+        return {
+          icon: CONNECT_PAYMENT_ICON,
+          eyebrow: text.moments.connectPayment,
+          headline: formatPayment(moment.payment.amount, currency, locale),
+          account,
+          details: itemContext(moment.payment, context),
+          footnote: connect.applicationFee
+            ? text.moments.connectFee(formatPayment(connect.applicationFee, currency, locale))
+            : null,
+          tone: "celebration",
+        };
+      }
       // A payment that started or upgraded a subscription is announced by what it started.
       const kind = moment.movement?.kind ?? "payment";
       return {

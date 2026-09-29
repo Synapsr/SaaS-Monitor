@@ -18,6 +18,7 @@ export function feedItem(overrides: Partial<FeedItem> = {}): FeedItem {
     customerName: null,
     country: "FR",
     planName: "Pro",
+    connect: null,
     accountId: "a1",
     accountName: "Acme",
     ...overrides,

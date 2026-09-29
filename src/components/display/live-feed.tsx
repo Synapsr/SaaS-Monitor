@@ -112,7 +112,7 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
   const { language, locale, text } = useDisplayLocale();
   const amount = itemAmount(item, currency, recurring, locale);
   const original = itemOriginalAmount(item, recurring, locale);
-  const kind = text.feed.kinds[item.kind];
+  const kind = item.connect ? text.feed.connectPayment : text.feed.kinds[item.kind];
   // A new customer has no amount: their name leads, or what they are when it is hidden.
   const headline = amount ?? item.customerName ?? kind;
   const context = itemContext(amount === null ? { ...item, customerName: null } : item, {
@@ -131,7 +131,7 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
         arrived && "motion-safe:animate-[display-arrival_5s_ease-out]",
       )}
     >
-      <KindIcon kind={item.kind} className="size-12" />
+      <KindIcon kind={item.kind} connect={item.connect !== null} className="size-12" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-4">
           <p className="flex items-baseline gap-2 truncate">

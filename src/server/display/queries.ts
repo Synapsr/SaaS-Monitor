@@ -153,7 +153,10 @@ export function movementsByDay(accountIds: string[], timeZone: string, from: str
     .groupBy(local.accountId, local.currency, local.kind, local.day);
 }
 
-/** Net revenue (payments minus refunds) per account, currency and local day, from `from` on. */
+/**
+ * Net revenue (payments minus refunds, and the fees of those made for Stripe Connect accounts)
+ * per account, currency and local day, from `from` on.
+ */
 export function revenueByDay(accountIds: string[], timeZone: string, from: string) {
   const local = db()
     .$with("local_payments")
@@ -162,7 +165,13 @@ export function revenueByDay(accountIds: string[], timeZone: string, from: strin
         .select({
           accountId: payments.accountId,
           currency: payments.currency,
-          net: sql<number>`${payments.amount} - ${payments.amountRefunded}`.as("net"),
+          // A payment made for a Stripe Connect account is theirs: the account earns its fee,
+          // unless the payment was refunded in full.
+          net: sql<number>`case
+            when ${payments.connectedAccountId} is null then ${payments.amount} - ${payments.amountRefunded}
+            when ${payments.amountRefunded} < ${payments.amount} then coalesce(${payments.applicationFee}, 0)
+            else 0
+          end`.as("net"),
           day: localDay(payments.occurredAt, timeZone).as("day"),
         })
         .from(payments)
@@ -284,6 +293,10 @@ export interface ActivityRow {
   customerName: string | null;
   country: string | null;
   planName: string | null;
+  /** For a payment made for a Stripe Connect account: that account's id. */
+  connectedAccountId: string | null;
+  /** What the account keeps of such a payment. */
+  applicationFee: number | null;
 }
 
 /** Newest first, and rows of the same instant by descending id, like the queries below. */
@@ -329,6 +342,8 @@ function latestPayments(accountId: string, limit: number) {
       customerName: payments.customerName,
       country: payments.customerCountry,
       customerId: payments.stripeCustomerId,
+      connectedAccountId: payments.connectedAccountId,
+      applicationFee: payments.applicationFee,
     })
     .from(payments)
     .where(and(eq(payments.accountId, accountId), gt(payments.amount, payments.amountRefunded)))
@@ -381,7 +396,12 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
     paymentRows.flatMap((row) => (row.customerId ? [row.customerId] : [])),
   );
   const rows: ActivityRow[] = [
-    ...movementRows.map((row) => ({ ...row, source: "movement" as const })),
+    ...movementRows.map((row) => ({
+      ...row,
+      source: "movement" as const,
+      connectedAccountId: null,
+      applicationFee: null,
+    })),
     ...paymentRows.map((row) => {
       const profile = row.customerId ? profiles.get(`${row.accountId}:${row.customerId}`) : null;
       return {
@@ -402,6 +422,8 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       amount: 0,
       currency: null,
       planName: null,
+      connectedAccountId: null,
+      applicationFee: null,
     })),
   ];
   return rows.sort(newestFirst).slice(0, limit);

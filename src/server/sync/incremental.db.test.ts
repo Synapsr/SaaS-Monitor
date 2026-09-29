@@ -296,6 +296,36 @@ describe("live updates", () => {
     ]);
   });
 
+  it("learns which payments were made for a Stripe Connect account, even seen again", async () => {
+    const charge = stripe.putCharge(
+      stripeCharge({ id: "ch_connect", created: T0 - MINUTE_SECONDS }),
+    );
+    // Imported before the app knew about Stripe Connect, then seen again with its destination.
+    await db().transaction((tx) =>
+      applyCharges(tx, accountId, [chargeSchema.parse(charge)], "backfill"),
+    );
+    const destination = {
+      transfer_data: { destination: "acct_photo" },
+      application_fee_amount: 240,
+    };
+    stripe.emit(
+      "charge.refunded",
+      stripe.putCharge({ ...charge, ...destination }),
+      T0 + MINUTE_SECONDS,
+    );
+    await syncAt(2 * MINUTE_SECONDS);
+
+    const [row] = await db()
+      .select()
+      .from(payments)
+      .where(eq(payments.stripeChargeId, "ch_connect"));
+    expect(row).toMatchObject({
+      connectedAccountId: "acct_photo",
+      applicationFee: 240,
+      origin: "backfill",
+    });
+  });
+
   it("never celebrates an imported payment", async () => {
     const charge = stripe.putCharge(stripeCharge({ id: "ch_seen", created: T0 - MINUTE_SECONDS }));
     // Imported by a scan first, then announced by its event.

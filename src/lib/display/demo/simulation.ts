@@ -160,6 +160,7 @@ function record(
     customerName: customer.name,
     country: customer.country,
     planName: kind === "customer" ? null : PLANS[customer.plan].name,
+    connect: null,
     accountId: draft.business.id,
     accountName: draft.business.name,
   });

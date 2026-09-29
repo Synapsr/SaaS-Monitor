@@ -59,6 +59,7 @@ export const nl: DisplayText = {
       contraction: "Downgrade",
       churn: "Opzegging",
     },
+    connectPayment: "Voor een gekoppeld account",
     justNow: "zojuist",
     minutesAgo: (minutes) => `${minutes} min geleden`,
     hoursAgo: (hours) => `${hours} uur geleden`,
@@ -79,6 +80,8 @@ export const nl: DisplayText = {
       contraction: "Downgrade",
       churn: "Abonnement opgezegd",
     },
+    connectPayment: "Betaling voor een gekoppeld account",
+    connectFee: (amount) => `Jouw commissie: ${amount}`,
     someoneNew: "Iemand nieuw",
     customersToday: (count) =>
       count === 1 ? "Eerste nieuwe klant vandaag" : `${count} nieuwe klanten vandaag`,

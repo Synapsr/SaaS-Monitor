@@ -59,6 +59,7 @@ export const fr: DisplayText = {
       contraction: "Descente en gamme",
       churn: "Résiliation",
     },
+    connectPayment: "Pour un compte connecté",
     justNow: "à l’instant",
     minutesAgo: (minutes) => `il y a ${minutes} min`,
     hoursAgo: (hours) => `il y a ${hours} h`,
@@ -79,6 +80,8 @@ export const fr: DisplayText = {
       contraction: "Descente en gamme",
       churn: "Abonnement résilié",
     },
+    connectPayment: "Paiement pour un compte connecté",
+    connectFee: (amount) => `Votre commission${NBSP}: ${amount}`,
     someoneNew: "Quelqu’un de nouveau",
     customersToday: (count) =>
       count === 1 ? "Premier nouveau client aujourd’hui" : `${count} nouveaux clients aujourd’hui`,
