@@ -105,4 +105,12 @@ export const pt: DisplayText = {
     goneDetails: (app) =>
       `A tela pode ter sido excluída ou ter tido o link gerado novamente. Abra-a de novo no seu painel do ${app} para obter o link atual.`,
   },
+  lock: {
+    title: "Esta tela está protegida",
+    details: "Digite a senha para abri-la. Este dispositivo vai se lembrar dela.",
+    password: "Senha",
+    open: "Abrir a tela",
+    wrongPassword: "Senha incorreta. Tente de novo.",
+    tooManyAttempts: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+  },
 };

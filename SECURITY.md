@@ -18,6 +18,9 @@ few days, and a fix will be released as quickly as possible, crediting you if yo
 - Webhooks are verified with their Stripe signing secret.
 - Screen URLs contain an unguessable token. They only expose the metrics shown on the screen;
   customer names are hidden unless enabled. Regenerating the link revokes the old one.
+- A screen may also ask for a password, hashed like user passwords. A device that typed it keeps
+  an HTTP-only cookie bound to that password, so changing it locks every device out again.
+  Attempts are limited per screen and client address.
 - Every dashboard query is scoped to the workspace of the signed-in member.
 - Invitation links work like passwords: email addresses are not verified yet, so whoever opens a
   link can create an account with the invited address and join the workspace. Share them

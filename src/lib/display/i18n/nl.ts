@@ -108,4 +108,12 @@ export const nl: DisplayText = {
     goneDetails: (app) =>
       `Het scherm is misschien verwijderd, of de link is opnieuw aangemaakt. Open het opnieuw vanuit je ${app}-dashboard om de huidige link te krijgen.`,
   },
+  lock: {
+    title: "Dit scherm is beveiligd",
+    details: "Voer het wachtwoord in om het te openen. Dit apparaat onthoudt het.",
+    password: "Wachtwoord",
+    open: "Scherm openen",
+    wrongPassword: "Onjuist wachtwoord. Probeer het opnieuw.",
+    tooManyAttempts: "Te veel pogingen. Wacht een paar minuten en probeer het dan opnieuw.",
+  },
 };

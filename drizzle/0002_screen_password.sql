@@ -1,0 +1,1 @@
+ALTER TABLE `screens` ADD `password_hash` text;

@@ -7,8 +7,9 @@ import type { DisplayState } from "@/lib/display/types";
  * - `online`: the last poll succeeded.
  * - `offline`: polls keep failing; the last data stays on screen.
  * - `gone`: the server no longer knows this screen (deleted, or its link was regenerated).
+ * - `locked`: the screen now asks for a password this device doesn't know.
  */
-export type Connection = "online" | "offline" | "gone";
+export type Connection = "online" | "offline" | "gone" | "locked";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 /** One failed poll is a hiccup; two in a row are worth showing. */
@@ -49,10 +50,10 @@ export function usePolledState(
           headers: { accept: "application/json" },
           signal: current.signal,
         });
-        if (response.status === 404) {
+        if (response.status === 404 || response.status === 401) {
           if (request !== latest) return;
           failures += 1;
-          setConnection("gone");
+          setConnection(response.status === 404 ? "gone" : "locked");
         } else {
           const data: unknown = response.ok ? await response.json() : null;
           if (!isDisplayState(data)) throw new Error(`Unexpected response (${response.status})`);
@@ -66,7 +67,9 @@ export function usePolledState(
         if (request !== latest || disposed) return;
         failures += 1;
         if (failures >= OFFLINE_AFTER_FAILURES) {
-          setConnection((previous) => (previous === "gone" ? previous : "offline"));
+          setConnection((previous) =>
+            previous === "gone" || previous === "locked" ? previous : "offline",
+          );
         }
       } finally {
         clearTimeout(timeout);

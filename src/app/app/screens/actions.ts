@@ -10,7 +10,9 @@ import {
   newScreenSchema,
   regenerateScreenToken,
   screenInputSchema,
+  screenPasswordSchema,
   sendTestEvent,
+  setScreenPassword,
   updateScreen,
 } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
@@ -55,6 +57,22 @@ export async function regenerateScreenLinkAction(
   if (!parsed.success) return invalidInput(parsed.error);
 
   const result = await regenerateScreenToken(workspace.id, parsed.data);
+  if (result.ok) revalidatePath("/app", "layout");
+  return result;
+}
+
+/** Sets the screen's password, or removes it with `null`. */
+export async function setScreenPasswordAction(
+  screenId: string,
+  password: string | null,
+): Promise<ActionResult> {
+  const { workspace } = await requireWorkspace();
+  const parsed = z
+    .object({ screenId: screenIdSchema, password: screenPasswordSchema })
+    .safeParse({ screenId, password });
+  if (!parsed.success) return invalidInput(parsed.error);
+
+  const result = await setScreenPassword(workspace.id, parsed.data.screenId, parsed.data.password);
   if (result.ok) revalidatePath("/app", "layout");
   return result;
 }

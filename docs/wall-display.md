@@ -6,6 +6,8 @@ your desk, a tablet on a shelf.
 
 Copy the screen link from **Screens → your screen → Screen link** in the dashboard. Anyone with the
 link can view the screen, so treat it like a password; **Regenerate link** revokes the old one.
+For more safety, **Set a password** next to it: each device asks for it once, then remembers it,
+and changing it locks every device out again. Members of your workspace, signed in, never need it.
 
 ## What the screen does on its own
 

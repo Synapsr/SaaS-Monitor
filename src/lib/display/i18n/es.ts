@@ -104,4 +104,12 @@ export const es: DisplayText = {
     goneDetails: (app) =>
       `Puede que la pantalla se haya eliminado o que su enlace se haya regenerado. Ábrela de nuevo desde tu panel de ${app} para obtener su enlace actual.`,
   },
+  lock: {
+    title: "Esta pantalla está protegida",
+    details: "Introduce su contraseña para abrirla. Este dispositivo la recordará.",
+    password: "Contraseña",
+    open: "Abrir la pantalla",
+    wrongPassword: "Contraseña incorrecta. Inténtalo de nuevo.",
+    tooManyAttempts: "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.",
+  },
 };

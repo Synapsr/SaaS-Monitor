@@ -15,6 +15,13 @@
       "when": 1790669079779,
       "tag": "0001_customers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1790675585427,
+      "tag": "0002_screen_password",
+      "breakpoints": true
     }
   ]
 }

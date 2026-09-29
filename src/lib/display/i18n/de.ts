@@ -103,4 +103,12 @@ export const de: DisplayText = {
     goneDetails: (app) =>
       `Der Bildschirm wurde vielleicht gelöscht oder sein Link neu erzeugt. Öffne ihn erneut in deinem ${app}-Dashboard, um den aktuellen Link zu erhalten.`,
   },
+  lock: {
+    title: "Dieser Bildschirm ist geschützt",
+    details: "Gib sein Passwort ein, um ihn zu öffnen. Dieses Gerät merkt es sich.",
+    password: "Passwort",
+    open: "Bildschirm öffnen",
+    wrongPassword: "Falsches Passwort. Versuch es noch einmal.",
+    tooManyAttempts: "Zu viele Versuche. Warte ein paar Minuten und versuch es dann erneut.",
+  },
 };

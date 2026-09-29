@@ -10,15 +10,18 @@ import { TvSetupSteps } from "@/components/app/screens/tv-setup";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Spinner } from "@/components/ui/spinner";
+import { ScreenPassword } from "./screen-password";
 
 /** Everything needed to get the screen onto a TV, and to check it works there. */
 export function SharePanel({
   screenId,
   url,
+  hasPassword,
   onLinkRegenerated,
 }: {
   screenId: string;
   url: string;
+  hasPassword: boolean;
   onLinkRegenerated: (publicToken: string) => void;
 }) {
   const id = useId();
@@ -49,7 +52,9 @@ export function SharePanel({
         </label>
         <CopyField id={`${id}-url`} value={url} label="screen link" />
         <p className="text-xs text-pretty text-muted-foreground">
-          Anyone with this link can watch the screen, no sign-in needed. Keep it for your TVs.
+          {hasPassword
+            ? "Anyone with this link and the password can watch the screen, no sign-in needed."
+            : "Anyone with this link can watch the screen, no sign-in needed. Keep it for your TVs."}
         </p>
       </div>
 
@@ -83,6 +88,8 @@ export function SharePanel({
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <ScreenPassword screenId={screenId} hasPassword={hasPassword} />
 
       <div className="flex items-center justify-between gap-3 border-t pt-4">
         <p className="text-sm text-muted-foreground">Link shared too widely?</p>

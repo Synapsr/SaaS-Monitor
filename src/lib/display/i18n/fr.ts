@@ -107,4 +107,12 @@ export const fr: DisplayText = {
     goneDetails: (app) =>
       `L’écran a peut-être été supprimé, ou son lien régénéré. Ouvrez-le de nouveau depuis votre tableau de bord ${app} pour obtenir son lien actuel.`,
   },
+  lock: {
+    title: "Cet écran est protégé",
+    details: "Saisissez son mot de passe pour l’ouvrir. Cet appareil s’en souviendra.",
+    password: "Mot de passe",
+    open: "Ouvrir l’écran",
+    wrongPassword: "Mot de passe incorrect. Réessayez.",
+    tooManyAttempts: "Trop de tentatives. Patientez quelques minutes, puis réessayez.",
+  },
 };

@@ -105,6 +105,14 @@ export const en = {
     goneDetails: (app: string) =>
       `The screen may have been deleted, or its link regenerated. Open it again from your ${app} dashboard to get its current link.`,
   },
+  lock: {
+    title: "This screen is protected",
+    details: "Type its password to open it. This device will remember it.",
+    password: "Password",
+    open: "Open the screen",
+    wrongPassword: "Wrong password. Try again.",
+    tooManyAttempts: "Too many attempts. Wait a few minutes, then try again.",
+  },
 };
 
 export type DisplayText = typeof en;

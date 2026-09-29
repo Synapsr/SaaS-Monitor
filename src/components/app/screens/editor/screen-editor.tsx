@@ -96,7 +96,12 @@ export function ScreenEditor({
               className="shadow-lg shadow-black/5"
             />
           </div>
-          <SharePanel screenId={screen.id} url={url} onLinkRegenerated={setPublicToken} />
+          <SharePanel
+            screenId={screen.id}
+            url={url}
+            hasPassword={screen.hasPassword}
+            onLinkRegenerated={setPublicToken}
+          />
         </aside>
 
         <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">

@@ -11,6 +11,7 @@ import {
   screenSettingsSchema,
   type ScreenSettings,
 } from "@/lib/screens/settings";
+import { hashScreenPassword } from "@/server/screen-access";
 
 // Every function takes the workspace id resolved by `requireWorkspace()` and filters on it: a screen
 // or a Stripe account of another workspace is treated exactly like one that does not exist. Input
@@ -28,6 +29,8 @@ export interface Screen {
   publicToken: string;
   settings: ScreenSettings;
   accounts: LinkedAccount[];
+  /** A password guards the screen's link. The password itself never leaves the server. */
+  hasPassword: boolean;
   createdAt: Date;
 }
 
@@ -46,6 +49,13 @@ export const screenInputSchema = z.object({
 });
 
 export type ScreenInput = z.infer<typeof screenInputSchema>;
+
+/** Typed on a TV with a remote, often: a PIN will do. `null` removes it. */
+export const screenPasswordSchema = z
+  .string()
+  .min(4, "Use at least 4 characters.")
+  .max(128, "Use at most 128 characters.")
+  .nullable();
 
 export const newScreenSchema = z.object({
   name: screenNameSchema,
@@ -94,6 +104,7 @@ async function findScreens(where: SQL | undefined): Promise<Screen[]> {
     accounts: row.screenAccounts
       .map(({ account }) => account)
       .sort((a, b) => a.name.localeCompare(b.name)),
+    hasPassword: row.passwordHash !== null,
     createdAt: row.createdAt,
   }));
 }
@@ -250,6 +261,23 @@ export async function regenerateScreenToken(
     .set({ publicToken })
     .where(inWorkspace(workspaceId, screenId));
   return affectedRows ? { ok: true, publicToken } : SCREEN_NOT_FOUND;
+}
+
+/**
+ * Sets the screen's password, or removes it with `null`. A new password locks out every device
+ * that knew the previous one.
+ */
+export async function setScreenPassword(
+  workspaceId: string,
+  screenId: string,
+  password: string | null,
+): Promise<ActionResult> {
+  const passwordHash = password === null ? null : await hashScreenPassword(password);
+  const [{ affectedRows }] = await db()
+    .update(screens)
+    .set({ passwordHash })
+    .where(inWorkspace(workspaceId, screenId));
+  return affectedRows ? { ok: true } : SCREEN_NOT_FOUND;
 }
 
 /** Asks every open display of the screen to play a fake sale, to check sound and confetti. */

@@ -104,4 +104,12 @@ export const it: DisplayText = {
     goneDetails: (app) =>
       `Lo schermo potrebbe essere stato eliminato o il suo link rigenerato. Aprilo di nuovo dalla tua dashboard di ${app} per ottenere il link attuale.`,
   },
+  lock: {
+    title: "Questo schermo è protetto",
+    details: "Inserisci la password per aprirlo. Questo dispositivo la ricorderà.",
+    password: "Password",
+    open: "Apri lo schermo",
+    wrongPassword: "Password errata. Riprova.",
+    tooManyAttempts: "Troppi tentativi. Attendi qualche minuto, poi riprova.",
+  },
 };

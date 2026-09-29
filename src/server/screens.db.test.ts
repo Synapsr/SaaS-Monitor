@@ -13,6 +13,7 @@ import {
   listScreens,
   regenerateScreenToken,
   sendTestEvent,
+  setScreenPassword,
   updateScreen,
 } from "./screens";
 
@@ -72,6 +73,22 @@ describe("screens", () => {
       settings: { currency: "gbp", timeZone: "UTC" },
     });
     expect(await createFirstScreen(workspaceId, { accountId, timeZone: "UTC" })).toBeNull();
+  });
+
+  it("guards a screen with a password, which it tells about but never gives back", async () => {
+    const owner = await createUserWithWorkspace("Ada");
+    const intruder = await createUserWithWorkspace("Eve");
+    const screenId = await createScreenIn(owner.workspaceId);
+    expect((await getScreen(owner.workspaceId, screenId))?.hasPassword).toBe(false);
+
+    expect(await setScreenPassword(owner.workspaceId, screenId, "4321")).toEqual({ ok: true });
+    const screen = await getScreen(owner.workspaceId, screenId);
+    expect(screen?.hasPassword).toBe(true);
+    expect(JSON.stringify(screen)).not.toMatch(/4321|scrypt|passwordHash/);
+
+    expect((await setScreenPassword(intruder.workspaceId, screenId, null)).ok).toBe(false);
+    expect(await setScreenPassword(owner.workspaceId, screenId, null)).toEqual({ ok: true });
+    expect((await getScreen(owner.workspaceId, screenId))?.hasPassword).toBe(false);
   });
 
   it("never exposes a screen to another workspace", async () => {

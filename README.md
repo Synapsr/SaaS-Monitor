@@ -60,8 +60,8 @@ when a payment lands, and confetti flies when you cross $10K MRR.
 - **Teams**: workspaces, invitations by link, as many screens as you like.
 - **Honest numbers**: MRR follows [Stripe's own definition](docs/stripe.md#how-mrr-is-computed), so
   the TV matches your Stripe Dashboard.
-- **Private and secure**: read-only restricted keys encrypted at rest, unguessable screen links,
-  customer names hidden unless you allow them.
+- **Private and secure**: read-only restricted keys encrypted at rest, unguessable screen links
+  with an optional password, customer names hidden unless you allow them.
 - **Real time within Stripe's limits**: webhooks for instant updates, and polling that respects
   Stripe's API read allowance when webhooks aren't available.
 

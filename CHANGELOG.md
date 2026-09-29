@@ -2,6 +2,17 @@
 
 Notable changes to SaaS Monitor, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+
+- An optional password per screen, on top of its link: each device asks for it once, in the
+  screen's language, and changing it locks every device out again.
+
+### Fixed
+
+- In development, the database sees new columns after a schema change without a restart.
+
 ## [1.0.0] - 2026-09-29
 
 The first public release.
@@ -43,4 +54,5 @@ The first public release.
 - Docker Compose with MySQL 8.4, migrations on startup, and images for amd64 and arm64 on GitHub
   Container Registry.
 
+[Unreleased]: https://github.com/Synapsr/SaaS-Monitor/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/Synapsr/SaaS-Monitor/releases/tag/v1.0.0

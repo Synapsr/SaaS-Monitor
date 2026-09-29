@@ -4,6 +4,8 @@ import type { DisplayState } from "@/lib/display/types";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { createScreen } from "@/test/screens";
 import { createStripeAccount } from "@/test/stripe-accounts";
+import { unlockScreen } from "@/server/screen-access";
+import { setScreenPassword } from "@/server/screens";
 import { GET } from "./route";
 
 vi.mock("next/server", () => ({ after: vi.fn() }));
@@ -42,6 +44,27 @@ describe("display polling endpoint", () => {
 
     expect(await second.json()).toEqual(await first.json());
     expect(after).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers 401 without the password of a protected screen, and the state with it", async () => {
+    const { workspaceId } = await createUserWithWorkspace();
+    const { id, token } = await createScreen(workspaceId);
+    await setScreenPassword(workspaceId, id, "4321");
+
+    const locked = await poll(token);
+    expect(locked.status).toBe(401);
+    expect(await locked.json()).not.toHaveProperty("metrics");
+
+    const unlocked = await unlockScreen(token, "4321", new Headers());
+    if (unlocked.outcome !== "unlocked" || !unlocked.cookie) throw new Error("Not unlocked.");
+    const { name, value } = unlocked.cookie;
+    const response = await GET(
+      new Request(`http://localhost/api/screens/${token}/state`, {
+        headers: { cookie: `${name}=${value}` },
+      }),
+      { params: Promise.resolve({ token }) },
+    );
+    expect(response.status).toBe(200);
   });
 
   it("answers 404 for an unknown screen", async () => {

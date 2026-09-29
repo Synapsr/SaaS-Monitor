@@ -316,6 +316,11 @@ export const screens = mysqlTable(
     /** Unguessable secret in the public URL (`/d/<token>`). Regenerating it revokes old links. */
     publicToken: identifier({ length: 64 }).notNull().unique(),
     settings: json().$type<ScreenSettings>().notNull(),
+    /**
+     * Optional password asked before showing the screen, on top of its token (hashed like the
+     * passwords of users). Browsers that typed it keep a proof of it (`src/server/screen-access.ts`).
+     */
+    passwordHash: text(),
     /** Last "send a test celebration" request, picked up by open displays. */
     testEventAt: instant(),
     ...timestamps,
