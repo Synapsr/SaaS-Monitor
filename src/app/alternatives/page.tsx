@@ -59,7 +59,7 @@ export default function AlternativesPage() {
       <ContentSection
         id="at-a-glance"
         title="At a glance"
-        description="What each tool is made for, and what it costs, in its own words."
+        description="What each tool is made for, and what it costs, as its own site describes it."
       >
         <AlternativesTable alternatives={ALTERNATIVES} />
         <SourcesNote names={others} sources={[]} />

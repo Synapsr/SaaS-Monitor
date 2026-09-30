@@ -54,7 +54,7 @@ const CHECKED = "2026-09-30";
 const BAREMETRICS_PRICING = "https://baremetrics.com/pricing";
 const CHARTMOGUL_PRICING = "https://chartmogul.com/pricing/";
 const GECKOBOARD_PRICING = "https://www.geckoboard.com/pricing/";
-const GECKOBOARD_STRIPE = "https://www.geckoboard.com/integrations/stripe/";
+const GECKOBOARD_STRIPE = "https://www.geckoboard.com/product/data-sources/stripe/";
 const PINGBELL_PRICING = "https://pingbell.io/pricing";
 const PINGBELL_STRIPE = "https://pingbell.io/solutions/stripe-push-notifications/";
 const PINGBELL_MRR = "https://pingbell.io/solutions/saas-mrr-counter/";
@@ -100,7 +100,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
         // Its pricing page served two price lists on the same day (one free up to $180K ARR):
         // only what both say is stated.
         them: fact(
-          "Priced by the ARR it tracks: Launch up to $360K ARR, Growth up to $3.6M, Scale above; up to 35% off billed annually. Its pricing page showed two different price lists when we checked: see it for yours",
+          "Priced by the ARR it tracks: Launch up to $360K ARR, Growth up to $3.6M, Scale above; up to 35% off billed annually. See its pricing page for current prices",
           BAREMETRICS_PRICING,
         ),
         us: OURS.price,
@@ -121,7 +121,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         topic: "Beyond metrics",
         them: fact(
-          "Payment recovery and cancellation insights, $129 a month each as add-ons",
+          "Payment recovery and cancellation insights, as add-ons from $129 a month each",
           BAREMETRICS_PRICING,
         ),
         us: "None: SaaS Monitor only reads Stripe (one optional permission adds its own webhook)",
@@ -245,7 +245,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
     website: "https://www.geckoboard.com",
     kind: "TV dashboards",
     summary: fact(
-      "Real-time dashboards from 90+ data sources, shown on TV screens, through sharing links, or in Slack and Teams.",
+      "Real-time dashboards from 90+ data sources, shown on TV screens, through sharing links, with snapshots in Slack and Teams.",
       GECKOBOARD_PRICING,
     ),
     price: fact("Essentials from $79 a month, billed annually", GECKOBOARD_PRICING),
@@ -257,7 +257,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         topic: "Made for",
         them: fact(
-          "Real-time dashboards you build from 90+ data sources, for TVs, links, Slack and Teams",
+          "Real-time dashboards you build from 90+ data sources, for TVs and sharing links, with snapshots in Slack and Teams",
           GECKOBOARD_PRICING,
         ),
         us: "One screen made for Stripe revenue, ready without building anything: MRR, sales, sounds and celebrations",
@@ -296,7 +296,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
     ],
     pickThem: [
       "Your screens mix Stripe with other tools: CRM, support desk, analytics, spreadsheets.",
-      "You need alerts, drilldowns and custom themes (Performance plan).",
+      "You need alerts and drilldowns (Performance plan), or custom themes.",
       "You want one tool for every team's dashboard.",
     ],
     pickUs: [
@@ -338,7 +338,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
     title: "PingBell alternative, free and open source",
     headline: "PingBell or SaaS Monitor: two ways to put Stripe on the office TV",
     description:
-      "PingBell and SaaS Monitor both put revenue on a TV. PingBell covers many sources, native TV apps and phones; SaaS Monitor goes deep on Stripe MRR, free and open source. An honest comparison.",
+      "PingBell and SaaS Monitor both put revenue on a TV. PingBell covers many sources, native TV apps and phones; SaaS Monitor goes deep on Stripe MRR, free and open source.",
     rows: [
       {
         topic: "Made for",
@@ -367,7 +367,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         topic: "Revenue counter",
         them: fact(
-          "Counts the payment events you point it at, such as paid invoices, and can add up several Stripe accounts",
+          "Counts “every payment event you point at it” (its FAQ), such as paid invoices, and can add up several Stripe accounts",
           PINGBELL_MRR,
         ),
         us: "MRR as Stripe defines it, from subscriptions, with each account on its own or added up",

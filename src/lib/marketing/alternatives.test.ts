@@ -53,7 +53,7 @@ describe("sourcesOf", () => {
     const geckoboard = alternativeBySlug("geckoboard")!;
     expect(sourcesOf(geckoboard)).toEqual([
       "https://www.geckoboard.com/pricing/",
-      "https://www.geckoboard.com/integrations/stripe/",
+      "https://www.geckoboard.com/product/data-sources/stripe/",
     ]);
   });
 });
