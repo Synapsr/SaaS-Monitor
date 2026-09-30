@@ -135,6 +135,7 @@ describe("voice", () => {
       subscription: true,
       downgrade: false,
       cancellation: false,
+      unpaid: false,
     });
   });
 
@@ -163,5 +164,16 @@ describe("voice", () => {
     expect(phrases(["x".repeat(160)])).toBe(true);
     expect(phrases(["x".repeat(161)])).toBe(false);
     expect(phrases(Array.from({ length: 6 }, () => "Ka-ching!"))).toBe(false);
+  });
+});
+
+describe("customer emails", () => {
+  it("are hidden by default, and may be masked or shown in full", () => {
+    expect(defaultScreenSettings.customerEmails).toBe("hidden");
+    expect(screenSettingsSchema.parse({ customerEmails: "masked" }).customerEmails).toBe("masked");
+    expect(parseScreenSettings({ customerEmails: "raw", showCustomerNames: true })).toMatchObject({
+      customerEmails: "hidden",
+      showCustomerNames: true,
+    });
   });
 });

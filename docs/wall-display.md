@@ -39,7 +39,8 @@ A screen can also say what just happened, out loud, right after the sound: "New 
 "Payment received!". Turn on **Announce out loud** in the screen settings, pick a voice (two per
 language) and choose what it announces: payments, payments made for a
 [Stripe Connect account](stripe.md#stripe-connect-platforms) (apart from your own), new
-subscribers, upgrades, reactivations, downgrades, cancellations, new customers and milestones.
+subscribers, upgrades, reactivations, downgrades, cancellations (including subscriptions set not
+to renew), failed payments, new customers and milestones.
 Voice has its own switch and volume, so a screen can speak without playing sounds. Voices speak
 English, French, German, Spanish and Portuguese, the screen's language.
 
@@ -120,6 +121,11 @@ needs to, so that it stays readable. The screen speaks English, French, German, 
 Italian, Portuguese or Dutch, and writes numbers and dates the local way (`12 480 €` in French).
 Its [voice](#voice) speaks the same language.
 The dashboard itself stays in English.
+
+Customer names are hidden by default: anyone who sees the screen sees who pays you. Once you show
+them, **Customers without a name** decides how the screen names those Stripe only knows by their
+email: not at all, by their email masked (`j•••@gmail.com`, masked by the server before it
+reaches the screen), or by their full email. Voices never read emails.
 
 ## Several screens
 

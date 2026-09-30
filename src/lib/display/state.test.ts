@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isDisplayState, resolveDisplayState, seriesInRange } from "@/lib/display/state";
-import { defaultScreenSettings } from "@/lib/screens/settings";
+import { defaultScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { displayState, feedItem } from "@/test/display";
 
 describe("polled state validation", () => {
@@ -58,5 +58,24 @@ describe("resolved state", () => {
     const settings = { ...defaultScreenSettings, showCustomerNames: true };
     const visible = resolveDisplayState({ ...state, screen: { name: "Office", settings } }, null);
     expect(visible.feed[0].customerName).toBe("Ada");
+  });
+
+  it("follows the editor's choice of emails, as far as what the server sent allows", () => {
+    const shown: ScreenSettings = {
+      ...defaultScreenSettings,
+      showCustomerNames: true,
+      customerEmails: "full",
+    };
+    const state = displayState({
+      screen: { name: "Office", settings: shown },
+      feed: [feedItem({ customerEmail: "ada@example.com" })],
+    });
+    const emailWith = (settings: Partial<ScreenSettings>) =>
+      resolveDisplayState(state, { name: "Office", settings: { ...shown, ...settings } }).feed[0]
+        .customerEmail;
+    expect(emailWith({})).toBe("ada@example.com");
+    expect(emailWith({ customerEmails: "masked" })).toBe("a•••@example.com");
+    expect(emailWith({ customerEmails: "hidden" })).toBeNull();
+    expect(emailWith({ showCustomerNames: false })).toBeNull();
   });
 });

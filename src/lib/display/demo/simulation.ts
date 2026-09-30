@@ -158,9 +158,15 @@ function record(
     live,
     customerKey: `${draft.business.id}-${customer.id}`,
     customerName: customer.name,
+    customerEmail: null,
     country: customer.country,
     planName: kind === "customer" ? null : PLANS[customer.plan].name,
     connect: null,
+    // Most SaaS customers leave at the end of the period they paid for.
+    churn:
+      kind === "churn"
+        ? { reason: "scheduled", endsAt: new Date(at + RENEWAL_PERIOD).toISOString() }
+        : null,
     accountId: draft.business.id,
     accountName: draft.business.name,
   });

@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
+import type { ChurnReason } from "@/lib/display/types";
 import type { ScreenSettings } from "@/lib/screens/settings";
 import type { CouponTerms } from "@/server/stripe/types";
 import { organizations } from "./auth";
@@ -43,6 +44,14 @@ const timestamps = {
 
 /** How a row entered the database. Only `live` rows trigger sounds and celebrations. */
 export const DATA_ORIGINS = ["backfill", "live", "reconcile"] as const;
+
+/** Why a subscription stopped counting (see `ChurnReason`). */
+export const CHURN_REASONS = [
+  "canceled",
+  "scheduled",
+  "unpaid",
+  "paused",
+] as const satisfies readonly ChurnReason[];
 
 /**
  * What a scan reads after every subscription. Scans are stored as JSON: fields added since the
@@ -149,6 +158,8 @@ export const subscriptions = mysqlTable(
     stripeSubscriptionId: stripeId().notNull(),
     stripeCustomerId: stripeId().notNull(),
     customerName: text(),
+    /** Shown on screens that allow it, for customers without a name. */
+    customerEmail: text(),
     /** ISO 3166-1 alpha-2 country code. */
     customerCountry: text(),
     /** Stripe status: active, past_due, trialing, canceled, unpaid, paused, incomplete… */
@@ -201,6 +212,10 @@ export const mrrMovements = mysqlTable(
     customerCountry: text(),
     planName: text(),
     kind: mysqlEnum(["new", "expansion", "reactivation", "contraction", "churn"]).notNull(),
+    /** Why a `churn` happened, when known: rows recorded before this was kept have none. */
+    churnReason: mysqlEnum(CHURN_REASONS),
+    /** When a `scheduled` churn takes effect: the subscription runs, paid, until then. */
+    endsAt: instant(),
     /** Signed change of monthly recurring revenue. */
     amount: money().notNull(),
     currency: currency().notNull(),
@@ -255,6 +270,7 @@ export const payments = mysqlTable(
     stripeChargeId: stripeId().notNull(),
     stripeCustomerId: stripeId(),
     customerName: text(),
+    customerEmail: text(),
     customerCountry: text(),
     description: text(),
     /** Gross amount charged. */
@@ -294,6 +310,7 @@ export const customers = mysqlTable(
       .references(() => stripeAccounts.id, { onDelete: "cascade" }),
     stripeCustomerId: stripeId().notNull(),
     name: text(),
+    email: text(),
     /** ISO 3166-1 alpha-2 country code. */
     country: text(),
     /** When Stripe created the customer. */

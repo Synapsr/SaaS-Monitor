@@ -10,6 +10,7 @@ export const ANNOUNCEMENTS = [
   "reactivation",
   "downgrade",
   "cancellation",
+  "unpaid",
   "customer",
   "milestone",
 ] as const;
@@ -17,10 +18,24 @@ export const ANNOUNCEMENTS = [
 export type Announcement = (typeof ANNOUNCEMENTS)[number];
 
 /**
- * The phrases of a voice: one per announcement, and a goal reached, which says more than a
- * milestone. Recorded clips and default phrases follow them.
+ * The phrases of a voice: one per announcement, and a few that say more about one. A goal is more
+ * than a milestone; a subscription set not to renew, or paused, is a cancellation of its own
+ * kind. Recorded clips and default phrases follow them.
  */
-export type Phrase = Announcement | "goal";
+export type Phrase = Announcement | "goal" | "cancellationScheduled" | "pause";
+
+/** The announcement a phrase belongs to, whose switch and own phrases it follows. */
+export function phraseAnnouncement(phrase: Phrase): Announcement {
+  switch (phrase) {
+    case "goal":
+      return "milestone";
+    case "cancellationScheduled":
+    case "pause":
+      return "cancellation";
+    default:
+      return phrase;
+  }
+}
 
 /** Details a phrase may say, written `{name}` in it. */
 export const VARIABLES = ["name", "amount", "plan", "country", "product", "fee"] as const;
@@ -36,6 +51,7 @@ export const ANNOUNCEMENT_VARIABLES: Record<Announcement, readonly Variable[]> =
   reactivation: ["name", "amount", "plan", "country", "product"],
   downgrade: ["name", "amount", "plan", "country", "product"],
   cancellation: ["name", "amount", "plan", "country", "product"],
+  unpaid: ["name", "amount", "plan", "country", "product"],
   customer: ["name", "country", "product"],
   milestone: ["amount", "product"],
 };

@@ -4,6 +4,16 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ## [Unreleased]
 
+### Added
+
+- Lost subscriptions say why, in the feed, on their card and in the voice: canceled, won't renew
+  (a cancellation at period end, with the date it ends), payment failed (Stripe's retries ran
+  out) or paused. Churns recorded before take the reason their subscription shows.
+- A voice announcement for failed payments, on its own switch, and phrases of their own for
+  subscriptions set not to renew or paused.
+- Customers without a name can be named by their email, masked (`j•••@gmail.com`) or in full,
+  on screens that show names and allow it.
+
 ## [1.1.0] - 2026-09-29
 
 ### Added

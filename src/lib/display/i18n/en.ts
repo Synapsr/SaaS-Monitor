@@ -55,6 +55,12 @@ export const en = {
       contraction: "Downgrade",
       churn: "Cancellation",
     },
+    /** Why a subscription stopped counting, when it was not simply canceled. */
+    churnReasons: {
+      scheduled: "Won’t renew",
+      unpaid: "Payment failed",
+      paused: "Paused",
+    },
     /** A payment made for one of the account's Stripe Connect accounts: Stripe's own name. */
     connectPayment: "Connect",
     justNow: "just now",
@@ -77,6 +83,14 @@ export const en = {
       contraction: "Downgrade",
       churn: "Subscription canceled",
     },
+    churnTitles: {
+      scheduled: "Won’t renew",
+      unpaid: "Payment failed",
+      paused: "Subscription paused",
+    },
+    /** When a subscription set not to renew stops: “Ends October 29”. */
+    endsOn: (date: string) => `Ends ${date}`,
+    unpaidDetails: "Unpaid after Stripe’s retries",
     connectPayment: "Payment for a connected account",
     connectFee: (amount: string) => `Your fee: ${amount}`,
     /** A new customer whose name is hidden and country unknown. */

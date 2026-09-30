@@ -105,6 +105,7 @@ const customerIdentity = z.object({
   name: z.string().nullish(),
   business_name: z.string().nullish(),
   individual_name: z.string().nullish(),
+  email: z.string().nullish(),
   address: z.object({ country: z.string().nullish() }).nullish(),
 });
 
@@ -112,12 +113,13 @@ function identify(customer: z.infer<typeof customerIdentity>) {
   return {
     id: customer.id,
     name: customer.name || customer.business_name || customer.individual_name || null,
+    email: customer.email || null,
     country: customer.address?.country || null,
   };
 }
 
 const subscriptionCustomerSchema = z.union([
-  z.string().transform((id) => ({ id, name: null, country: null, discount: null })),
+  z.string().transform((id) => ({ id, name: null, email: null, country: null, discount: null })),
   customerIdentity
     .extend({ discount: discountSchema.nullish() })
     .transform((customer) => ({ ...identify(customer), discount: customer.discount ?? null })),
@@ -239,6 +241,7 @@ export const subscriptionSchema = z
     ended_at: z.number().nullish(),
     canceled_at: z.number().nullish(),
     cancel_at_period_end: z.boolean().default(false),
+    cancel_at: z.number().nullish(),
     discounts: z.array(discountSchema).default([]),
     items: z.object({ data: z.array(subscriptionItemSchema), has_more: z.boolean() }),
   })
@@ -252,6 +255,7 @@ export const subscriptionSchema = z
     endedAt: subscription.ended_at ?? null,
     canceledAt: subscription.canceled_at ?? null,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    cancelAt: subscription.cancel_at ?? null,
     discounts: subscription.discounts,
     items: subscription.items.data,
     hasMoreItems: subscription.items.has_more,
@@ -279,9 +283,11 @@ export const chargeSchema = z
     billing_details: z
       .object({
         name: z.string().nullish(),
+        email: z.string().nullish(),
         address: z.object({ country: z.string().nullish() }).nullish(),
       })
       .nullish(),
+    receipt_email: z.string().nullish(),
     payment_method_details: z
       .object({ card: z.object({ country: z.string().nullish() }).nullish() })
       .nullish(),
@@ -300,6 +306,7 @@ export const chargeSchema = z
     collected: charge.status === "succeeded" && charge.captured !== false,
     description: charge.description || null,
     customerName: charge.billing_details?.name || null,
+    customerEmail: charge.billing_details?.email || charge.receipt_email || null,
     country:
       charge.billing_details?.address?.country ||
       charge.payment_method_details?.card?.country ||

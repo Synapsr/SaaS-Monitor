@@ -81,6 +81,11 @@ export function formatEta(
   return formatter(locale, { timeZone, month: "short", year: "numeric" }).format(eta);
 }
 
+/** A day in the screen's time zone, month in full: "October 29", "29 octobre". */
+export function formatDate(at: Date, timeZone: string, locale: string): string {
+  return formatter(locale, { timeZone, month: "long", day: "numeric" }).format(at);
+}
+
 /** What the labels of a chart's time axis name: days (or weeks), months or years. */
 export type AxisUnit = "day" | "month" | "year";
 

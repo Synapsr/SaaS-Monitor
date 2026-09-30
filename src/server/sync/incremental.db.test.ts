@@ -50,6 +50,20 @@ describe("live updates", () => {
       .orderBy(asc(mrrMovements.occurredAt));
   }
 
+  async function churns() {
+    return db()
+      .select({ reason: mrrMovements.churnReason, endsAt: mrrMovements.endsAt })
+      .from(mrrMovements)
+      .where(
+        and(
+          eq(mrrMovements.accountId, accountId),
+          eq(mrrMovements.kind, "churn"),
+          eq(mrrMovements.origin, "live"),
+        ),
+      )
+      .orderBy(asc(mrrMovements.occurredAt));
+  }
+
   async function expectLedgerToMatchMirror() {
     const totals = await mrrTotals(accountId);
     expect(totals.ledger).toEqual(totals.mirror);
@@ -139,6 +153,34 @@ describe("live updates", () => {
     await syncAt(2 * MINUTE_SECONDS);
 
     expect(await liveMovements()).toMatchObject([{ kind: "churn", amount: -4900 }]);
+    expect(await churns()).toEqual([{ reason: "canceled", endsAt: null }]);
+    await expectLedgerToMatchMirror();
+  });
+
+  it("tells a subscription set not to renew, and when it ends, from an unpaid one", async () => {
+    change(
+      "sub_ada",
+      (subscription) => ({
+        ...subscription,
+        cancel_at_period_end: true,
+        canceled_at: T0 + MINUTE_SECONDS,
+        cancel_at: T0 + 20 * DAY_SECONDS,
+      }),
+      MINUTE_SECONDS,
+    );
+    change("sub_lapsed", (subscription) => ({ ...subscription, status: "active" }), MINUTE_SECONDS);
+    await syncAt(2 * MINUTE_SECONDS);
+    change(
+      "sub_lapsed",
+      (subscription) => ({ ...subscription, status: "unpaid" }),
+      3 * MINUTE_SECONDS,
+    );
+    await syncAt(4 * MINUTE_SECONDS);
+
+    expect(await churns()).toEqual([
+      { reason: "scheduled", endsAt: at(20 * DAY_SECONDS) },
+      { reason: "unpaid", endsAt: null },
+    ]);
     await expectLedgerToMatchMirror();
   });
 

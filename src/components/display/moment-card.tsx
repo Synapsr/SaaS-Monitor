@@ -104,7 +104,13 @@ export function MomentCard({
         )}
         {footnote && (
           <Reveal delay={0.34}>
-            <p className="mt-2 rounded-full bg-(--glow-wash) px-8 py-3 text-3xl font-medium text-(--glow-ink) tabular-nums">
+            <p
+              className={cn(
+                "mt-2 rounded-full px-8 py-3 text-3xl font-medium tabular-nums",
+                // A loss is said plainly: no accent for when a subscription ends.
+                celebration ? "bg-(--glow-wash) text-(--glow-ink)" : "bg-(--fill) text-(--ink-2)",
+              )}
+            >
               {footnote}
             </p>
           </Reveal>

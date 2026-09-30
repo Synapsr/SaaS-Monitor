@@ -62,6 +62,7 @@ describe("subscription normalization", () => {
     expect(subscription.customer).toEqual({
       id: "cus_2",
       name: null,
+      email: null,
       country: null,
       discount: null,
     });
@@ -225,19 +226,31 @@ describe("charge normalization", () => {
 });
 
 describe("customer normalization", () => {
-  it("keeps who a customer is and when they signed up, never their email", () => {
+  it("keeps who a customer is, their email and when they signed up", () => {
     const customer = customerSchema.parse({
       ...stripeCustomer({ id: "cus_1", name: null, country: "DE", created: JANUARY_1 }),
       business_name: "Acme GmbH",
       email: "billing@acme.example",
     });
-    expect(customer).toEqual({ id: "cus_1", name: "Acme GmbH", country: "DE", created: JANUARY_1 });
+    expect(customer).toEqual({
+      id: "cus_1",
+      name: "Acme GmbH",
+      email: "billing@acme.example",
+      country: "DE",
+      created: JANUARY_1,
+    });
   });
 
   it("accepts a customer created with an email alone", () => {
     expect(
       customerSchema.parse({ id: "cus_2", created: JANUARY_1, email: "ada@example.com" }),
-    ).toEqual({ id: "cus_2", name: null, country: null, created: JANUARY_1 });
+    ).toEqual({
+      id: "cus_2",
+      name: null,
+      email: "ada@example.com",
+      country: null,
+      created: JANUARY_1,
+    });
   });
 });
 
@@ -281,7 +294,13 @@ describe("event signals", () => {
 
     expect(readEventSignal(event("customer.created", customer))).toEqual({
       kind: "customer",
-      customer: { id: "cus_1", name: "Ada Lovelace", country: "GB", created: JANUARY_1 },
+      customer: {
+        id: "cus_1",
+        name: "Ada Lovelace",
+        email: null,
+        country: "GB",
+        created: JANUARY_1,
+      },
       created: true,
     });
     expect(readEventSignal(event("customer.updated", customer))).toMatchObject({

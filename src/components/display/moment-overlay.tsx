@@ -1,9 +1,10 @@
 import { CircleDollarSignIcon, PartyPopperIcon } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { CONNECT_PAYMENT_ICON, KIND_ICONS } from "@/components/display/feed-kind-icon";
+import { CHURN_ICONS, CONNECT_PAYMENT_ICON, KIND_ICONS } from "@/components/display/feed-kind-icon";
 import { MilestoneCelebration } from "@/components/display/milestone-celebration";
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
 import { useDisplayLocale } from "@/hooks/use-display-locale";
+import { customerLabel } from "@/lib/display/customer";
 import { itemContext, itemCountry } from "@/lib/display/feed";
 import { formatAmount, formatPayment } from "@/lib/display/format";
 import type { DisplayLocale } from "@/lib/display/i18n";
@@ -15,7 +16,8 @@ import {
   type Moment,
 } from "@/lib/display/moments";
 import { screenView } from "@/lib/display/rotation";
-import type { DisplayState } from "@/lib/display/types";
+import { formatDate } from "@/lib/display/time";
+import type { DisplayState, FeedItem } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 
 interface MomentOverlayProps {
@@ -44,6 +46,27 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
       </AnimatePresence>
     </div>
   );
+}
+
+/**
+ * What a card adds about a lost subscription: when one set not to renew ends, or that Stripe's
+ * retries of an unpaid one ran out.
+ */
+function churnFootnote(
+  item: FeedItem,
+  timeZone: string,
+  { locale, text }: DisplayLocale,
+): string | null {
+  switch (item.churn?.reason) {
+    case "scheduled":
+      return item.churn.endsAt
+        ? text.moments.endsOn(formatDate(new Date(item.churn.endsAt), timeZone, locale))
+        : null;
+    case "unpaid":
+      return text.moments.unpaidDetails;
+    default:
+      return null;
+  }
 }
 
 /** The account a moment comes from, named only when the screen shows several. */
@@ -98,28 +121,39 @@ function describe(
       };
     }
     case "movement": {
+      const { movement } = moment;
+      const reason = movement.churn?.reason;
       return {
-        icon: KIND_ICONS[moment.movement.kind],
-        eyebrow: text.moments.titles[moment.movement.kind],
-        headline: change(moment.movement.amount),
+        icon: movement.churn ? CHURN_ICONS[movement.churn.reason] : KIND_ICONS[movement.kind],
+        eyebrow:
+          reason && reason !== "canceled"
+            ? text.moments.churnTitles[reason]
+            : text.moments.titles[movement.kind],
+        headline: change(movement.amount),
         metric: recurring.label,
         account,
-        details: itemContext(moment.movement, context),
-        tone: isMrrIncrease(moment.movement) ? "celebration" : "calm",
+        details: itemContext(movement, context),
+        footnote: churnFootnote(movement, state.screen.settings.timeZone, {
+          language,
+          locale,
+          text,
+        }),
+        tone: isMrrIncrease(movement) ? "celebration" : "calm",
       };
     }
     case "customer": {
       // Named when the screen shows names, else by where they come from.
       const { customer } = moment;
+      const name = customerLabel(customer);
       const country = itemCountry(customer, language);
       const today = screenView(state, customer.accountId).metrics.customersCreatedToday;
       return {
         icon: KIND_ICONS.customer,
         eyebrow: text.moments.titles.customer,
-        headline: customer.customerName ?? country ?? text.moments.someoneNew,
+        headline: name ?? country ?? text.moments.someoneNew,
         headlineKind: "name",
         account,
-        details: customer.customerName && country ? [country] : [],
+        details: name && country ? [country] : [],
         footnote: today > 0 ? text.moments.customersToday(today) : null,
         tone: "celebration",
       };

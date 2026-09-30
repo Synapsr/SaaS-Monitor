@@ -31,6 +31,7 @@ const ANNOUNCEMENT_LABELS: Record<Announcement, (metric: RecurringMetric["label"
   reactivation: () => "Reactivation",
   downgrade: () => "Downgrade",
   cancellation: () => "Cancellation",
+  unpaid: () => "Payment failed",
   customer: () => "New customer",
   milestone: (metric) => `${metric} milestone or goal`,
 };
@@ -43,7 +44,8 @@ const ANNOUNCEMENT_DESCRIPTIONS: Record<Announcement, string> = {
   upgrade: "A subscription moves to a bigger plan.",
   reactivation: "A former subscriber pays again.",
   downgrade: "A subscription moves to a smaller plan.",
-  cancellation: "A subscription stops.",
+  cancellation: "A subscription stops, or is set not to renew.",
+  unpaid: "Stripe’s retries of a subscription’s payment ran out.",
   customer: "Created in Stripe, often at sign-up, before they pay.",
   milestone: "A milestone is crossed, or the goal reached.",
 };
@@ -52,9 +54,14 @@ const ANNOUNCEMENT_DESCRIPTIONS: Record<Announcement, string> = {
 function recordedQuote(voice: Voice, announcement: Announcement): string {
   const phrases = RECORDED_PHRASES[voice.language];
   const quote = (phrase: Phrase) => `“${phrases[phrase]}”`;
-  return announcement === "milestone"
-    ? `${quote("milestone")} or ${quote("goal")}`
-    : quote(announcement);
+  switch (announcement) {
+    case "milestone":
+      return `${quote("milestone")} or ${quote("goal")}`;
+    case "cancellation":
+      return `${quote("cancellation")} or ${quote("cancellationScheduled")}`;
+    default:
+      return quote(announcement);
+  }
 }
 
 /** The screen's phrases, with those of an announcement replaced, or gone back to the defaults. */

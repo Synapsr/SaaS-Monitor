@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { customers, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import { calendarDay, chartDays, daysBetween } from "@/lib/display/calendar";
-import type { MrrMovementKind } from "@/lib/display/types";
+import type { ChurnReason, MrrMovementKind } from "@/lib/display/types";
 import { isTimeZone, type ScreenSettingsInput } from "@/lib/screens/settings";
 import type { RateSource } from "@/server/fx";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
@@ -34,6 +34,7 @@ async function addSubscription(
     currency?: string;
     plan?: string;
     customerName?: string;
+    customerEmail?: string;
     country?: string;
   },
 ) {
@@ -44,6 +45,7 @@ async function addSubscription(
       stripeSubscriptionId: row.id,
       stripeCustomerId: row.customer ?? `cus_${row.id}`,
       customerName: row.customerName ?? null,
+      customerEmail: row.customerEmail ?? null,
       customerCountry: row.country ?? null,
       status: row.status ?? (row.mrr > 0 ? "active" : "canceled"),
       currency: row.currency ?? "usd",
@@ -61,8 +63,11 @@ async function addMovement(
     amount: number;
     at: string;
     customer?: string;
+    customerName?: string | null;
     currency?: string;
     origin?: "backfill" | "live" | "reconcile";
+    churnReason?: ChurnReason;
+    endsAt?: string;
   },
 ) {
   const [movement] = await db()
@@ -71,10 +76,12 @@ async function addMovement(
       accountId,
       stripeSubscriptionId: row.subscription,
       stripeCustomerId: row.customer ?? `cus_${row.subscription}`,
-      customerName: "Ada Lovelace",
+      customerName: row.customerName === undefined ? "Ada Lovelace" : row.customerName,
       customerCountry: "FR",
       planName: "Pro",
       kind: row.kind,
+      churnReason: row.churnReason ?? null,
+      endsAt: row.endsAt ? new Date(row.endsAt) : null,
       amount: row.amount,
       currency: row.currency ?? "usd",
       occurredAt: new Date(row.at),
@@ -606,9 +613,11 @@ describe("display state", () => {
         live: true,
         customerKey: null,
         customerName: null,
+        customerEmail: null,
         country: "US",
         planName: null,
         connect: null,
+        churn: null,
         accountId,
         accountName: "Acme",
       },
@@ -744,9 +753,11 @@ describe("display state", () => {
         live: true,
         customerKey: feed[0].customerKey,
         customerName: null,
+        customerEmail: null,
         country: "GB",
         planName: null,
         connect: null,
+        churn: null,
         accountId,
         accountName: "Acme",
       },
@@ -779,6 +790,60 @@ describe("display state", () => {
     expect((await displayOf([accountId], { showCustomerNames: true })).feed[0].customerName).toBe(
       "Grace Hopper",
     );
+  });
+
+  it("says why a subscription stopped counting, and when a scheduled cancellation ends", async () => {
+    const accountId = await readyAccount();
+    await addMovement(accountId, {
+      subscription: "sub_late",
+      kind: "churn",
+      amount: -4900,
+      at: "2026-03-14T10:00:00Z",
+      churnReason: "unpaid",
+    });
+    await addMovement(accountId, {
+      subscription: "sub_leaving",
+      kind: "churn",
+      amount: -2900,
+      at: "2026-03-14T11:00:00Z",
+      churnReason: "scheduled",
+      endsAt: "2026-04-02T00:00:00Z",
+    });
+
+    expect((await displayOf([accountId])).feed.map((item) => item.churn)).toEqual([
+      { reason: "scheduled", endsAt: "2026-04-02T00:00:00.000Z" },
+      { reason: "unpaid", endsAt: null },
+    ]);
+  });
+
+  it("names customers without a name by their email, masked or not, when allowed", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, {
+      id: "sub_anon",
+      mrr: 0,
+      status: "unpaid",
+      customer: "cus_anon",
+      customerEmail: "justine@example.com",
+    });
+    await addMovement(accountId, {
+      subscription: "sub_anon",
+      customer: "cus_anon",
+      customerName: null,
+      kind: "churn",
+      amount: -1750,
+      at: "2026-03-14T10:00:00Z",
+    });
+    const emailOf = async (settings: ScreenSettingsInput) =>
+      (await displayOf([accountId], settings)).feed[0].customerEmail;
+
+    expect(await emailOf({ showCustomerNames: true })).toBeNull();
+    expect(await emailOf({ showCustomerNames: true, customerEmails: "masked" })).toBe(
+      "j•••@example.com",
+    );
+    expect(await emailOf({ showCustomerNames: true, customerEmails: "full" })).toBe(
+      "justine@example.com",
+    );
+    expect(await emailOf({ showCustomerNames: false, customerEmails: "full" })).toBeNull();
   });
 
   it("gives each account of a screen its own numbers, which add up to the screen's", async () => {

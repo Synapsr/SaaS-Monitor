@@ -1,4 +1,5 @@
 import { chartStart } from "@/lib/display/calendar";
+import { shownEmail } from "@/lib/display/customer";
 import type { DisplayState, SeriesPoint } from "@/lib/display/types";
 import type { ChartRange, ScreenSettings } from "@/lib/screens/settings";
 
@@ -59,11 +60,14 @@ export function resolveDisplayState(
       }
     : state;
 
-  if (resolved.screen.settings.showCustomerNames) return resolved;
+  // The server wrote names and emails as the saved settings say: follow the edited ones.
+  const { showCustomerNames, customerEmails } = resolved.screen.settings;
   return {
     ...resolved,
-    feed: resolved.feed.map((item) =>
-      item.customerName === null ? item : { ...item, customerName: null },
-    ),
+    feed: resolved.feed.map((item) => ({
+      ...item,
+      customerName: showCustomerNames ? item.customerName : null,
+      customerEmail: showCustomerNames ? shownEmail(item.customerEmail, customerEmails) : null,
+    })),
   };
 }

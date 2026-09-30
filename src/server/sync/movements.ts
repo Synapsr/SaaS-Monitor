@@ -1,5 +1,5 @@
 import "server-only";
-import type { MrrMovementKind } from "@/lib/display/types";
+import type { ChurnReason, MrrMovementKind } from "@/lib/display/types";
 import { contributesToMrr, potentialMrr, subscriptionMrr } from "@/server/stripe/mrr";
 import type { Coupon, Subscription, UnixTime } from "@/server/stripe/types";
 
@@ -81,6 +81,25 @@ export function importedHistory(valued: ValuedSubscription, now: UnixTime): Plan
     { kind: "new", amount: potential, occurredAt: since },
     { kind: "churn", amount: -potential, occurredAt: stoppedAt },
   ];
+}
+
+/**
+ * Why a subscription stopped counting, as its status tells: canceled, set not to renew, unpaid
+ * once Stripe's retries ran out, or paused. `null` for one that still runs but brings no MRR, such
+ * as a 100% discount.
+ */
+export function churnReason(subscription: Subscription): ChurnReason | null {
+  switch (subscription.status) {
+    case "canceled":
+    case "incomplete_expired":
+      return "canceled";
+    case "unpaid":
+      return "unpaid";
+    case "paused":
+      return "paused";
+    default:
+      return subscription.cancelAtPeriodEnd ? "scheduled" : null;
+  }
 }
 
 /** Kind of an MRR change; `hasHistory` tells a comeback from a first payment. */

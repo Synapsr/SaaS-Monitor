@@ -3,6 +3,7 @@ import {
   itemAmount,
   itemContext,
   itemCountry,
+  itemKindLabel,
   itemOriginalAmount,
   warningText,
 } from "@/lib/display/feed";
@@ -58,6 +59,26 @@ describe("feed items", () => {
         { showAccount: true, language: "en" },
       ),
     ).toEqual(["Pro", "Acme"]);
+  });
+
+  it("names what happened, and why a subscription stopped counting", () => {
+    const { text } = displayLocale("fr");
+    expect(itemKindLabel(feedItem({ kind: "payment" }), text)).toBe("Paiement");
+    expect(itemKindLabel(feedItem({ connect: { applicationFee: 100 } }), text)).toBe("Connect");
+    const churn = (reason: "canceled" | "scheduled" | "unpaid") =>
+      feedItem({ kind: "churn", amount: -4_900, churn: { reason, endsAt: null } });
+    expect(itemKindLabel(churn("canceled"), text)).toBe("Résiliation");
+    expect(itemKindLabel(churn("scheduled"), text)).toBe("Non renouvelé");
+    expect(itemKindLabel(churn("unpaid"), text)).toBe("Paiement échoué");
+    expect(itemKindLabel(feedItem({ kind: "churn", amount: -4_900 }), text)).toBe("Résiliation");
+  });
+
+  it("names customers without a name by the email the screen was given", () => {
+    const item = feedItem({ customerEmail: "a•••@example.com", planName: "Pro", country: null });
+    expect(itemContext(item, { showAccount: false, language: "en" })).toEqual([
+      "a•••@example.com",
+      "Pro",
+    ]);
   });
 
   it("names countries in the screen's language", () => {

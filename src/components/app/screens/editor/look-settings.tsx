@@ -2,13 +2,22 @@
 
 import { MoonIcon, SunIcon, type LucideIcon } from "lucide-react";
 import { useId } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { recurringMetric } from "@/lib/display/metric";
 import {
   CHART_RANGES,
+  CUSTOMER_EMAILS,
   THEMES,
   type ChartRange,
+  type CustomerEmails,
   type Metric,
   type ScreenSettings,
   type Theme,
@@ -24,6 +33,12 @@ const THEME_OPTIONS: Record<Theme, { label: string; icon: LucideIcon }> = {
   light: { label: "Light", icon: SunIcon },
 };
 
+const CUSTOMER_EMAIL_LABELS: Record<CustomerEmails, string> = {
+  hidden: "Don’t show their email",
+  masked: "Show their email, masked: j•••@gmail.com",
+  full: "Show their full email",
+};
+
 const CHART_RANGE_LABELS: Record<ChartRange, string> = {
   "30d": "30 days",
   "90d": "90 days",
@@ -33,7 +48,13 @@ const CHART_RANGE_LABELS: Record<ChartRange, string> = {
 
 type LookSettingsValue = Pick<
   ScreenSettings,
-  "theme" | "accent" | "chartRange" | "celebrations" | "momentSeconds" | "showCustomerNames"
+  | "theme"
+  | "accent"
+  | "chartRange"
+  | "celebrations"
+  | "momentSeconds"
+  | "showCustomerNames"
+  | "customerEmails"
 >;
 
 export function LookSettings({
@@ -155,6 +176,38 @@ export function LookSettings({
           onCheckedChange={(showCustomerNames) => onChange({ showCustomerNames })}
         />
       </SettingRow>
+
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-0.5">
+          <label htmlFor={`${id}-emails`} className="text-sm font-medium">
+            Customers without a name
+          </label>
+          <p className="text-sm text-pretty text-muted-foreground">
+            {settings.showCustomerNames
+              ? "Stripe only knows the email of some customers. Their email tells more than a name."
+              : "Show customer names to name them by their email."}
+          </p>
+        </div>
+        <Select
+          name="customerEmails"
+          value={settings.customerEmails}
+          onValueChange={(customerEmails) =>
+            onChange({ customerEmails: customerEmails as CustomerEmails })
+          }
+          disabled={!settings.showCustomerNames}
+        >
+          <SelectTrigger id={`${id}-emails`} className="h-9 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CUSTOMER_EMAILS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {CUSTOMER_EMAIL_LABELS[option]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

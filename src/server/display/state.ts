@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { BUILD_ID } from "@/lib/build-id";
 import { calendarDay, chartStart, displayCalendar } from "@/lib/display/calendar";
+import { shownEmail } from "@/lib/display/customer";
 import type { DisplayState, DisplayWarning, FeedItem } from "@/lib/display/types";
 import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
@@ -184,8 +185,13 @@ function toFeedItem(
     occurredAt: row.occurredAt.toISOString(),
     live: row.origin === "live",
     customerKey: row.customerId && customerKey(row.accountId, row.customerId),
-    // The screen URL may be seen by visitors: names only appear when the founder allows it.
+    // The screen URL may be seen by visitors: names only appear when the founder allows it, and
+    // emails, masked here when asked, only for customers without a name.
     customerName: settings.showCustomerNames ? row.customerName : null,
+    customerEmail:
+      settings.showCustomerNames && row.customerName === null
+        ? shownEmail(row.customerEmail, settings.customerEmails)
+        : null,
     country: row.country,
     planName: row.planName,
     connect:
@@ -197,6 +203,10 @@ function toFeedItem(
                 ? null
                 : converter.convert(row.applicationFee, row.currency),
           },
+    churn:
+      row.kind === "churn" && row.churnReason !== null
+        ? { reason: row.churnReason, endsAt: row.endsAt?.toISOString() ?? null }
+        : null,
     accountId: row.accountId,
     accountName,
   };

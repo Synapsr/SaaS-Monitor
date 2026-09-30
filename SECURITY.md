@@ -17,7 +17,8 @@ few days, and a fix will be released as quickly as possible, crediting you if yo
   the app register its own webhook endpoint.
 - Webhooks are verified with their Stripe signing secret.
 - Screen URLs contain an unguessable token. They only expose the metrics shown on the screen;
-  customer names are hidden unless enabled. Regenerating the link revokes the old one.
+  customer names are hidden unless enabled, and so are the emails of customers without a name
+  (masked on the server when a screen asks for it). Regenerating the link revokes the old one.
 - A screen may also ask for a password, hashed like user passwords. A device that typed it keeps
   an HTTP-only cookie bound to that password, so changing it locks every device out again.
   Attempts are limited per screen and client address.

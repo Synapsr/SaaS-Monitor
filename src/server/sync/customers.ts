@@ -6,7 +6,7 @@ import type { Customer } from "@/server/stripe/types";
 import type { DataOrigin } from "./apply";
 
 /**
- * Records the customers Stripe `created` lately, and keeps the name and country of those already
+ * Records the customers Stripe `created` lately, and keeps the name, email and country of those already
  * recorded up to date. `updated` customers are only refreshed, never added: the update of someone
  * who signed up long ago is no sign-up. A customer seen again (replayed event, scan) keeps its
  * origin, so it is never celebrated twice. Stored rows are locked first, like subscriptions.
@@ -26,6 +26,7 @@ export async function applyCustomers(
       id: customers.id,
       stripeCustomerId: customers.stripeCustomerId,
       name: customers.name,
+      email: customers.email,
       country: customers.country,
     })
     .from(customers)
@@ -44,11 +45,12 @@ export async function applyCustomers(
   let changed = 0;
   for (const customer of seen) {
     const previous = stored.get(customer.id);
-    if (previous && (previous.name !== customer.name || previous.country !== customer.country)) {
-      await tx
-        .update(customers)
-        .set({ name: customer.name, country: customer.country })
-        .where(eq(customers.id, previous.id));
+    const { name, email, country } = customer;
+    if (
+      previous &&
+      (previous.name !== name || previous.email !== email || previous.country !== country)
+    ) {
+      await tx.update(customers).set({ name, email, country }).where(eq(customers.id, previous.id));
       changed += 1;
     }
   }
@@ -60,6 +62,7 @@ export async function applyCustomers(
         accountId,
         stripeCustomerId: customer.id,
         name: customer.name,
+        email: customer.email,
         country: customer.country,
         occurredAt: new Date(customer.created * 1000),
         origin,

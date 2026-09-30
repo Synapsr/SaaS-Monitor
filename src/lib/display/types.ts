@@ -112,6 +112,12 @@ export interface SeriesPoint {
 }
 
 export type MrrMovementKind = "new" | "expansion" | "reactivation" | "contraction" | "churn";
+/**
+ * Why a subscription stopped counting: `canceled`; `scheduled`, set not to renew (Stripe stops
+ * counting it at once, while it runs until `endsAt`); `unpaid`, once Stripe's retries of a failed
+ * payment ran out; or `paused`.
+ */
+export type ChurnReason = "canceled" | "scheduled" | "unpaid" | "paused";
 /** `customer`: a Stripe customer was created, before they pay anything, if they ever do. */
 export type FeedItemKind = "payment" | "customer" | MrrMovementKind;
 
@@ -136,6 +142,11 @@ export interface FeedItem {
   customerKey: string | null;
   /** Only filled when the screen shows customer names. */
   customerName: string | null;
+  /**
+   * For a customer without a name, on a screen that shows names and allows it
+   * (`settings.customerEmails`): their email, masked (`j•••@gmail.com`) or in full.
+   */
+  customerEmail: string | null;
   /** ISO 3166-1 alpha-2 code, e.g. `FR`. */
   country: string | null;
   planName: string | null;
@@ -145,6 +156,8 @@ export interface FeedItem {
    * `null` for everything else.
    */
   connect: { applicationFee: number | null } | null;
+  /** Why a `churn` happened, when known; `null` for everything else. */
+  churn: { reason: ChurnReason; endsAt: string | null } | null;
   /** As in `DisplayState.accounts`. */
   accountId: string;
   accountName: string;

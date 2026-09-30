@@ -29,6 +29,13 @@
       "when": 1790676327528,
       "tag": "0003_connect_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1790753235489,
+      "tag": "0004_churn_reasons_and_emails",
+      "breakpoints": true
     }
   ]
 }

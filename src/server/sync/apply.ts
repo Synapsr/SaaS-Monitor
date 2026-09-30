@@ -6,6 +6,7 @@ import { mainInterval, planName } from "@/server/stripe/mrr";
 import type { Charge, UnixTime } from "@/server/stripe/types";
 import type { EventRef } from "./events";
 import {
+  churnReason,
   classifyChange,
   importedHistory,
   reconciledChangeTime,
@@ -89,6 +90,7 @@ export async function applySubscriptionUpdates(
         ? importedHistory(update, now)
         : plannedChange(update, previous?.mrr ?? 0, comebacks.has(update.subscription.id), now);
     for (const movement of planned) {
+      const reason = movement.kind === "churn" ? churnReason(update.subscription) : null;
       movements.push({
         accountId,
         stripeSubscriptionId: values.stripeSubscriptionId,
@@ -97,6 +99,8 @@ export async function applySubscriptionUpdates(
         customerCountry: values.customerCountry,
         planName: values.planName,
         kind: movement.kind,
+        churnReason: reason,
+        endsAt: reason === "scheduled" ? toOptionalDate(update.subscription.cancelAt) : null,
         amount: movement.amount,
         currency: values.currency,
         occurredAt: toDate(movement.occurredAt),
@@ -194,6 +198,7 @@ async function endSubscriptions(
       customerCountry: row.customerCountry,
       planName: row.planName,
       kind: "churn",
+      churnReason: "canceled",
       amount: -row.mrr,
       currency: row.currency,
       occurredAt: endedAt,
@@ -245,8 +250,9 @@ function toSubscriptionValues(
     accountId,
     stripeSubscriptionId: subscription.id,
     stripeCustomerId: subscription.customer.id,
-    // Deleted customers lose their name: keep the one we knew.
+    // Deleted customers lose their name: keep the one we knew. Events don't expand customers.
     customerName: subscription.customer.name ?? previous?.customerName ?? null,
+    customerEmail: subscription.customer.email ?? previous?.customerEmail ?? null,
     customerCountry: subscription.customer.country ?? previous?.customerCountry ?? null,
     status: subscription.status,
     currency: subscription.currency,
@@ -344,7 +350,9 @@ async function newPayments(
     tx,
     accountId,
     charges.flatMap((charge) =>
-      charge.customerId && (!charge.customerName || !charge.country) ? [charge.customerId] : [],
+      charge.customerId && (!charge.customerName || !charge.customerEmail || !charge.country)
+        ? [charge.customerId]
+        : [],
     ),
   );
   return charges.map((charge) => {
@@ -354,6 +362,7 @@ async function newPayments(
       stripeChargeId: charge.id,
       stripeCustomerId: charge.customerId,
       customerName: charge.customerName ?? customer?.name ?? null,
+      customerEmail: charge.customerEmail ?? customer?.email ?? null,
       customerCountry: charge.country ?? customer?.country ?? null,
       description: charge.description,
       amount: charge.amount,
@@ -369,6 +378,7 @@ async function newPayments(
 
 interface KnownCustomer {
   name: string | null;
+  email: string | null;
   country: string | null;
 }
 
@@ -383,6 +393,7 @@ async function knownCustomers(
     .select({
       id: subscriptions.stripeCustomerId,
       name: subscriptions.customerName,
+      email: subscriptions.customerEmail,
       country: subscriptions.customerCountry,
     })
     .from(subscriptions)
@@ -393,5 +404,5 @@ async function knownCustomers(
       ),
     );
   // Any subscription of a customer names them.
-  return new Map(rows.map((row) => [row.id, { name: row.name, country: row.country }]));
+  return new Map(rows.map(({ id, ...customer }) => [id, customer]));
 }

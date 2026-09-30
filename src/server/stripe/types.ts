@@ -21,6 +21,8 @@ export interface Subscription {
   /** For `cancel_at_period_end`, the time of the cancellation request, not the period end. */
   canceledAt: UnixTime | null;
   cancelAtPeriodEnd: boolean;
+  /** When a requested cancellation takes effect: the period end, or a date of its own. */
+  cancelAt: UnixTime | null;
   /** Subscription-level discounts. Each item carries its own. */
   discounts: Discount[];
   items: SubscriptionItem[];
@@ -33,16 +35,19 @@ export interface SubscriptionCustomer {
   id: string;
   /** `null` when unknown, e.g. the customer was deleted or not expanded. */
   name: string | null;
+  email: string | null;
   /** ISO 3166-1 alpha-2 code. */
   country: string | null;
   /** Applies to the customer's subscriptions that have no discount of their own. */
   discount: Discount | null;
 }
 
-/** A customer as listed or described by its events, for the feed. Emails are not read. */
+/** A customer as listed or described by its events, for the feed. */
 export interface Customer {
   id: string;
   name: string | null;
+  /** Shown only by screens that allow it, for customers without a name. */
+  email: string | null;
   /** ISO 3166-1 alpha-2 code. */
   country: string | null;
   created: UnixTime;
@@ -141,6 +146,7 @@ export interface Charge {
   collected: boolean;
   description: string | null;
   customerName: string | null;
+  customerEmail: string | null;
   country: string | null;
   /**
    * The Stripe Connect account a destination charge was made for: the money goes to it, and the

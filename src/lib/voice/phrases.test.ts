@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Phrase } from "./announcements";
+import { phraseAnnouncement, type Phrase } from "./announcements";
 import {
   chooseSpeech,
   DEFAULT_PHRASES,
@@ -94,7 +94,7 @@ describe("the phrases voices ship with", () => {
     for (const language of VOICE_LANGUAGES) {
       for (const phrase of phrases) {
         const defaults = DEFAULT_PHRASES[language][phrase];
-        const announcement = phrase === "goal" ? "milestone" : phrase;
+        const announcement = phraseAnnouncement(phrase);
         for (const text of defaults) expect(phraseProblem(text, announcement), text).toBeNull();
         // The amount of a moment is always known; nothing else is.
         const last = phraseVariables(defaults[defaults.length - 1]).variables;

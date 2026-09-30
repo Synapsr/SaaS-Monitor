@@ -4,7 +4,14 @@ import { useState } from "react";
 import { KindIcon } from "@/components/display/feed-kind-icon";
 import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { useNow } from "@/hooks/use-now";
-import { isGoodNews, itemAmount, itemOriginalAmount, warningText } from "@/lib/display/feed";
+import { customerLabel } from "@/lib/display/customer";
+import {
+  isGoodNews,
+  itemAmount,
+  itemKindLabel,
+  itemOriginalAmount,
+  warningText,
+} from "@/lib/display/feed";
 import { countryFlag, countryName } from "@/lib/display/format";
 import type { RecurringMetric } from "@/lib/display/metric";
 import { formatFeedTime } from "@/lib/display/time";
@@ -107,15 +114,16 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
   const { language, locale, text } = useDisplayLocale();
   const amount = itemAmount(item, currency, recurring, locale);
   const original = itemOriginalAmount(item, recurring, locale);
-  const kind = item.connect ? text.feed.connectPayment : text.feed.kinds[item.kind];
+  const kind = itemKindLabel(item, text);
+  const customer = customerLabel(item);
   // A new customer has no amount: their name leads, or what they are when it is hidden.
-  const headline = amount ?? item.customerName ?? kind;
+  const headline = amount ?? customer ?? kind;
   // The column is narrow: a flag stands for the country, and the account moves up by the time.
   const country = item.country && countryName(item.country, language);
   const flag = countryFlag(item.country);
   const details = [
     headline === kind ? null : kind,
-    amount === null ? null : item.customerName,
+    amount === null ? null : customer,
     item.planName,
   ].filter((part): part is string => Boolean(part));
   return (
@@ -130,7 +138,7 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
         arrived && "motion-safe:animate-[display-arrival_5s_ease-out]",
       )}
     >
-      <KindIcon kind={item.kind} connect={item.connect !== null} className="size-12" />
+      <KindIcon item={item} className="size-12" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-4">
           <p className="flex items-baseline gap-2 truncate">

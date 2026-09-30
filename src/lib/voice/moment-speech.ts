@@ -42,7 +42,8 @@ function movementAnnouncement(item: FeedItem): Announcement {
     case "contraction":
       return "downgrade";
     case "churn":
-      return "cancellation";
+      // A failed payment is no customer leaving: it has its own announcement.
+      return item.churn?.reason === "unpaid" ? "unpaid" : "cancellation";
     default:
       return "payment";
   }
@@ -62,8 +63,18 @@ export function momentSpeech(
   if (announcement === null) return null;
   // The founder asked to hear it: only the main switch applies.
   if (moment.kind !== "test" && !voice.announce[announcement]) return null;
-  const phrase = moment.kind === "milestone" && moment.isGoal ? "goal" : announcement;
-  return { announcement, phrase, language };
+  return { announcement, phrase: momentPhrase(moment, announcement), language };
+}
+
+/** The phrase of an announcement that says the most about the moment. */
+function momentPhrase(moment: Moment, announcement: Announcement): Phrase {
+  if (moment.kind === "milestone" && moment.isGoal) return "goal";
+  if (moment.kind === "movement" && announcement === "cancellation") {
+    const reason = moment.movement.churn?.reason;
+    if (reason === "scheduled") return "cancellationScheduled";
+    if (reason === "paused") return "pause";
+  }
+  return announcement;
 }
 
 /** Where the recorded clip of a phrase is served from (`scripts/generate-voices.ts`). */

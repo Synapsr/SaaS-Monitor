@@ -8,6 +8,8 @@ export const ACCENTS = ["emerald", "violet", "sky", "amber", "rose"] as const;
 export const THEMES = ["dark", "light"] as const;
 /** Languages a screen speaks. Its numbers and dates follow the language's conventions too. */
 export const LANGUAGES = ["en", "fr", "de", "es", "it", "pt", "nl"] as const;
+/** How a screen names customers without a name, when it shows names: by their email, or not. */
+export const CUSTOMER_EMAILS = ["hidden", "masked", "full"] as const;
 /** `all` starts with the first MRR movement of the screen's accounts. */
 export const CHART_RANGES = ["30d", "90d", "12m", "all"] as const;
 /** The recurring revenue a screen shows: monthly (MRR) or annual (ARR, twelve times MRR). */
@@ -33,6 +35,7 @@ export type Theme = (typeof THEMES)[number];
 export type Language = (typeof LANGUAGES)[number];
 export type ChartRange = (typeof CHART_RANGES)[number];
 export type Metric = (typeof METRICS)[number];
+export type CustomerEmails = (typeof CUSTOMER_EMAILS)[number];
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -119,6 +122,7 @@ export const screenSettingsSchema = z.object({
           reactivation: z.boolean().default(true),
           downgrade: z.boolean().default(false),
           cancellation: z.boolean().default(false),
+          unpaid: z.boolean().default(false),
           customer: z.boolean().default(true),
           milestone: z.boolean().default(true),
         })
@@ -144,6 +148,11 @@ export const screenSettingsSchema = z.object({
   momentSeconds: z.number().int().min(MOMENT_SECONDS.min).max(MOMENT_SECONDS.max).default(10),
   /** Customer names are hidden by default: the screen URL may be seen by visitors. */
   showCustomerNames: z.boolean().default(false),
+  /**
+   * What names a customer without a name, on a screen showing names: nothing, their email masked
+   * (`j•••@gmail.com`), or their whole email. Emails say more than names: hidden by default.
+   */
+  customerEmails: z.enum(CUSTOMER_EMAILS).default("hidden"),
   chartRange: z.enum(CHART_RANGES).default("90d"),
   accent: z.union([z.enum(ACCENTS), customAccentSchema]).default("emerald"),
   theme: z.enum(THEMES).default("dark"),

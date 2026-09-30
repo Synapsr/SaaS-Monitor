@@ -25,7 +25,7 @@ import {
   subscriptions,
 } from "@/db/schema";
 import { dayToUtcDate } from "@/lib/display/calendar";
-import type { FeedItemKind } from "@/lib/display/types";
+import type { ChurnReason, FeedItemKind } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 
 /*
@@ -291,8 +291,13 @@ export interface ActivityRow {
   /** Stripe's id: it never leaves the server (see `toFeedItem`). */
   customerId: string | null;
   customerName: string | null;
+  /** Leaves the server only for screens that allow it (see `toFeedItem`). */
+  customerEmail: string | null;
   country: string | null;
   planName: string | null;
+  /** Why a churn happened, and when a scheduled one takes effect. */
+  churnReason: ChurnReason | null;
+  endsAt: Date | null;
   /** For a payment made for a Stripe Connect account: that account's id. */
   connectedAccountId: string | null;
   /** What the account keeps of such a payment. */
@@ -319,6 +324,8 @@ function latestMovements(accountId: string, limit: number) {
       customerName: mrrMovements.customerName,
       country: mrrMovements.customerCountry,
       planName: mrrMovements.planName,
+      churnReason: mrrMovements.churnReason,
+      endsAt: mrrMovements.endsAt,
     })
     .from(mrrMovements)
     .where(eq(mrrMovements.accountId, accountId))
@@ -340,6 +347,7 @@ function latestPayments(accountId: string, limit: number) {
       origin: payments.origin,
       accountId: payments.accountId,
       customerName: payments.customerName,
+      customerEmail: payments.customerEmail,
       country: payments.customerCountry,
       customerId: payments.stripeCustomerId,
       connectedAccountId: payments.connectedAccountId,
@@ -361,6 +369,7 @@ function latestCustomers(accountId: string, limit: number) {
       accountId: customers.accountId,
       customerId: customers.stripeCustomerId,
       customerName: customers.name,
+      customerEmail: customers.email,
       country: customers.country,
     })
     .from(customers)
@@ -393,17 +402,25 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
 
   const profiles = await customerProfiles(
     accountIds,
-    paymentRows.flatMap((row) => (row.customerId ? [row.customerId] : [])),
+    [...paymentRows, ...movementRows].flatMap((row) => (row.customerId ? [row.customerId] : [])),
   );
+  const profileOf = (row: { accountId: string; customerId: string | null }) =>
+    row.customerId ? profiles.get(`${row.accountId}:${row.customerId}`) : undefined;
   const rows: ActivityRow[] = [
-    ...movementRows.map((row) => ({
-      ...row,
-      source: "movement" as const,
-      connectedAccountId: null,
-      applicationFee: null,
-    })),
+    ...movementRows.map((row) => {
+      const profile = profileOf(row);
+      return {
+        ...row,
+        source: "movement" as const,
+        // A movement keeps the name its customer had then; one without may have got one since.
+        customerName: row.customerName ?? profile?.customerName ?? null,
+        customerEmail: profile?.customerEmail ?? null,
+        connectedAccountId: null,
+        applicationFee: null,
+      };
+    }),
     ...paymentRows.map((row) => {
-      const profile = row.customerId ? profiles.get(`${row.accountId}:${row.customerId}`) : null;
+      const profile = profileOf(row);
       return {
         ...row,
         source: "payment" as const,
@@ -412,7 +429,10 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
         // A charge only knows its card and billing details: the card may come from another
         // country, so the customer's own profile names them like their subscription does.
         customerName: profile?.customerName ?? row.customerName,
+        customerEmail: profile?.customerEmail ?? row.customerEmail,
         country: profile?.country ?? row.country,
+        churnReason: null,
+        endsAt: null,
       };
     }),
     ...customerRows.map((row) => ({
@@ -422,6 +442,8 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
       amount: 0,
       currency: null,
       planName: null,
+      churnReason: null,
+      endsAt: null,
       connectedAccountId: null,
       applicationFee: null,
     })),
@@ -432,12 +454,17 @@ export async function latestActivity(accountIds: string[], limit: number): Promi
 /**
  * Charges don't say which plan they pay for, and their billing details may differ from the
  * customer's: describe each customer as their main subscription does (the one bringing the most
- * MRR, then the latest), keyed by `<account id>:<customer id>`.
+ * MRR, then the latest), keyed by `<account id>:<customer id>`. Movements take their email there.
  */
 async function customerProfiles(accountIds: string[], customerIds: string[]) {
   const profiles = new Map<
     string,
-    { planName: string | null; customerName: string | null; country: string | null }
+    {
+      planName: string | null;
+      customerName: string | null;
+      customerEmail: string | null;
+      country: string | null;
+    }
   >();
   if (!customerIds.length) return profiles;
 
@@ -447,6 +474,7 @@ async function customerProfiles(accountIds: string[], customerIds: string[]) {
       customerId: subscriptions.stripeCustomerId,
       planName: subscriptions.planName,
       customerName: subscriptions.customerName,
+      customerEmail: subscriptions.customerEmail,
       country: subscriptions.customerCountry,
     })
     .from(subscriptions)

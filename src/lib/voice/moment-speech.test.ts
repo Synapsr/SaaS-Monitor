@@ -56,6 +56,13 @@ describe("momentAnnouncement", () => {
     expect(momentAnnouncement(movement("reactivation"))).toBe("reactivation");
     expect(momentAnnouncement(movement("contraction"))).toBe("downgrade");
     expect(momentAnnouncement(movement("churn"))).toBe("cancellation");
+    // A failed payment is no customer leaving.
+    const unpaid: Moment = {
+      id: "m",
+      kind: "movement",
+      movement: feedItem({ kind: "churn", churn: { reason: "unpaid", endsAt: null } }),
+    };
+    expect(momentAnnouncement(unpaid)).toBe("unpaid");
     expect(momentAnnouncement({ id: "t", kind: "test" })).toBe("payment");
   });
 
@@ -105,6 +112,22 @@ describe("momentSpeech", () => {
     });
     expect(momentSpeech(milestone(false), settings({}))?.phrase).toBe("milestone");
     expect(momentSpeech(milestone(true), settings({}))?.phrase).toBe("goal");
+  });
+
+  it("says a cancellation at period end, or a pause, in phrases of their own", () => {
+    const churn = (reason: "canceled" | "scheduled" | "paused"): Moment => ({
+      id: "m",
+      kind: "movement",
+      movement: feedItem({ kind: "churn", churn: { reason, endsAt: null } }),
+    });
+    const loud = settings({
+      announce: { ...defaultScreenSettings.voice.announce, cancellation: true },
+    });
+    expect(momentSpeech(churn("canceled"), loud)?.phrase).toBe("cancellation");
+    expect(momentSpeech(churn("scheduled"), loud)?.phrase).toBe("cancellationScheduled");
+    expect(momentSpeech(churn("paused"), loud)?.phrase).toBe("pause");
+    // Losses stay quiet unless asked for.
+    expect(momentSpeech(churn("scheduled"), settings({}))).toBeNull();
   });
 
   it("stays quiet in a language no voice speaks", () => {

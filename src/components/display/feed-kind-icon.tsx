@@ -1,6 +1,9 @@
 import {
+  CalendarXIcon,
   CircleDollarSignIcon,
+  CirclePauseIcon,
   createLucideIcon,
+  CreditCardXIcon,
   RotateCcwIcon,
   SparklesIcon,
   TrendingDownIcon,
@@ -10,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { isGoodNews } from "@/lib/display/feed";
-import type { FeedItemKind } from "@/lib/display/types";
+import type { ChurnReason, FeedItem, FeedItemKind } from "@/lib/display/types";
 import { cn } from "@/lib/utils";
 
 /** One icon per kind of activity, in the feed and in the moments that announce it. */
@@ -22,6 +25,14 @@ export const KIND_ICONS: Record<FeedItemKind, LucideIcon> = {
   reactivation: RotateCcwIcon,
   contraction: TrendingDownIcon,
   churn: UserMinusIcon,
+};
+
+/** Why a subscription stopped counting, in place of the icon of a churn. */
+export const CHURN_ICONS: Record<ChurnReason, LucideIcon> = {
+  canceled: UserMinusIcon,
+  scheduled: CalendarXIcon,
+  unpaid: CreditCardXIcon,
+  paused: CirclePauseIcon,
 };
 
 /**
@@ -37,19 +48,22 @@ export const CONNECT_PAYMENT_ICON = createLucideIcon("circle-dollar-out", [
 ]);
 
 /**
- * The icon of a kind of activity on a disc, in the accent for good news. A payment made for a
- * Stripe Connect account (`connect`) has its own icon.
+ * The icon of an item on a disc, in the accent for good news: its kind's, the Connect one for a
+ * payment made for a Stripe Connect account, or the reason of a churn.
  */
 export function KindIcon({
-  kind,
-  connect = false,
+  item,
   className,
 }: {
-  kind: FeedItemKind;
-  connect?: boolean;
+  item: Pick<FeedItem, "kind" | "connect" | "churn">;
   className?: string;
 }) {
-  const Icon = connect ? CONNECT_PAYMENT_ICON : KIND_ICONS[kind];
+  const { kind, connect, churn } = item;
+  const Icon = connect
+    ? CONNECT_PAYMENT_ICON
+    : churn
+      ? CHURN_ICONS[churn.reason]
+      : KIND_ICONS[kind];
   return (
     <span
       className={cn(

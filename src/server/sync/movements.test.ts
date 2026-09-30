@@ -12,6 +12,7 @@ import {
   type SubscriptionFixture,
 } from "@/test/stripe-fixtures";
 import {
+  churnReason,
   classifyChange,
   importedHistory,
   payingSince,
@@ -134,5 +135,22 @@ describe("reconciled changes", () => {
     );
     expect(reconciledChangeTime("expansion", subscription(), NOW)).toBe(NOW);
     expect(reconciledChangeTime("reactivation", subscription(), NOW)).toBe(NOW);
+  });
+});
+
+describe("churn reasons", () => {
+  it("tell a cancellation, one at period end, a failed payment and a pause apart", () => {
+    expect(churnReason(subscription({ status: "canceled" }))).toBe("canceled");
+    expect(churnReason(subscription({ status: "incomplete_expired" }))).toBe("canceled");
+    expect(churnReason(subscription({ cancel_at_period_end: true }))).toBe("scheduled");
+    expect(churnReason(subscription({ status: "past_due", cancel_at_period_end: true }))).toBe(
+      "scheduled",
+    );
+    expect(churnReason(subscription({ status: "unpaid" }))).toBe("unpaid");
+    expect(churnReason(subscription({ status: "paused" }))).toBe("paused");
+  });
+
+  it("are unknown for a subscription that runs without bringing MRR", () => {
+    expect(churnReason(subscription({ status: "active" }))).toBeNull();
   });
 });

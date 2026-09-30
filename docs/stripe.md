@@ -13,16 +13,16 @@ endpoint).
 2. Check the permissions, name the key (e.g. "SaaS Monitor") and create it.
 3. Copy the key (`rk_live_…` or `rk_test_…`) and paste it in SaaS Monitor.
 
-| Permission          | Section | Access | Why                                           |
-| ------------------- | ------- | ------ | --------------------------------------------- |
-| Subscriptions       | Billing | Read   | MRR, customers, upgrades and churn            |
-| Customers           | Core    | Read   | New customers, with their names and countries |
-| Charges and Refunds | Core    | Read   | Revenue and payment celebrations              |
-| Events              | Core    | Read   | Detect what changed since the last check      |
-| Products            | Core    | Read   | Plan names                                    |
-| Prices              | Billing | Read   | Amounts of tiered prices                      |
-| Coupons             | Billing | Read   | Discounts, which reduce MRR                   |
-| Webhook Endpoints   | Webhook | Write  | _Optional_: instant updates (see below)       |
+| Permission          | Section | Access | Why                                      |
+| ------------------- | ------- | ------ | ---------------------------------------- |
+| Subscriptions       | Billing | Read   | MRR, customers, upgrades and churn       |
+| Customers           | Core    | Read   | New customers, their names and countries |
+| Charges and Refunds | Core    | Read   | Revenue and payment celebrations         |
+| Events              | Core    | Read   | Detect what changed since the last check |
+| Products            | Core    | Read   | Plan names                               |
+| Prices              | Billing | Read   | Amounts of tiered prices                 |
+| Coupons             | Billing | Read   | Discounts, which reduce MRR              |
+| Webhook Endpoints   | Webhook | Write  | _Optional_: instant updates (see below)  |
 
 The key is checked when you paste it: if a permission is missing, SaaS Monitor tells you which
 one. Keys are encrypted at rest and never displayed again.
@@ -66,7 +66,11 @@ so the number on the wall matches your Stripe Dashboard:
 
 Every change of a subscription's MRR is recorded as a movement: **new** (it starts paying),
 **expansion** and **contraction** (its amount changes), **churn** (it stops counting) and
-**reactivation** (it pays again after stopping). Net new MRR adds up this month's movements. A
+**reactivation** (it pays again after stopping). A churn says why: the subscription was
+**canceled**, **won't renew** (a cancellation at period end, with the date it ends), is
+**unpaid** (Stripe's retries of a failed payment ran out: paying the invoice brings it back as a
+reactivation) or **paused**. Churns recorded before SaaS Monitor kept reasons take the one their
+subscription shows. Net new MRR adds up this month's movements. A
 _new customer_ paid nothing when the month began; a customer adding a second subscription is not
 one.
 

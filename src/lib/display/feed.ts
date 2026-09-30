@@ -1,3 +1,4 @@
+import { customerLabel } from "@/lib/display/customer";
 import { countryFlag, countryName, formatAmount, formatPayment } from "@/lib/display/format";
 import type { DisplayText } from "@/lib/display/i18n";
 import type { RecurringMetric } from "@/lib/display/metric";
@@ -49,13 +50,25 @@ export function itemCountry(item: FeedItem, language: Language): string | null {
   return [countryFlag(item.country), countryName(item.country, language)].filter(Boolean).join(" ");
 }
 
+/**
+ * What an item is, as a screen names it: "Payment", or "Connect" for a payment made for a Stripe
+ * Connect account, and why a subscription stopped counting ("Won't renew", "Payment failed").
+ */
+export function itemKindLabel(item: FeedItem, text: DisplayText): string {
+  if (item.connect) return text.feed.connectPayment;
+  if (item.churn && item.churn.reason !== "canceled") {
+    return text.feed.churnReasons[item.churn.reason];
+  }
+  return text.feed.kinds[item.kind];
+}
+
 /** What a screen may say about an item: customer (when shown), plan, country, account. */
 export function itemContext(
   item: FeedItem,
   options: { showAccount: boolean; language: Language },
 ): string[] {
   return [
-    item.customerName,
+    customerLabel(item),
     item.planName,
     itemCountry(item, options.language),
     options.showAccount ? item.accountName : null,
