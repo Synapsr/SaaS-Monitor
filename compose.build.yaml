@@ -1,0 +1,16 @@
+# Builds the app from this clone's source instead of pulling the published image. Turn it on with
+# `COMPOSE_FILE=compose.yaml:compose.build.yaml` in .env: `docker compose up -d` then builds (from
+# cache when nothing changed) and runs your build. See docs/self-hosting.md.
+services:
+  app:
+    # A name of its own, so that a local build never passes for a published release.
+    image: saas-monitor:local
+    pull_policy: build
+    build:
+      context: .
+      args:
+        # Static pages, such as the landing page, carry the absolute URL of their social preview
+        # image, written when the app is built.
+        APP_URL: ${APP_URL:-http://localhost:3000}
+        # Identifies the build: open screens reload when it changes. Empty gives each build its own.
+        BUILD_ID: ${BUILD_ID:-}

@@ -1,5 +1,6 @@
-# Self-hosting: `node scripts/setup.mjs` (or copy .env.example to .env and fill in the secrets),
-# then `docker compose up -d`. The app listens on http://localhost:3000 (APP_PORT).
+# Self-hosting (docs/self-hosting.md): put this file next to a `.env` with fresh secrets, then run
+# `docker compose up -d`. `curl -fsSL https://saas-monitor.com/install.sh | sh` writes both; in a
+# clone, `node scripts/setup.mjs` writes the `.env`. The app listens on port 3000 (APP_PORT).
 name: saas-monitor
 
 services:
@@ -22,12 +23,10 @@ services:
       start_period: 1m
 
   app:
-    build:
-      context: .
-      args:
-        # Social previews (og:image…) need absolute URLs, written into the pages at build time.
-        APP_URL: ${APP_URL:-http://localhost:3000}
-        BUILD_ID: ${BUILD_ID:-}
+    # The published image, for amd64 and arm64 (a Raspberry Pi with a 64-bit OS runs it too).
+    # `docker compose pull` fetches a newer one; SAAS_MONITOR_VERSION in .env pins a release.
+    # compose.build.yaml builds it from source instead.
+    image: ghcr.io/synapsr/saas-monitor:${SAAS_MONITOR_VERSION:-latest}
     restart: unless-stopped
     init: true
     ports:
@@ -43,6 +42,8 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GRADIUM_API_KEY: ${GRADIUM_API_KEY:-}
+      GRADIUM_API_URL: ${GRADIUM_API_URL:-https://api.gradium.ai/api}
       MIGRATE_ON_START: ${MIGRATE_ON_START:-true}
       FX_RATES_URL: ${FX_RATES_URL:-https://api.frankfurter.dev/v1}
       PLAUSIBLE_DOMAIN: ${PLAUSIBLE_DOMAIN:-}

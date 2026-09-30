@@ -81,28 +81,35 @@ included, is sent to Gradium), and every open copy of the screen says the same p
 
 ## Raspberry Pi (recommended)
 
-Any Raspberry Pi 4 or 5 connected to a TV over HDMI does the job. With Raspberry Pi OS (desktop):
+Any Raspberry Pi 4 or 5 connected to a TV over HDMI does the job, with Raspberry Pi OS (desktop).
 
-1. In Raspberry Pi Imager, enable auto-login, Wi-Fi and SSH before flashing the card.
-2. Disable screen blanking: `sudo raspi-config` → **Display Options** → **Screen Blanking** →
-   **No**.
-3. Pick the HDMI audio output from the volume icon in the taskbar if you want sound on the TV,
-   and install the emoji font used for country flags: `sudo apt install fonts-noto-color-emoji`.
-4. Start the screen automatically at login. Raspberry Pi OS uses the labwc compositor: add this
-   line to `~/.config/labwc/autostart` (create the file if needed), with your screen's link. The
-   dashboard gives the same command with the link filled in, under **Set up a TV or Raspberry
-   Pi**: add the final `&` so that the session keeps starting.
+1. In Raspberry Pi Imager, enable auto-login, Wi-Fi and SSH before flashing the card, then start
+   the Pi on the TV.
+2. Once it shows its desktop, run this block over SSH (or in a terminal on the Pi), with your
+   screen's link. The dashboard gives the `chromium` line with the link filled in, under **Set up
+   a TV or Raspberry Pi**.
 
    ```bash
-   chromium --kiosk --noerrdialogs --disable-infobars --incognito \
+   # Never blank the screen, and show the emoji used for country flags.
+   sudo raspi-config nonint do_blanking 1
+   sudo apt install -y fonts-noto-color-emoji
+   # Open the screen at every login (Raspberry Pi OS's desktop, labwc, runs this file).
+   mkdir -p ~/.config/labwc
+   cat >> ~/.config/labwc/autostart <<'EOF'
+   chromium --kiosk --noerrdialogs --disable-infobars --hide-crash-restore-bubble \
      --autoplay-policy=no-user-gesture-required \
      --check-for-update-interval=31536000 \
      "https://monitor.example.com/d/your-screen-token" &
+   EOF
+   sudo reboot
    ```
 
-   On older releases the browser binary is called `chromium-browser`.
+   The Pi restarts into the screen, full screen, with sound, without keyboard or mouse. On older
+   releases the browser binary is called `chromium-browser`. Don't add `--incognito`: a screen
+   with a password remembers it in a cookie, which incognito forgets at every reboot. After a
+   power cut, the browser opens the screen again without asking to restore pages.
 
-5. Reboot: the screen opens full screen, with sound, without keyboard or mouse.
+3. No sound from the TV? Pick the HDMI output from the volume icon in the taskbar.
 
 For a vertical monitor, rotate the output in **Screen Configuration** (or with
 `wlr-randr --output HDMI-A-1 --transform 90`); the layout adapts to portrait automatically.
