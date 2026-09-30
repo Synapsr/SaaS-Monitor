@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { trackRedirect } from "@/lib/analytics/track";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 import { permissionLabel } from "@/lib/stripe-permissions";
 
@@ -46,7 +47,8 @@ export function ConnectAccountForm() {
   const [name, setName] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [state, connect, pending] = useActionState(
-    (_: ConnectResult | null, input: ConnectInput) => connectAccountAction(input),
+    (_: ConnectResult | null, input: ConnectInput) =>
+      trackRedirect(connectAccountAction(input), "Stripe connected"),
     null,
   );
   const keyHintId = useId();

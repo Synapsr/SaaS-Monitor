@@ -10,6 +10,7 @@ import { TvSetupSteps } from "@/components/app/screens/tv-setup";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Spinner } from "@/components/ui/spinner";
+import { track } from "@/lib/analytics/track";
 import { ScreenPassword } from "./screen-password";
 
 /** Everything needed to get the screen onto a TV, and to check it works there. */
@@ -32,6 +33,7 @@ export function SharePanel({
     startTest(async () => {
       const result = await sendTestCelebrationAction(screenId);
       if (result.ok) {
+        track("Test celebration");
         toast.success("Test celebration sent", {
           description: "Open copies of this screen celebrate within a few seconds.",
         });

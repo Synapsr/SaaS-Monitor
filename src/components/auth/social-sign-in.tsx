@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { GitHubIcon, GoogleIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { markSignup } from "@/lib/analytics/signup";
 import { authClient } from "@/lib/auth-client";
 import { withRedirect } from "@/lib/safe-redirect";
 import type { SocialProvider } from "@/lib/social-providers";
@@ -24,6 +25,7 @@ export function SocialSignIn({ providers, next }: { providers: SocialProvider[];
     const { error } = await authClient.signIn.social({
       provider,
       callbackURL: next,
+      newUserCallbackURL: markSignup(next, provider),
       errorCallbackURL: withRedirect("/sign-in", next),
     });
     if (error) {

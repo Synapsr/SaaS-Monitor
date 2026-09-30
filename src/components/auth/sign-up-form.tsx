@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { track } from "@/lib/analytics/track";
 import { authClient } from "@/lib/auth-client";
 import { PERSON_NAME_MAX_LENGTH } from "@/lib/names";
 import { MIN_PASSWORD_LENGTH } from "@/lib/passwords";
@@ -35,6 +36,7 @@ export function SignUpForm({
       password: String(form.get("password")),
     });
     if (error) return authErrorMessage(error, { signupsDisabled });
+    track("Signup", { method: "email", invited: invitedEmail ? "yes" : "no" });
     router.replace(next);
     router.refresh();
     return null;
