@@ -20,6 +20,9 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ### Changed
 
+- A new subscription is announced first, then the payment that started it, even when Stripe
+  records them seconds apart; upgrades and comebacks paid at once too. Payments of subscribers
+  still play at once.
 - Sound and voice settings keep to how they sound: which events play moved to **Events**. Screens
   keep the sounds and voice they had chosen.
 

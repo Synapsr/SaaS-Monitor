@@ -60,17 +60,13 @@ export function itemEvent(item: Pick<FeedItem, "kind" | "connect" | "churn">): F
 }
 
 /**
- * The events a moment plays: one, or those of the items a burst sums up. A payment that started
- * or upgraded a subscription plays as what it started; a test celebration, as a payment.
+ * The events a moment plays: one, or those of the items a burst sums up. A test celebration plays
+ * as a payment.
  */
 export function momentEvents(moment: Moment): ScreenEvent[] {
   switch (moment.kind) {
     case "payment":
-      return [
-        moment.movement && !moment.payment.connect
-          ? itemEvent(moment.movement)
-          : itemEvent(moment.payment),
-      ];
+      return [itemEvent(moment.payment)];
     case "movement":
       return [itemEvent(moment.movement)];
     case "customer":

@@ -9,13 +9,7 @@ import type { SoundEvent } from "@/lib/sounds";
 
 /** Something worth a sound and a moment on screen. */
 export type Moment =
-  | {
-      id: string;
-      kind: "payment";
-      payment: FeedItem;
-      /** The subscription change behind the payment, e.g. the new subscription it started. */
-      movement: FeedItem | null;
-    }
+  | { id: string; kind: "payment"; payment: FeedItem }
   | { id: string; kind: "movement"; movement: FeedItem }
   /** A Stripe customer created, who has not paid (yet). */
   | { id: string; kind: "customer"; customer: FeedItem }
@@ -52,8 +46,8 @@ export type Moment =
 const BURST_SIZE = 4;
 
 /**
- * A payment and a subscription change of the same customer within this delay are one moment, and
- * so is the creation of the customer paying: Stripe Checkout creates all three at once.
+ * A payment and a subscription change of the same customer within this delay go together, and so
+ * does the creation of the customer paying: Stripe Checkout creates all three at once.
  */
 const SAME_CHECKOUT_MS = 10 * 60_000;
 
@@ -91,87 +85,111 @@ export function planMoments(fresh: readonly FeedItem[]): Moment[] {
   const byAccount = new Map<string, FeedItem[]>();
   for (const item of fresh)
     byAccount.set(item.accountId, [...(byAccount.get(item.accountId) ?? []), item]);
-  const planned = [...byAccount.values()].flatMap((items) =>
-    planAccountMoments(items).map((moment) => ({ moment, at: momentTime(moment, items) })),
-  );
-  // Stable: the moments of one account keep their order.
-  return planned.sort((a, b) => a.at - b.at).map(({ moment }) => moment);
+  const groups = [...byAccount.values()].flatMap(planAccountMoments);
+  // Stable: the groups of one account keep their order.
+  return groups.sort((a, b) => a.at - b.at).flatMap((group) => group.moments);
+}
+
+/** Moments played one after the other, as early as the first thing they announce happened. */
+interface MomentGroup {
+  moments: Moment[];
+  at: number;
 }
 
 /**
- * The moments of one account. A new subscription usually arrives with its first payment, and
- * with the creation of its customer: they become a single moment instead of celebrations in a
- * row.
+ * The moments of one account. A new subscription usually arrives with its first payment, and with
+ * the creation of its customer: the subscription is announced first, then the payment that started
+ * it, while the customer's creation goes without saying. Upgrades and comebacks paid at once go
+ * the same way.
  */
-function planAccountMoments(items: readonly FeedItem[]): Moment[] {
+function planAccountMoments(items: readonly FeedItem[]): MomentGroup[] {
   const payments = items.filter((item) => item.kind === "payment");
   const customers = items.filter((item) => item.kind === "customer");
   const movements = items.filter((item) => item.kind !== "payment" && item.kind !== "customer");
 
-  const merged = new Map<string, FeedItem>();
+  // Each subscription that started or grew with a payment, and the payment: the customer's
+  // closest in time, should they have paid twice.
+  const paidWith = new Map<string, FeedItem>();
+  const paid = new Set<string>();
   for (const movement of movements) {
     if (!isMrrIncrease(movement)) continue;
-    // A payment made for a Stripe Connect account never pays for the account's subscriptions.
-    const payment = payments.find(
-      (candidate) =>
-        candidate.connect === null &&
-        !merged.has(candidate.id) &&
-        sameCheckout(candidate, movement),
-    );
-    if (payment) merged.set(payment.id, movement);
+    const distance = (payment: FeedItem) =>
+      Math.abs(Date.parse(payment.occurredAt) - Date.parse(movement.occurredAt));
+    const [payment] = payments
+      .filter((candidate) => !paid.has(candidate.id) && startedBy(movement, candidate))
+      .sort((a, b) => distance(a) - distance(b));
+    if (!payment) continue;
+    paidWith.set(movement.id, payment);
+    paid.add(payment.id);
   }
   const celebrated = [...payments, ...movements.filter(isMrrIncrease)];
-  const absorbed = new Set([
-    ...[...merged.values()].map((movement) => movement.id),
-    ...customers
+  const absorbed = new Set(
+    customers
       .filter((customer) => celebrated.some((item) => sameCheckout(item, customer)))
       .map((customer) => customer.id),
-  ]);
+  );
 
-  const moments = items.flatMap((item): Moment[] => {
-    if (absorbed.has(item.id)) return [];
+  const groups = items.flatMap((item): MomentGroup[] => {
+    if (paid.has(item.id) || absorbed.has(item.id)) return [];
+    const at = Date.parse(item.occurredAt);
     switch (item.kind) {
       case "payment":
-        return [
-          { id: item.id, kind: "payment", payment: item, movement: merged.get(item.id) ?? null },
-        ];
+        return [{ at, moments: [{ id: item.id, kind: "payment", payment: item }] }];
       case "customer":
-        return [{ id: item.id, kind: "customer", customer: item }];
-      default:
-        return [{ id: item.id, kind: "movement", movement: item }];
+        return [{ at, moments: [{ id: item.id, kind: "customer", customer: item }] }];
+      default: {
+        const movement: Moment = { id: item.id, kind: "movement", movement: item };
+        const payment = paidWith.get(item.id);
+        if (!payment) return [{ at, moments: [movement] }];
+        return [
+          {
+            at: Math.min(at, Date.parse(payment.occurredAt)),
+            moments: [movement, { id: payment.id, kind: "payment", payment }],
+          },
+        ];
+      }
     }
   });
-  if (moments.length < BURST_SIZE) return moments;
+  if (groups.length < BURST_SIZE) return groups;
 
   const sum = (list: FeedItem[]) => list.reduce((total, item) => total + ownRevenue(item), 0);
   const last = items[items.length - 1];
+  const summary: Moment = {
+    id: `summary:${last.id}`,
+    kind: "summary",
+    accountId: last.accountId,
+    events: [...new Set(items.map(itemEvent))],
+    payments: payments.length,
+    changes: movements.length,
+    customers: customers.length,
+    revenue: sum(payments),
+    mrrChange: sum(movements),
+  };
   return [
-    {
-      id: `summary:${last.id}`,
-      kind: "summary",
-      accountId: last.accountId,
-      events: [...new Set(items.map(itemEvent))],
-      payments: payments.length,
-      changes: movements.length,
-      customers: customers.length,
-      revenue: sum(payments),
-      mrrChange: sum(movements),
-    },
+    { at: Math.max(...items.map((item) => Date.parse(item.occurredAt))), moments: [summary] },
   ];
 }
 
-/** When the activity a moment announces happened, to play moments in order. */
-function momentTime(moment: Moment, items: readonly FeedItem[]): number {
-  switch (moment.kind) {
-    case "payment":
-      return Date.parse(moment.payment.occurredAt);
-    case "movement":
-      return Date.parse(moment.movement.occurredAt);
-    case "customer":
-      return Date.parse(moment.customer.occurredAt);
-    default:
-      return Math.max(...items.map((item) => Date.parse(item.occurredAt)));
-  }
+/**
+ * Whether a payment started or grew a subscription: made by its customer around the same time.
+ * A payment made for a Stripe Connect account never pays for the account's subscriptions.
+ */
+function startedBy(movement: FeedItem, payment: FeedItem): boolean {
+  return payment.connect === null && sameCheckout(payment, movement);
+}
+
+/**
+ * The first payment of a customer without a subscription may start one: Stripe activates it a few
+ * seconds later, often after the display polled. It waits for the next state, to be announced
+ * after its subscription rather than before it.
+ */
+function awaitsSubscription(item: FeedItem): boolean {
+  return (
+    item.kind === "payment" &&
+    item.connect === null &&
+    item.customerKey !== null &&
+    item.customerSubscribed === false
+  );
 }
 
 /**
@@ -204,6 +222,8 @@ export interface MomentTracker {
    * celebrates it only once. They name the metric: $250K of MRR and of ARR are two milestones.
    */
   celebrated: ReadonlySet<string>;
+  /** Payments waiting for the subscription they may start (see `awaitsSubscription`). */
+  held: readonly FeedItem[];
 }
 
 export const initialMomentTracker: MomentTracker = {
@@ -211,6 +231,7 @@ export const initialMomentTracker: MomentTracker = {
   seen: null,
   testEventId: null,
   celebrated: new Set(),
+  held: [],
 };
 
 /**
@@ -233,7 +254,15 @@ export function trackMoments(
 
   const { settings } = state.screen;
   const { fresh, seen } = diffFeed(comparable ? tracker.seen : null, state.feed);
-  const moments = planMoments(fresh.filter((item) => eventPlays(itemEvent(item), settings)));
+  const played = fresh.filter((item) => eventPlays(itemEvent(item), settings));
+  // Payments held by the previous state play now, after their subscription if it came.
+  const candidates = comparable ? [...tracker.held, ...played] : played;
+  const held = played.filter(
+    (item) =>
+      awaitsSubscription(item) &&
+      !candidates.some((other) => isMrrIncrease(other) && startedBy(other, item)),
+  );
+  const moments = planMoments(candidates.filter((item) => !held.includes(item)));
 
   let celebrated = tracker.celebrated;
   if (comparable && showSameMetricAndGoal(previous, state) && eventPlays("milestone", settings)) {
@@ -249,7 +278,7 @@ export function trackMoments(
     moments.push({ id: `test:${testEventId}`, kind: "test" });
   }
 
-  return { tracker: { previous: state, seen, testEventId, celebrated }, moments };
+  return { tracker: { previous: state, seen, testEventId, celebrated, held }, moments };
 }
 
 /**

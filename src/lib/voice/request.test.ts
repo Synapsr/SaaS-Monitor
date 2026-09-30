@@ -18,7 +18,7 @@ function roundTrip(moment: Moment) {
 describe("announcement requests", () => {
   it("name a moment the server rebuilds from the screen's own feed", () => {
     const moments: Moment[] = [
-      { id: "payment:1", kind: "payment", payment, movement: subscription },
+      { id: "payment:1", kind: "payment", payment },
       { id: "movement:1", kind: "movement", movement: subscription },
       { id: "customer:1", kind: "customer", customer },
       {
@@ -36,15 +36,12 @@ describe("announcement requests", () => {
 
   it("ignore items the screen doesn't show, or that are not what they claim", () => {
     const stranger = feedItem({ id: "payment:elsewhere", kind: "payment" });
-    expect(roundTrip({ id: "p", kind: "payment", payment: stranger, movement: null })).toBeNull();
+    expect(roundTrip({ id: "p", kind: "payment", payment: stranger })).toBeNull();
     expect(
       requestedMoment({ kind: "customer", id: "c", customerId: "payment:1" }, state),
     ).toBeNull();
     expect(
-      requestedMoment(
-        { kind: "payment", id: "p", paymentId: "payment:1", movementId: "customer:1" },
-        state,
-      ),
+      requestedMoment({ kind: "payment", id: "p", paymentId: "customer:1" }, state),
     ).toBeNull();
     expect(
       requestedMoment(

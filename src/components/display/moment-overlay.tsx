@@ -108,15 +108,12 @@ function describe(
           tone: "celebration",
         };
       }
-      // A payment that started or upgraded a subscription is announced by what it started.
-      const kind = moment.movement?.kind ?? "payment";
       return {
-        icon: KIND_ICONS[kind],
-        eyebrow: text.moments.titles[kind],
+        icon: KIND_ICONS.payment,
+        eyebrow: text.moments.titles.payment,
         headline: formatPayment(moment.payment.amount, currency, locale),
         account,
         details: itemContext(moment.payment, context),
-        footnote: moment.movement ? labeledChange(moment.movement.amount) : null,
         tone: "celebration",
       };
     }

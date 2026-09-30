@@ -300,6 +300,8 @@ export interface ActivityRow {
   customerEmail: string | null;
   country: string | null;
   planName: string | null;
+  /** For a payment: its customer has a subscription bringing MRR. */
+  customerSubscribed: boolean | null;
   /** Why a churn happened, and when a scheduled one takes effect. */
   churnReason: ChurnReason | null;
   endsAt: Date | null;
@@ -485,6 +487,7 @@ export async function latestActivity(
         // A movement keeps the name its customer had then; one without may have got one since.
         customerName: row.customerName ?? profile?.customerName ?? null,
         customerEmail: profile?.customerEmail ?? null,
+        customerSubscribed: null,
         connectedAccountId: null,
         applicationFee: null,
       };
@@ -501,6 +504,7 @@ export async function latestActivity(
         customerName: profile?.customerName ?? row.customerName,
         customerEmail: profile?.customerEmail ?? row.customerEmail,
         country: profile?.country ?? row.country,
+        customerSubscribed: row.customerId === null ? null : (profile?.mrr ?? 0) > 0,
         churnReason: null,
         endsAt: null,
       };
@@ -512,6 +516,7 @@ export async function latestActivity(
       amount: 0,
       currency: null,
       planName: null,
+      customerSubscribed: null,
       churnReason: null,
       endsAt: null,
       connectedAccountId: null,
@@ -534,6 +539,8 @@ async function customerProfiles(accountIds: string[], customerIds: string[]) {
       customerName: string | null;
       customerEmail: string | null;
       country: string | null;
+      /** Of their main subscription, 0 when none brings MRR. */
+      mrr: number;
     }
   >();
   if (!customerIds.length) return profiles;
@@ -546,6 +553,7 @@ async function customerProfiles(accountIds: string[], customerIds: string[]) {
       customerName: subscriptions.customerName,
       customerEmail: subscriptions.customerEmail,
       country: subscriptions.customerCountry,
+      mrr: subscriptions.mrr,
     })
     .from(subscriptions)
     .where(

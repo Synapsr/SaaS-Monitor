@@ -13,12 +13,7 @@ const itemId = z.string().min(1).max(100);
 
 export const announcementRequestSchema = z.object({
   moment: z.discriminatedUnion("kind", [
-    z.object({
-      kind: z.literal("payment"),
-      id: z.string().max(200),
-      paymentId: itemId,
-      movementId: itemId.nullable(),
-    }),
+    z.object({ kind: z.literal("payment"), id: z.string().max(200), paymentId: itemId }),
     z.object({ kind: z.literal("movement"), id: z.string().max(200), movementId: itemId }),
     z.object({ kind: z.literal("customer"), id: z.string().max(200), customerId: itemId }),
     z.object({
@@ -41,12 +36,7 @@ export type AnnouncementRequest = z.infer<typeof announcementRequestSchema>;
 export function momentRequest(moment: Moment): AnnouncementRequest["moment"] | null {
   switch (moment.kind) {
     case "payment":
-      return {
-        kind: "payment",
-        id: moment.id,
-        paymentId: moment.payment.id,
-        movementId: moment.movement?.id ?? null,
-      };
+      return { kind: "payment", id: moment.id, paymentId: moment.payment.id };
     case "movement":
       return { kind: "movement", id: moment.id, movementId: moment.movement.id };
     case "customer":
@@ -79,9 +69,7 @@ export function requestedMoment(
   switch (request.kind) {
     case "payment": {
       const payment = find(request.paymentId, (item) => item.kind === "payment");
-      const movement = request.movementId === null ? null : find(request.movementId, isMovement);
-      if (!payment || (request.movementId !== null && !movement)) return null;
-      return { id: request.id, kind: "payment", payment, movement };
+      return payment && { id: request.id, kind: "payment", payment };
     }
     case "movement": {
       const movement = find(request.movementId, isMovement);

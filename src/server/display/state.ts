@@ -221,6 +221,7 @@ function toFeedItem(
                 ? null
                 : converter.convert(row.applicationFee, row.currency),
           },
+    customerSubscribed: row.customerSubscribed,
     churn:
       row.kind === "churn" && row.churnReason !== null
         ? { reason: row.churnReason, endsAt: row.endsAt?.toISOString() ?? null }

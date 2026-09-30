@@ -21,7 +21,10 @@ and changing it locks every device out again. Members of your workspace, signed 
 
 Each sale, new customer or subscription change gets a large card in the middle of the screen, for
 as long as you choose in the screen settings (**Moments stay on screen**, 10 seconds by default).
-When several arrive at once, they play one after the other, a little faster.
+When several arrive at once, they play one after the other, a little faster. A new subscription
+comes first, then the payment that started it: Stripe collects the payment a few seconds before
+the subscription starts, so a new customer's first payment waits for the next update of the
+screen, in case its subscription follows.
 
 ## Events
 

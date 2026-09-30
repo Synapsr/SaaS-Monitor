@@ -49,7 +49,7 @@ async function screenWithPayment(settings: ScreenSettingsInput = personalized) {
 
 function paymentRequest(paymentId: string): AnnouncementRequest {
   return {
-    moment: { kind: "payment", id: paymentId, paymentId, movementId: null },
+    moment: { kind: "payment", id: paymentId, paymentId },
     format: "opus",
   };
 }

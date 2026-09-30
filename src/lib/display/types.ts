@@ -156,6 +156,12 @@ export interface FeedItem {
    * `null` for everything else.
    */
   connect: { applicationFee: number | null } | null;
+  /**
+   * For a payment: whether its customer had a subscription bringing MRR when the state was made.
+   * A first payment may start one, a few seconds later (see `trackMoments`). `null` for anything
+   * else, and for payments without a customer.
+   */
+  customerSubscribed: boolean | null;
   /** Why a `churn` happened, when known; `null` for everything else. */
   churn: { reason: ChurnReason; endsAt: string | null } | null;
   /** As in `DisplayState.accounts`. */

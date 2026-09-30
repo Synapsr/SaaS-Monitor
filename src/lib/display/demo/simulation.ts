@@ -162,6 +162,8 @@ function record(
     country: customer.country,
     planName: kind === "customer" ? null : PLANS[customer.plan].name,
     connect: null,
+    // Its checkouts record a subscription and its payment at once: nothing to wait for.
+    customerSubscribed: null,
     // Most SaaS customers leave at the end of the period they paid for.
     churn:
       kind === "churn"

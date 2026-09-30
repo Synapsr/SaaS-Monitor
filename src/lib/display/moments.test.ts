@@ -35,20 +35,35 @@ function withSettings(state: DisplayState, settings: Partial<ScreenSettings>): D
 }
 
 describe("moment planning", () => {
-  it("merges a new subscription with its first payment", () => {
-    const movement = feedItem({ id: "movement:1", kind: "new", amount: 19_900 });
-    const payment = feedItem({ id: "payment:1", kind: "payment", amount: 19_900 });
-    expect(planMoments([movement, payment])).toEqual([
-      { id: "payment:1", kind: "payment", payment, movement },
+  it("announces a new subscription first, then the payment that started it", () => {
+    // Stripe collects the first payment a few seconds before the subscription is active.
+    const payment = feedItem({
+      id: "payment:1",
+      kind: "payment",
+      amount: 19_900,
+      occurredAt: "2026-09-28T12:00:00Z",
+    });
+    const movement = feedItem({
+      id: "movement:1",
+      kind: "new",
+      amount: 19_900,
+      occurredAt: "2026-09-28T12:00:04Z",
+    });
+    const earlier = feedItem({ id: "payment:0", occurredAt: "2026-09-28T11:59:00Z" });
+    expect(planMoments([earlier, payment, movement])).toEqual([
+      { id: "payment:0", kind: "payment", payment: earlier },
+      { id: "movement:1", kind: "movement", movement },
+      { id: "payment:1", kind: "payment", payment },
     ]);
   });
 
-  it("merges them however differently the charge names the customer", () => {
+  it("pairs them however differently the charge names the customer", () => {
     // Charges carry the billing name and the card's country; movements, the Stripe customer's.
     const movement = feedItem({ kind: "new", customerName: "Acme Inc", country: "FR" });
     const payment = feedItem({ kind: "payment", customerName: "Ada Lovelace", country: "GB" });
-    expect(planMoments([movement, payment])).toEqual([
-      { id: payment.id, kind: "payment", payment, movement },
+    expect(planMoments([payment, movement]).map((moment) => moment.id)).toEqual([
+      movement.id,
+      payment.id,
     ]);
   });
 
@@ -67,10 +82,13 @@ describe("moment planning", () => {
     ]);
   });
 
-  it("does not merge a payment with a subscription change from long before", () => {
+  it("does not pair a payment with a subscription change from long before", () => {
     const movement = feedItem({ kind: "expansion", occurredAt: "2026-09-28T10:00:00Z" });
     const payment = feedItem({ kind: "payment", occurredAt: "2026-09-28T12:00:00Z" });
-    expect(planMoments([movement, payment])).toHaveLength(2);
+    expect(planMoments([payment, movement]).map((moment) => moment.kind)).toEqual([
+      "movement",
+      "payment",
+    ]);
   });
 
   it("summarizes a burst in a single moment", () => {
@@ -94,25 +112,31 @@ describe("moment planning", () => {
     ]);
   });
 
-  it("counts moments, not items, towards a burst: a checkout and a sign-up are two", () => {
+  it("counts what happened, not items, towards a burst: a checkout and a sign-up are two", () => {
     const checkout = [
       feedItem({ kind: "customer", amount: 0, customerKey: "customer_1" }),
-      feedItem({ kind: "new", customerKey: "customer_1" }),
       feedItem({ kind: "payment", customerKey: "customer_1" }),
+      feedItem({ kind: "new", customerKey: "customer_1" }),
     ];
     const signUp = feedItem({ kind: "customer", amount: 0, customerKey: "customer_2" });
     expect(planMoments([signUp, ...checkout]).map((moment) => moment.kind)).toEqual([
       "customer",
+      "movement",
       "payment",
     ]);
   });
 
-  it("never merges a payment made for a Stripe Connect account with a subscription", () => {
-    const movement = feedItem({ kind: "new", amount: 19_900 });
-    const payment = feedItem({ kind: "payment", amount: 19_900, connect: { applicationFee: 500 } });
-    expect(planMoments([movement, payment]).map((moment) => moment.kind)).toEqual([
-      "movement",
+  it("never pairs a payment made for a Stripe Connect account with a subscription", () => {
+    const payment = feedItem({
+      kind: "payment",
+      amount: 19_900,
+      connect: { applicationFee: 500 },
+      occurredAt: "2026-09-28T12:00:00Z",
+    });
+    const movement = feedItem({ kind: "new", amount: 19_900, occurredAt: "2026-09-28T12:00:04Z" });
+    expect(planMoments([payment, movement]).map((moment) => moment.kind)).toEqual([
       "payment",
+      "movement",
     ]);
   });
 
@@ -148,8 +172,9 @@ describe("moment planning", () => {
     const customer = feedItem({ kind: "customer", amount: 0 });
     const movement = feedItem({ kind: "new", amount: 19_900 });
     const payment = feedItem({ kind: "payment", amount: 19_900 });
-    expect(planMoments([customer, movement, payment])).toEqual([
-      { id: payment.id, kind: "payment", payment, movement },
+    expect(planMoments([customer, payment, movement])).toEqual([
+      { id: movement.id, kind: "movement", movement },
+      { id: payment.id, kind: "payment", payment },
     ]);
   });
 
@@ -182,7 +207,7 @@ describe("moment planning", () => {
 
   it("tells which account each moment comes from", () => {
     const payment = feedItem({ accountId: "b1" });
-    expect(momentAccount({ id: "p", kind: "payment", payment, movement: null })).toBe("b1");
+    expect(momentAccount({ id: "p", kind: "payment", payment })).toBe("b1");
     expect(momentAccount({ id: "t", kind: "test" })).toBeNull();
   });
 });
@@ -198,6 +223,42 @@ describe("moment tracking", () => {
     const payment = feedItem();
     const [, moments] = track([state, withActivity(state, [payment])]);
     expect(moments).toEqual([expect.objectContaining({ kind: "payment", payment })]);
+  });
+
+  it("waits one poll for the subscription a first payment starts, to announce it first", () => {
+    const state = displayState();
+    const payment = feedItem({ customerSubscribed: false, occurredAt: "2026-09-28T12:00:00Z" });
+    const movement = feedItem({ kind: "new", occurredAt: "2026-09-28T12:00:04Z" });
+    const paid = withActivity(state, [payment]);
+    const subscribed = withActivity(paid, [movement]);
+
+    expect(track([state, paid, subscribed])).toEqual([
+      [],
+      [],
+      [
+        { id: movement.id, kind: "movement", movement },
+        { id: payment.id, kind: "payment", payment },
+      ],
+    ]);
+  });
+
+  it("plays a first payment alone when no subscription followed it", () => {
+    const state = displayState();
+    const payment = feedItem({ customerSubscribed: false });
+    const paid = withActivity(state, [payment]);
+    const later = withActivity(paid, []);
+    expect(track([state, paid, later])).toEqual([[], [], [expect.objectContaining({ payment })]]);
+  });
+
+  it("plays at once a payment of a subscriber, or one that came with its subscription", () => {
+    const state = displayState();
+    const renewal = feedItem({ customerSubscribed: true, customerKey: "customer_1" });
+    const checkout = [
+      feedItem({ customerSubscribed: false, customerKey: "customer_2" }),
+      feedItem({ kind: "new", customerKey: "customer_2" }),
+    ];
+    const [, moments] = track([state, withActivity(state, [renewal, ...checkout])]);
+    expect(moments.map((moment) => moment.kind)).toEqual(["payment", "movement", "payment"]);
   });
 
   it("lets events that neither show nor play go by", () => {
@@ -385,7 +446,7 @@ describe("moment tracking", () => {
 
 describe("moment sounds", () => {
   const settings = defaultScreenSettings;
-  const payment: Moment = { id: "p", kind: "payment", payment: feedItem(), movement: null };
+  const payment: Moment = { id: "p", kind: "payment", payment: feedItem() };
   const churn: Moment = {
     id: "c",
     kind: "movement",
@@ -499,9 +560,7 @@ describe("moment celebrations", () => {
       revenue,
       mrrChange: -9_000,
     });
-    expect(
-      momentCelebration({ id: "p", kind: "payment", payment: feedItem(), movement: null }),
-    ).toBe("payment");
+    expect(momentCelebration({ id: "p", kind: "payment", payment: feedItem() })).toBe("payment");
     expect(
       momentCelebration({
         id: "m",
@@ -521,8 +580,6 @@ describe("moment celebrations", () => {
     expect(momentCelebration({ id: "n", kind: "customer", customer })).toBeNull();
     // Money for a Stripe Connect account passes through: it rings, without confetti.
     const connect = feedItem({ connect: { applicationFee: 300 } });
-    expect(
-      momentCelebration({ id: "c", kind: "payment", payment: connect, movement: null }),
-    ).toBeNull();
+    expect(momentCelebration({ id: "c", kind: "payment", payment: connect })).toBeNull();
   });
 });

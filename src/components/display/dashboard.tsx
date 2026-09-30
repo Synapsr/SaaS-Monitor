@@ -94,7 +94,6 @@ export function Dashboard({ state, view, moment, serverTime }: DashboardProps) {
 /** The hero number glows while MRR grows on screen, and dims softly when it shrinks. */
 function mrrHighlight(moment: Moment | null): "up" | "down" | null {
   if (moment?.kind === "movement") return isMrrIncrease(moment.movement) ? "up" : "down";
-  if (moment?.kind === "payment" && moment.movement) return "up";
   if (moment?.kind === "milestone") return "up";
   return null;
 }

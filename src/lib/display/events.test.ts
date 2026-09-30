@@ -8,7 +8,6 @@ const payment = (overrides: Parameters<typeof feedItem>[0] = {}): Moment => ({
   id: "payment:1",
   kind: "payment",
   payment: feedItem({ kind: "payment", ...overrides }),
-  movement: null,
 });
 
 /** Default settings with sound and voice on, and some channels of an event changed. */
@@ -44,11 +43,11 @@ describe("screen events", () => {
     expect(itemEvent(feedItem({ kind: "customer" }))).toBe("customer");
   });
 
-  it("name what a moment plays: what a payment started, and what a burst sums up", () => {
+  it("name what a moment plays, and what a burst sums up", () => {
     expect(momentEvents(payment())).toEqual(["payment"]);
-    expect(momentEvents({ ...payment(), movement: feedItem({ kind: "new" }) } as Moment)).toEqual([
-      "subscription",
-    ]);
+    expect(
+      momentEvents({ id: "m", kind: "movement", movement: feedItem({ kind: "new" }) }),
+    ).toEqual(["subscription"]);
     expect(momentEvents({ id: "t", kind: "test" })).toEqual(["payment"]);
     expect(
       momentEvents({

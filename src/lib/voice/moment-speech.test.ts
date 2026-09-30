@@ -41,7 +41,6 @@ const payment = (overrides: Parameters<typeof feedItem>[0] = {}): Moment => ({
   id: "payment:1",
   kind: "payment",
   payment: feedItem({ kind: "payment", ...overrides }),
-  movement: null,
 });
 
 describe("momentSpeech", () => {
@@ -129,10 +128,9 @@ describe("momentText", () => {
       { currency: "eur" },
     );
     const moment: Moment = {
-      id: "payment:9",
-      kind: "payment",
-      payment: feedItem({ customerName: "Ada", amount: 123_456, planName: "Pro" }),
-      movement: feedItem({ kind: "new", amount: 123_456 }),
+      id: "movement:9",
+      kind: "movement",
+      movement: feedItem({ kind: "new", customerName: "Ada", amount: 123_456, planName: "Pro" }),
     };
     expect(momentText(moment, state)).toBe("Ada rejoint Pro pour 1 234,56 € !");
   });

@@ -621,6 +621,7 @@ describe("display state", () => {
         country: "US",
         planName: null,
         connect: null,
+        customerSubscribed: null,
         churn: null,
         accountId,
         accountName: "Acme",
@@ -761,6 +762,7 @@ describe("display state", () => {
         country: "GB",
         planName: null,
         connect: null,
+        customerSubscribed: null,
         churn: null,
         accountId,
         accountName: "Acme",
@@ -794,6 +796,17 @@ describe("display state", () => {
     expect((await displayOf([accountId], { showCustomerNames: true })).feed[0].customerName).toBe(
       "Grace Hopper",
     );
+  });
+
+  it("tells displays whether the customer of a payment already had a subscription", async () => {
+    const accountId = await readyAccount();
+    await addSubscription(accountId, { id: "sub_ada", mrr: 4900, customer: "cus_ada" });
+    await addPayment(accountId, { amount: 4900, at: "2026-03-14T10:00:00Z", customer: "cus_ada" });
+    await addPayment(accountId, { amount: 4900, at: "2026-03-14T11:00:00Z", customer: "cus_new" });
+    await addPayment(accountId, { amount: 900, at: "2026-03-14T12:00:00Z" });
+
+    const { feed } = await displayOf([accountId]);
+    expect(feed.map((item) => item.customerSubscribed)).toEqual([null, false, true]);
   });
 
   it("fills the feed with the events it shows, and keeps the latest for moments", async () => {
