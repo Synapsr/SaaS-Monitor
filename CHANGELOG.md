@@ -18,6 +18,10 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   Connect accounts have their own row: they may stay off the feed, which still fills up with the
   account's own activity.
 
+- Self-hosted dashboards ask, once in a while, for a star on GitHub: "Maybe later" asks again a
+  day later, and starring or "Don't ask again" never asks again. `DISABLE_STAR_PROMPT=true` turns
+  it off for the whole instance.
+
 ### Changed
 
 - A new subscription is announced first, then the payment that started it, even when Stripe

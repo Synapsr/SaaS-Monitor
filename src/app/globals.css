@@ -16,6 +16,21 @@
       transform: translateX(300%);
     }
   }
+
+  /* Sparkles around the star of the GitHub prompt. */
+  --animate-twinkle: twinkle 2.8s ease-in-out infinite;
+
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.4) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1) rotate(45deg);
+    }
+  }
 }
 
 @theme inline {

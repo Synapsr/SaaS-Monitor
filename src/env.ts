@@ -22,6 +22,8 @@ const schema = z
     DISABLE_SIGNUPS: booleanFlag(false),
     /** Apply pending database migrations when the server starts. */
     MIGRATE_ON_START: booleanFlag(true),
+    /** Self-hosted instances ask, now and then, for a star on GitHub: `true` never asks. */
+    DISABLE_STAR_PROMPT: booleanFlag(false),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
