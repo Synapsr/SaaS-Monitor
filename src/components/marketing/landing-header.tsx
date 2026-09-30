@@ -22,9 +22,9 @@ export function LandingHeader() {
           <Link href="/d/demo" className={`${linkClass} hidden sm:block`}>
             Live demo
           </Link>
-          <a href="#pricing" className={`${linkClass} hidden md:block`}>
+          <Link href="/#pricing" className={`${linkClass} hidden md:block`}>
             Pricing
-          </a>
+          </Link>
           <a href={siteConfig.docsUrl} className={`${linkClass} hidden md:block`}>
             Docs
           </a>
