@@ -51,6 +51,19 @@ describe("resolved state", () => {
     expect(resolved.metrics).toEqual(state.metrics);
   });
 
+  it("drops the credit as soon as the editor turns it off, never adds one the server left out", () => {
+    const credited = displayState({ attribution: true });
+    const withCredit = (state: typeof credited, attribution: boolean) =>
+      resolveDisplayState(state, {
+        name: "Office",
+        settings: { ...defaultScreenSettings, attribution },
+      }).attribution;
+    expect(resolveDisplayState(credited, null).attribution).toBe(true);
+    expect(withCredit(credited, true)).toBe(true);
+    expect(withCredit(credited, false)).toBe(false);
+    expect(withCredit(displayState({ attribution: false }), true)).toBe(false);
+  });
+
   it("hides customer names unless the screen shows them", () => {
     const state = displayState({ feed: [feedItem({ customerName: "Ada" })] });
     expect(resolveDisplayState(state, null).feed[0].customerName).toBeNull();

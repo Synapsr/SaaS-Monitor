@@ -39,9 +39,16 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
             isGoal={moment.isGoal}
             currency={state.currency}
             account={accountName(moment, state)}
+            attribution={state.attribution}
           />
         ) : (
-          moment && <MomentCard key={moment.id} {...describe(moment, state, locale)} />
+          moment && (
+            <MomentCard
+              key={moment.id}
+              {...describe(moment, state, locale)}
+              attribution={state.attribution}
+            />
+          )
         )}
       </AnimatePresence>
     </div>
