@@ -12,7 +12,7 @@ export function llmsTxt(appUrl: string): string {
 
 ${siteConfig.name} is an open-source Stripe dashboard for the office TV. It connects to Stripe with a restricted API key that only reads (one optional permission lets it register its own webhook) and turns your account into a screen: MRR front and center, revenue, a live feed of payments, new customers and subscription changes, a sound for every sale, a voice that says what happened, and confetti for milestones. A screen is an unguessable link that any TV, monitor, tablet or Raspberry Pi opens in its browser, with no sign-in (a password is optional).
 
-- MRR follows Stripe's own definition, so the screen matches the Stripe Dashboard.
+- MRR is computed as Stripe defines it; the few known differences with the Stripe Dashboard are documented.
 - Stripe keys are encrypted at rest (AES-256-GCM) and never leave the server.
 - Screens speak English, French, German, Spanish, Italian, Portuguese and Dutch; voices speak English, French, German, Spanish and Portuguese.
 - Open source under the MIT license. The hosted version is free during the public beta; self-hosting with Docker is free for good.
@@ -20,7 +20,7 @@ ${siteConfig.name} is an open-source Stripe dashboard for the office TV. It conn
 
 ## Try it
 
-- [Live demo](${page("/d/demo")}): a screen fed by a simulated SaaS, no account needed. Query parameters change it: \`theme=light\`, \`lang=fr\`, \`accent=ff6b35\`, \`sound=arcade\`, \`voice=marius\`, \`metric=arr\`, \`accounts=2\`.
+- [Live demo](${page("/d/demo")}): a screen fed by a simulated SaaS, no account needed. Query parameters change it: \`theme=light\`, \`lang=fr\`, \`accent=ff6b35\`, \`sound=arcade\`, \`voice=sterling\`, \`metric=arr\`, \`accounts=2\`.
 - [Create an account](${page("/sign-up")}): connect Stripe, then open the screen's link on a TV.
 - [Stripe notification sounds](${page("/stripe-notification-sound")})
 
