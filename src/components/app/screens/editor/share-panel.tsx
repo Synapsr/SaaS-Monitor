@@ -7,6 +7,7 @@ import { regenerateScreenLinkAction, sendTestCelebrationAction } from "@/app/app
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CopyField } from "@/components/app/copy-button";
 import { TvSetupSteps } from "@/components/app/screens/tv-setup";
+import { WallShareCard } from "@/components/app/wall-share-card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Spinner } from "@/components/ui/spinner";
@@ -27,6 +28,7 @@ export function SharePanel({
   const id = useId();
   const [testing, startTest] = useTransition();
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
+  const [celebrated, setCelebrated] = useState(false);
 
   function sendTest() {
     startTest(async () => {
@@ -35,6 +37,7 @@ export function SharePanel({
         toast.success("Test celebration sent", {
           description: "Open copies of this screen celebrate within a few seconds.",
         });
+        setCelebrated(true);
       } else {
         toast.error(result.error);
       }
@@ -76,6 +79,8 @@ export function SharePanel({
           The easiest way to check the sound on your TV.
         </p>
       </div>
+
+      {celebrated && <WallShareCard />}
 
       <Collapsible className="border-t pt-4">
         <CollapsibleTrigger className="group/trigger flex w-full items-center gap-1.5 rounded-sm text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
