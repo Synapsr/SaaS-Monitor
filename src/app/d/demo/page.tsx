@@ -4,9 +4,13 @@ import { env } from "@/env";
 import { parseDemoOptions } from "@/lib/display/demo/options";
 import { siteConfig } from "@/lib/site";
 
+/**
+ * Shared links show a card (`opengraph-image.tsx`, which `robots.ts` lets crawlers fetch), while
+ * search engines leave the demo out: the landing page is what they should find.
+ */
 export const metadata: Metadata = {
   title: "Live demo",
-  description: `A ${siteConfig.name} wall display with simulated data from a fictional SaaS.`,
+  description: `A ${siteConfig.name} wall display with simulated data from a fictional SaaS: watch a sale land and a milestone fill the screen.`,
   robots: { index: false, follow: false },
 };
 
