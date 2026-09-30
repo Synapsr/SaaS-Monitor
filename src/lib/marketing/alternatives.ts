@@ -134,7 +134,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
     ],
     pickUs: [
       "You want the team to see, and hear, every sale as it lands.",
-      "You want the number on the wall to match your Stripe Dashboard: SaaS Monitor follows Stripe's definition of MRR.",
+      "You want the number on the wall to be MRR as Stripe defines it.",
       "You want a screen that costs nothing: free during the beta, free for good on your own server.",
       "You'd like to read the code, or keep your Stripe data on your own server.",
     ],
@@ -149,7 +149,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         question: "Will both show the same MRR?",
         answer:
-          "SaaS Monitor follows Stripe's own definition of MRR, so it matches your Stripe Dashboard. Analytics tools make their own choices about trials, discounts or failed payments, so small gaps between tools are normal.",
+          "SaaS Monitor computes MRR as Stripe defines it, so it stays close to your Stripe Dashboard (the known differences are documented). Analytics tools make their own choices about trials, discounts or failed payments, so small gaps between tools are normal.",
       },
       {
         question: "Can both read the same Stripe account?",
@@ -216,7 +216,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
     pickUs: [
       "You want the team to see, and hear, every sale as it lands.",
       "You want a screen that runs by itself on a TV or a Raspberry Pi, with no one signed in.",
-      "You want the number on the wall to match your Stripe Dashboard: SaaS Monitor follows Stripe's definition of MRR.",
+      "You want the number on the wall to be MRR as Stripe defines it.",
       "You'd like to read the code, or keep your Stripe data on your own server.",
     ],
     together:
@@ -286,7 +286,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
           "A Stripe integration with customer and subscriber counts, and several Stripe accounts",
           GECKOBOARD_STRIPE,
         ),
-        us: "MRR as Stripe computes it, revenue, new customers and each subscription change, from one or several Stripe accounts",
+        us: "MRR as Stripe defines it, revenue, new customers and each subscription change, from one or several Stripe accounts",
       },
       {
         topic: "Data sources",
@@ -370,7 +370,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
           "Counts the payment events you point it at, such as paid invoices, and can add up several Stripe accounts",
           PINGBELL_MRR,
         ),
-        us: "MRR as Stripe computes it, from subscriptions, with each account on its own or added up",
+        us: "MRR as Stripe defines it, from subscriptions, with each account on its own or added up",
       },
       {
         topic: "Sound",
@@ -389,7 +389,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       "You want notifications on your team's phones, or leaderboards for a sales team.",
     ],
     pickUs: [
-      "Stripe is where your revenue lives, and you want MRR exactly as Stripe computes it.",
+      "Stripe is where your revenue lives, and you want MRR computed the way Stripe defines it.",
       "You want a voice that says what just happened, in English, French, German, Spanish or Portuguese.",
       "You want it free: during the beta on saas-monitor.com, for good on your own server.",
       "You'd like to read the code, or keep your Stripe data on your own server.",
@@ -403,9 +403,9 @@ export const ALTERNATIVES: readonly Alternative[] = [
           "SaaS Monitor is free during its public beta, and free for good on your own server. It works with Stripe only, and runs in a browser rather than a TV app.",
       },
       {
-        question: "Why doesn't SaaS Monitor count payments as MRR?",
+        question: "How does SaaS Monitor compute MRR?",
         answer:
-          "Because MRR is about subscriptions: SaaS Monitor follows Stripe's definition (active and past-due subscriptions, brought to a month, without taxes or metered usage), so the wall matches your Stripe Dashboard. Payments show up too, as today's revenue and in the feed.",
+          "From subscriptions, as Stripe defines MRR: active and past-due subscriptions, each brought to a month, without taxes or metered usage, so the wall stays close to your Stripe Dashboard (the known differences are documented). Payments show up too, as today's revenue and in the feed.",
       },
       {
         question: "Does SaaS Monitor need a TV app?",

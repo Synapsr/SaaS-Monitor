@@ -98,7 +98,7 @@ The first public release.
 ### Stripe
 
 - Read-only restricted keys, encrypted at rest.
-- MRR as Stripe computes it: discounts, trials, cancellations at period end, billing intervals.
+- MRR as Stripe defines it: discounts, trials, cancellations at period end, billing intervals.
 - A resumable import of subscriptions, a year of payments and the last week's new customers,
   then an incremental sync from the Events API: instant with webhooks, otherwise paced within
   Stripe's read allowance.

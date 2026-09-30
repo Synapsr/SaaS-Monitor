@@ -71,8 +71,8 @@ cross $10K MRR.
 - **Several Stripe accounts** on one screen, converted to your currency: added up, or taking turns
   every few seconds, each moment naming the product it comes from. Or one screen per product.
 - **Teams**: workspaces, invitations by link, as many screens as you like.
-- **Honest numbers**: MRR follows [Stripe's own definition](docs/stripe.md#how-mrr-is-computed), so
-  the TV matches your Stripe Dashboard.
+- **Honest numbers**: MRR is computed [as Stripe defines it](docs/stripe.md#how-mrr-is-computed),
+  so the TV stays close to your Stripe Dashboard; the few known differences are documented.
 - **Private and secure**: read-only restricted keys encrypted at rest, unguessable screen links
   with an optional password, customer names and emails hidden unless you allow them.
 - **Real time within Stripe's limits**: webhooks for instant updates, and polling that respects

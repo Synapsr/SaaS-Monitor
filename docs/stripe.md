@@ -48,8 +48,9 @@ are lost.
 
 ## How MRR is computed
 
-SaaS Monitor follows [Stripe's definition of MRR](https://docs.stripe.com/billing/subscriptions/analytics),
-so the number on the wall matches your Stripe Dashboard:
+SaaS Monitor computes MRR [as Stripe defines it](https://docs.stripe.com/billing/subscriptions/analytics),
+so the number on the wall stays close to your Stripe Dashboard (the few differences are listed
+under the limits below):
 
 - Only `active` and `past_due` subscriptions count: trials and `canceled`, `unpaid`, `paused` or
   `incomplete` subscriptions don't.
