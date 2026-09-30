@@ -143,11 +143,6 @@ export function parseInline(source: string, references: References = new Map()):
   return nodes;
 }
 
-/** The words alone, e.g. for a summary. */
-export function inlineText(nodes: Inline[]): string {
-  return nodes.map((node) => ("children" in node ? inlineText(node.children) : node.text)).join("");
-}
-
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")

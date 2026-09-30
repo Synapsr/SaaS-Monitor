@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { blocksHtml, inlineText, parseChangelog, parseInline, releasedVersions } from "./changelog";
+import { blocksHtml, parseChangelog, parseInline, releasedVersions } from "./changelog";
 
 const SAMPLE = `# Changelog
 
@@ -122,12 +122,21 @@ describe("parseChangelog", () => {
   it("joins the wrapped lines of a bullet or a paragraph", () => {
     const [heading, list] = changelog.releases[0].blocks;
     expect(heading).toEqual({ type: "heading", children: [{ type: "text", text: "Added" }] });
-    expect(list.type).toBe("list");
-    const items = list.type === "list" ? list.items : [];
-    expect(items.map(inlineText)).toEqual([
-      "Lost subscriptions say why: canceled, won't renew (a cancellation at period end) or paused.",
-      "Events, in the screen settings.",
-    ]);
+    expect(list).toEqual({
+      type: "list",
+      items: [
+        [
+          {
+            type: "text",
+            text: "Lost subscriptions say why: canceled, won't renew (a cancellation at period end) or paused.",
+          },
+        ],
+        [
+          { type: "strong", children: [{ type: "text", text: "Events" }] },
+          { type: "text", text: ", in the screen settings." },
+        ],
+      ],
+    });
     expect(changelog.releases[2].blocks[0]).toEqual({
       type: "paragraph",
       children: [{ type: "text", text: "The first public release. On to the next one." }],
