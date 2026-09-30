@@ -1,9 +1,9 @@
 # Connect Stripe
 
 SaaS Monitor reads your Stripe data with a **restricted API key**: a key you create in the Stripe
-Dashboard that can only do what you allow. It never needs your secret key, and it never changes
-anything in your account (the single optional write permission lets it register its own webhook
-endpoint).
+Dashboard that can only do what you allow. It never needs your secret key, and it only reads your
+account, apart from the single optional write permission that lets it register its own webhook
+endpoint.
 
 ## Create the key
 

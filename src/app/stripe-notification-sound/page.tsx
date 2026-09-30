@@ -165,7 +165,7 @@ export default function StripeNotificationSoundPage() {
             {
               question: "Does SaaS Monitor replace the Stripe app?",
               answer:
-                "No. It only reads your Stripe account, with a read-only restricted key, to show your revenue on a screen. Keep the Stripe app for refunds, payouts and everything else.",
+                "No. It reads your Stripe account with a restricted key (one optional permission adds its own webhook) to show your revenue on a screen. Keep the Stripe app for refunds, payouts and everything else.",
             },
             {
               question: "Do I need to install anything to hear the sounds?",

@@ -124,7 +124,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
           "Payment recovery and cancellation insights, $129 a month each as add-ons",
           BAREMETRICS_PRICING,
         ),
-        us: "None: SaaS Monitor only reads Stripe, with a read-only key",
+        us: "None: SaaS Monitor only reads Stripe (one optional permission adds its own webhook)",
       },
     ],
     pickThem: [
@@ -154,7 +154,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         question: "Can both read the same Stripe account?",
         answer:
-          "Yes. SaaS Monitor reads Stripe with a restricted key of its own, read-only, and never writes to your account.",
+          "Yes. SaaS Monitor uses a restricted key of its own. It only reads, apart from one optional permission that lets it add its own webhook endpoint.",
       },
     ],
   },
@@ -235,7 +235,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         question: "Can both read the same Stripe account?",
         answer:
-          "Yes. SaaS Monitor reads Stripe with a restricted key of its own, read-only, and never writes to your account.",
+          "Yes. SaaS Monitor uses a restricted key of its own. It only reads, apart from one optional permission that lets it add its own webhook endpoint.",
       },
     ],
   },
@@ -400,7 +400,7 @@ export const ALTERNATIVES: readonly Alternative[] = [
       {
         question: "Is there a free PingBell alternative?",
         answer:
-          "SaaS Monitor is free during its public beta, and free for good on your own server. It only reads Stripe, and runs in a browser rather than a TV app.",
+          "SaaS Monitor is free during its public beta, and free for good on your own server. It works with Stripe only, and runs in a browser rather than a TV app.",
       },
       {
         question: "Why doesn't SaaS Monitor count payments as MRR?",
