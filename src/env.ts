@@ -22,6 +22,11 @@ const schema = z
     DISABLE_SIGNUPS: booleanFlag(false),
     /** Apply pending database migrations when the server starts. */
     MIGRATE_ON_START: booleanFlag(true),
+    /**
+     * Screens credit "saas-monitor.com" on their celebrations, unless a screen turns it off. Only
+     * the hosted instance sets it: self-hosted screens carry no one's brand.
+     */
+    SHOW_ATTRIBUTION: booleanFlag(false),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),

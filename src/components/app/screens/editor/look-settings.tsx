@@ -52,6 +52,7 @@ type LookSettingsValue = Pick<
   | "accent"
   | "chartRange"
   | "celebrations"
+  | "attribution"
   | "momentSeconds"
   | "showCustomerNames"
   | "customerEmails"
@@ -60,11 +61,14 @@ type LookSettingsValue = Pick<
 export function LookSettings({
   settings,
   metric,
+  attributionAvailable,
   onChange,
 }: {
   settings: LookSettingsValue;
   /** The chart shows it: the "MRR chart" or the "ARR chart". */
   metric: Metric;
+  /** This server credits the product on celebrations (`SHOW_ATTRIBUTION`): screens may opt out. */
+  attributionAvailable: boolean;
   onChange: (patch: Partial<LookSettingsValue>) => void;
 }) {
   const id = useId();
@@ -164,6 +168,20 @@ export function LookSettings({
           onCheckedChange={(celebrations) => onChange({ celebrations })}
         />
       </SettingRow>
+
+      {attributionAvailable && (
+        <SettingRow
+          htmlFor={`${id}-attribution`}
+          label="Show saas-monitor.com on celebrations"
+          description="A small credit under moments and milestones. It helps other founders find SaaS Monitor when your wall ends up in a photo."
+        >
+          <Switch
+            id={`${id}-attribution`}
+            checked={settings.attribution}
+            onCheckedChange={(attribution) => onChange({ attribution })}
+          />
+        </SettingRow>
+      )}
 
       <SettingRow
         htmlFor={`${id}-names`}

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
+import { Attribution } from "@/components/display/attribution";
 import { LogoPulse } from "@/components/logo";
 import type { RecurringMetric } from "@/lib/display/metric";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,11 @@ export interface MomentCardContent {
 
 const SPRING = { type: "spring", duration: 0.7, bounce: 0.18 } as const;
 
+interface MomentCardProps extends MomentCardContent {
+  /** Credit "saas-monitor.com" under the card's content (`DisplayState.attribution`). */
+  attribution: boolean;
+}
+
 /** A large card in the middle of the screen, readable from across the room. */
 export function MomentCard({
   icon: Icon,
@@ -34,7 +40,8 @@ export function MomentCard({
   details,
   footnote,
   tone,
-}: MomentCardContent) {
+  attribution,
+}: MomentCardProps) {
   const celebration = tone === "celebration";
   return (
     <motion.div
@@ -57,7 +64,9 @@ export function MomentCard({
         transition={SPRING}
         className={cn(
           // Read from across the room: the card takes most of the screen's width.
-          "relative flex w-[min(calc(var(--u)*112),92%)] flex-col items-center gap-5 overflow-hidden rounded-[calc(var(--rem)*3)] bg-(--card) px-20 pt-16 pb-16 text-center ring-1",
+          "relative flex w-[min(calc(var(--u)*112),92%)] flex-col items-center gap-5 overflow-hidden rounded-[calc(var(--rem)*3)] bg-(--card) px-20 pt-16 text-center ring-1",
+          // The credit sits in the bottom margin, which grows to keep it apart from the content.
+          attribution ? "pb-22" : "pb-16",
           celebration
             ? "shadow-(--moment-glow) ring-(--edge)"
             : "shadow-(--moment-shadow) ring-(--hairline)",
@@ -114,6 +123,13 @@ export function MomentCard({
               {footnote}
             </p>
           </Reveal>
+        )}
+        {attribution && (
+          <div className="absolute inset-x-0 bottom-7 flex justify-center">
+            <Reveal delay={0.42}>
+              <Attribution className="text-xl" />
+            </Reveal>
+          </div>
         )}
       </motion.article>
     </motion.div>

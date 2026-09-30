@@ -130,4 +130,9 @@ export const fr: DisplayText = {
     wrongPassword: "Mot de passe incorrect. Réessayez.",
     tooManyAttempts: "Trop de tentatives. Patientez quelques minutes, puis réessayez.",
   },
+  demo: {
+    label: "Démo en direct · données simulées",
+    pitch: (metric) => `Affichez votre propre ${metric} au mur`,
+    start: "Commencer gratuitement",
+  },
 };

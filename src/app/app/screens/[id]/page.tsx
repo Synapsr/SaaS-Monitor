@@ -34,6 +34,7 @@ export default async function ScreenPage({ params }: PageProps<"/app/screens/[id
       accounts={accounts}
       appUrl={env().APP_URL}
       canPersonalizeVoice={canSynthesize()}
+      attributionAvailable={env().SHOW_ATTRIBUTION}
     />
   );
 }

@@ -45,6 +45,12 @@ export interface DisplayState {
    * key to synthesize them. Otherwise voices say recorded phrases.
    */
   personalizedVoice: boolean;
+  /**
+   * Moments and milestones credit "saas-monitor.com": the screen allows it
+   * (`settings.attribution`) and its server is one that credits the product (`SHOW_ATTRIBUTION`,
+   * the hosted one). Self-hosted screens never do.
+   */
+  attribution: boolean;
   /** Issues worth surfacing discreetly, written by the display in the screen's language. */
   warnings: DisplayWarning[];
 }

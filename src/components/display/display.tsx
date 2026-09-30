@@ -4,6 +4,7 @@ import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { Backdrop } from "@/components/display/backdrop";
 import { Dashboard } from "@/components/display/dashboard";
+import { DemoFooter } from "@/components/display/demo-footer";
 import { MomentOverlay } from "@/components/display/moment-overlay";
 import { StatusScreen } from "@/components/display/status-screen";
 import { TopBar } from "@/components/display/top-bar";
@@ -21,6 +22,7 @@ import { useWakeLock } from "@/hooks/use-wake-lock";
 import { accentPalette, accentVariables } from "@/lib/display/accents";
 import { momentPlays } from "@/lib/display/events";
 import { displayLocale } from "@/lib/display/i18n";
+import { recurringMetric } from "@/lib/display/metric";
 import { momentAccount, momentCelebration, momentSound } from "@/lib/display/moments";
 import { rotationSlides, screenView, TOTAL } from "@/lib/display/rotation";
 import { resolveDisplayState } from "@/lib/display/state";
@@ -45,6 +47,11 @@ export interface DisplayProps {
    * demo, whose voice says recorded ones.
    */
   announcementEndpoint: string | null;
+  /**
+   * The standalone demo's footer (`DemoFooter`), with where visitors sign up; `null` for every
+   * other screen, and for the demo embedded as a preview.
+   */
+  demoFooter: { signUpHref: string | null } | null;
 }
 
 /**
@@ -57,6 +64,7 @@ export function Display({
   preview,
   followServerVersion,
   announcementEndpoint,
+  demoFooter,
 }: DisplayProps) {
   const override = usePreviewOverride(preview);
   const state = useMemo(() => resolveDisplayState(fetched, override), [fetched, override]);
@@ -114,12 +122,13 @@ export function Display({
         <div
           style={accentVariables(palette) as CSSProperties}
           data-theme={settings.theme}
+          data-demo-footer={demoFooter ? "" : undefined}
           className={cn("display fixed inset-0 overflow-hidden select-none", idle && "cursor-none")}
         >
           <Backdrop />
           <div
             ref={content}
-            className="relative flex h-full flex-col gap-10 px-13 pt-10 pb-12 transition-[translate] duration-[3s] ease-in-out"
+            className="relative flex h-full flex-col gap-10 px-13 pt-10 pb-(--bottom-band) transition-[translate] duration-[3s] ease-in-out"
           >
             <TopBar
               name={state.screen.name}
@@ -158,6 +167,13 @@ export function Display({
             )}
           </div>
           <MomentOverlay moment={moment} state={state} />
+          {demoFooter && (
+            <DemoFooter
+              metric={recurringMetric(settings.metric).label}
+              signUpHref={demoFooter.signUpHref}
+              idle={idle}
+            />
+          )}
           <canvas
             ref={canvasRef}
             aria-hidden

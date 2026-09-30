@@ -168,6 +168,8 @@ export function demoState(worlds: readonly DemoWorld[], now: Date): DisplayState
     testEvent: null,
     // The demo runs in the browser alone: its voice says recorded phrases.
     personalizedVoice: false,
+    // The demo is the product showing itself, wherever it runs.
+    attribution: true,
     warnings: [],
   };
 }

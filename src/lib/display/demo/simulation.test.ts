@@ -117,6 +117,10 @@ describe("demo history", () => {
     const named = demoState([createDemoWorld({ ...options, showCustomerNames: true }, now)], now);
     expect(named.feed.every((item) => item.customerName)).toBe(true);
   });
+
+  it("credits the product on every server, the demo being the product showing itself", () => {
+    expect(state.attribution).toBe(true);
+  });
 });
 
 describe("demo simulation", () => {

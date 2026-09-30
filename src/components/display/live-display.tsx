@@ -27,6 +27,7 @@ export function LiveDisplay({ token, initialState, preview }: LiveDisplayProps) 
       preview={preview}
       followServerVersion
       announcementEndpoint={`/api/screens/${encodeURIComponent(token)}/announcement`}
+      demoFooter={null}
     />
   );
 }
