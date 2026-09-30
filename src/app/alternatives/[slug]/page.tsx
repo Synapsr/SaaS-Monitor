@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ClosingCall } from "@/components/content/closing-call";
 import { ComparisonTable, PickWhich, SourcesNote } from "@/components/content/comparison";
 import { ContentPage, ContentSection, PageIntro } from "@/components/content/content-page";
-import { Faq } from "@/components/content/faq";
+import { Faq } from "@/components/marketing/faq";
 import { SourceLink } from "@/components/content/source-link";
 import { Button } from "@/components/ui/button";
 import { ALTERNATIVES, alternativeBySlug, sourcesOf } from "@/lib/marketing/alternatives";

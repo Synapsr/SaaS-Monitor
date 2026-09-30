@@ -3,10 +3,10 @@ import type { ResolvingMetadata } from "next";
 import Link from "next/link";
 import { ClosingCall } from "@/components/content/closing-call";
 import { ContentPage, ContentSection, PageIntro } from "@/components/content/content-page";
-import { Faq } from "@/components/content/faq";
 import { SoundLibrary } from "@/components/content/sound-library";
 import { StepsCard } from "@/components/content/steps-card";
-import { VoiceBoard } from "@/components/content/voice-board";
+import { Faq } from "@/components/marketing/faq";
+import { VoiceBoard } from "@/components/marketing/voice-board";
 import { Button } from "@/components/ui/button";
 import { contentMetadata } from "@/lib/marketing/page-metadata";
 

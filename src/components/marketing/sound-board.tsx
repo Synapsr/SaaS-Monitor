@@ -68,7 +68,13 @@ export function SoundBoard() {
           </li>
         ))}
       </ul>
-      <VoiceBoard />
+      <VoiceBoard
+        heading={{
+          title: "Voices",
+          description:
+            "After the sound, a voice says what happened, in the screen’s language. Two voices per language.",
+        }}
+      />
     </div>
   );
 }

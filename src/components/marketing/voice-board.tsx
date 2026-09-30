@@ -23,12 +23,16 @@ const LANGUAGE_LABELS: Record<VoiceLanguage, string> = {
 const PHRASES: { id: Phrase; label: string }[] = [
   { id: "payment", label: "Payment" },
   { id: "subscription", label: "New subscriber" },
+  { id: "customer", label: "New customer" },
   { id: "upgrade", label: "Upgrade" },
-  { id: "goal", label: "Goal" },
+  { id: "goal", label: "Goal reached" },
 ];
 
-/** Every voice saying the same recorded phrase, in its own language: the clips screens play. */
-export function VoiceBoard() {
+/**
+ * Every voice saying the same recorded phrase, in its own language: the clips screens play.
+ * `heading` introduces the board where the section around it doesn't.
+ */
+export function VoiceBoard({ heading }: { heading?: { title: string; description: string } }) {
   const id = useId();
   const [phrase, setPhrase] = useState<Phrase>("payment");
   const [playing, setPlaying] = useState<string | null>(null);
@@ -45,19 +49,19 @@ export function VoiceBoard() {
 
   return (
     <section
-      aria-labelledby={`${id}-title`}
+      aria-labelledby={heading ? `${id}-title` : undefined}
+      aria-label={heading ? undefined : "Voices"}
       className="flex flex-col gap-6 rounded-2xl bg-white/[0.03] p-6 ring-1 ring-white/[0.08]"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h3 id={`${id}-title`} className="font-medium text-(--ink)">
-            Voices
-          </h3>
-          <p className="mt-1 text-sm text-pretty text-(--ink-3)">
-            After the sound, a voice says what happened, in the screen’s language. Two voices per
-            language.
-          </p>
-        </div>
+        {heading && (
+          <div>
+            <h3 id={`${id}-title`} className="font-medium text-(--ink)">
+              {heading.title}
+            </h3>
+            <p className="mt-1 text-sm text-pretty text-(--ink-3)">{heading.description}</p>
+          </div>
+        )}
         <ToggleGroup
           type="single"
           size="sm"
