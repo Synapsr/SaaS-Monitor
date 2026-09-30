@@ -3,23 +3,15 @@
 import { PlayIcon } from "lucide-react";
 import { useState } from "react";
 import { VoiceBoard } from "@/components/marketing/voice-board";
+import { SOUND_EVENT_LABELS, SOUND_EVENTS } from "@/lib/marketing/sound-files";
 import { SOUND_PACKS, type SoundPack } from "@/lib/screens/settings";
-import { playSound, SOUND_PACK_NAMES, type SoundEvent } from "@/lib/sounds";
+import {
+  playSound,
+  SOUND_PACK_DESCRIPTIONS,
+  SOUND_PACK_NAMES,
+  type SoundEvent,
+} from "@/lib/sounds";
 import { cn } from "@/lib/utils";
-
-const PACK_DESCRIPTIONS: Record<SoundPack, string> = {
-  register: "The classic ka-ching.",
-  chime: "Soft bells for a calm office.",
-  arcade: "8-bit coins and power-ups.",
-};
-
-const EVENTS: { id: SoundEvent; label: string }[] = [
-  { id: "payment", label: "Payment" },
-  { id: "customer", label: "New customer" },
-  { id: "mrrUp", label: "MRR up" },
-  { id: "mrrDown", label: "MRR down" },
-  { id: "milestone", label: "Milestone" },
-];
 
 /**
  * Every sound of every pack, one click away, then every voice. Sounds are synthesized in the
@@ -45,21 +37,22 @@ export function SoundBoard() {
           >
             <div>
               <h3 className="font-medium text-(--ink)">{SOUND_PACK_NAMES[pack]}</h3>
-              <p className="mt-1 text-sm text-(--ink-3)">{PACK_DESCRIPTIONS[pack]}</p>
+              <p className="mt-1 text-sm text-(--ink-3)">{SOUND_PACK_DESCRIPTIONS[pack]}</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {EVENTS.map((event) => {
-                const active = playing === `${pack}:${event.id}`;
+              {SOUND_EVENTS.map((event) => {
+                const label = SOUND_EVENT_LABELS[event];
+                const active = playing === `${pack}:${event}`;
                 return (
                   <button
-                    key={event.id}
+                    key={event}
                     type="button"
-                    onClick={() => play(pack, event.id)}
-                    aria-label={`Play the ${event.label} sound of the ${SOUND_PACK_NAMES[pack]} pack`}
+                    onClick={() => play(pack, event)}
+                    aria-label={`Play the ${label} sound of the ${SOUND_PACK_NAMES[pack]} pack`}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-(--ink-2) ring-1 ring-white/10 transition-colors outline-none hover:bg-white/[0.06] hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow)",
                       // The fanfare gets the last row to itself.
-                      event.id === "milestone" && "col-span-2",
+                      event === "milestone" && "col-span-2",
                       active && "bg-(--glow)/10 text-(--ink) ring-(--glow)/50",
                     )}
                   >
@@ -67,7 +60,7 @@ export function SoundBoard() {
                       aria-hidden
                       className={cn("size-3.5 fill-current", active && "text-(--glow)")}
                     />
-                    {event.label}
+                    {label}
                   </button>
                 );
               })}

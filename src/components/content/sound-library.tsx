@@ -2,14 +2,14 @@
 
 import { DownloadIcon, PlayIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  SOUND_EVENT_LABELS,
-  SOUND_EVENTS,
-  SOUND_PACK_DESCRIPTIONS,
-  soundFile,
-} from "@/lib/marketing/sound-files";
+import { SOUND_EVENT_LABELS, SOUND_EVENTS, soundFile } from "@/lib/marketing/sound-files";
 import { SOUND_PACKS, type SoundPack } from "@/lib/screens/settings";
-import { playSound, SOUND_PACK_NAMES, type SoundEvent } from "@/lib/sounds";
+import {
+  playSound,
+  SOUND_PACK_DESCRIPTIONS,
+  SOUND_PACK_NAMES,
+  type SoundEvent,
+} from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 
 /**
