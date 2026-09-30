@@ -9,16 +9,25 @@ import { Pricing } from "@/components/marketing/pricing";
 import { SelfHost } from "@/components/marketing/self-host";
 import { SetupSteps } from "@/components/marketing/setup-steps";
 import { SoundBoard } from "@/components/marketing/sound-board";
+import { appUrl } from "@/env";
 import { siteConfig } from "@/lib/site";
+import { serializeJsonLd, softwareApplicationJsonLd } from "@/lib/structured-data";
 import "./landing.css";
 
 export const metadata: Metadata = {
-  title: { absolute: `${siteConfig.name} · ${siteConfig.tagline}` },
+  title: { absolute: `${siteConfig.name} · ${siteConfig.headline}` },
+  alternates: { canonical: "/" },
+  // Replaces the layout's Open Graph fields rather than adding to them: repeat them.
+  openGraph: { type: "website", siteName: siteConfig.name, url: "/" },
 };
 
 export default function LandingPage() {
   return (
     <div className="landing dark min-h-svh">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(softwareApplicationJsonLd(appUrl())) }}
+      />
       <LandingHeader />
       <main>
         <LandingHero />
