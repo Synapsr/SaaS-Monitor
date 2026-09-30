@@ -13,9 +13,9 @@ const QUESTIONS: Question[] = [
       <>
         <p>
           You connect Stripe with a restricted key, created in your Stripe Dashboard with only the
-          permissions {siteConfig.name} needs: it reads subscriptions, customers and payments, and
-          changes nothing. One permission is optional: it lets {siteConfig.name} register its own
-          webhook endpoint, for instant updates.
+          permissions {siteConfig.name} needs: it reads subscriptions, customers, payments and the
+          products, prices and coupons they use. One permission is optional: it lets{" "}
+          {siteConfig.name} register its own webhook endpoint, for instant updates.
         </p>
         <p>
           The key is encrypted at rest with AES-256-GCM, never leaves the server and is never
@@ -32,13 +32,14 @@ const QUESTIONS: Question[] = [
     answer: (
       <>
         <p>
-          Yes: {siteConfig.name} follows Stripe’s own definition of MRR. Only active and past-due
-          subscriptions count, a yearly price counts for a twelfth, and discounts are subtracted,
-          except one-time ones.
+          Yes, in most cases: {siteConfig.name} follows Stripe’s own definition of MRR. Only active
+          and past-due subscriptions count, a yearly price counts for a twelfth, and discounts are
+          subtracted, except one-time ones.
         </p>
         <p>
-          Two cases differ, both documented: tax-inclusive prices count with their tax, and the
-          chart before your first import is rebuilt from each subscription’s current amount.{" "}
+          A few limits are documented: tax-inclusive prices count with their tax, a coupon deleted
+          before your first import counts on the whole subscription, and the chart before that
+          import is rebuilt from each subscription’s current amount.{" "}
           <FaqLink href={`${siteConfig.stripeDocsUrl}#how-mrr-is-computed`}>
             How MRR is computed
           </FaqLink>
