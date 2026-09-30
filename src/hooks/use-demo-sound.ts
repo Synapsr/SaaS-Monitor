@@ -11,6 +11,7 @@ import {
 } from "@/lib/demo-sound";
 import { unlockAudio } from "@/lib/sounds";
 import { getAudioGraph } from "@/lib/sounds/graph";
+import { hush } from "@/lib/voice/player";
 
 /** The sound switch of the landing page's demo TV: see `src/lib/demo-sound.ts`. */
 
@@ -45,7 +46,8 @@ export function useDemoSoundSwitch(enabled: boolean, onTurnedOn: () => void): bo
       const turn = (requests += 1);
       if (request === "off") {
         switchTo(false);
-        // Also silences what is ringing right now.
+        // Also silences what is ringing right now, and the voice about to speak over it.
+        hush();
         void getAudioGraph()
           ?.context.suspend()
           .catch(() => {});
