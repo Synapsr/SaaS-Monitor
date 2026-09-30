@@ -1,6 +1,18 @@
 "use client";
 
-import { LaptopIcon, LogOutIcon, MoonIcon, PlusIcon, SettingsIcon, SunIcon } from "lucide-react";
+import {
+  ArrowUpRightIcon,
+  BookOpenIcon,
+  LaptopIcon,
+  LogOutIcon,
+  MessageSquareIcon,
+  MoonIcon,
+  PlusIcon,
+  ScrollTextIcon,
+  SettingsIcon,
+  StarIcon,
+  SunIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useState } from "react";
@@ -17,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSignOut } from "@/hooks/use-sign-out";
+import { communityLinks } from "@/lib/community";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { UserAvatar } from "./user-avatar";
 
@@ -77,6 +90,27 @@ export function UserMenu({
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <ExternalItem href={communityLinks.star}>
+              <StarIcon />
+              Star on GitHub
+            </ExternalItem>
+            <ExternalItem href={communityLinks.docs}>
+              <BookOpenIcon />
+              Docs
+            </ExternalItem>
+            <DropdownMenuItem asChild>
+              <Link href={communityLinks.changelog}>
+                <ScrollTextIcon />
+                Changelog
+              </Link>
+            </DropdownMenuItem>
+            <ExternalItem href={communityLinks.feedback}>
+              <MessageSquareIcon />
+              Send feedback
+            </ExternalItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={signOut}>
             <LogOutIcon />
             Sign out
@@ -85,5 +119,17 @@ export function UserMenu({
       </DropdownMenu>
       <CreateWorkspaceDialog open={creating} onOpenChange={setCreating} />
     </>
+  );
+}
+
+/** A page about the project, opened next to the dashboard rather than in its place. */
+function ExternalItem({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <DropdownMenuItem asChild>
+      <a href={href} target="_blank" rel="noreferrer">
+        {children}
+        <ArrowUpRightIcon className="ml-auto size-3.5 text-muted-foreground" />
+      </a>
+    </DropdownMenuItem>
   );
 }
