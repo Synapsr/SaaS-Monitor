@@ -1,6 +1,7 @@
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
+import { Analytics } from "@/components/analytics";
 import { Providers } from "@/components/providers";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn(GeistSans.variable, GeistMono.variable, "h-full antialiased")}
     >
       <body className="min-h-full">
+        <Analytics />
         <Providers>{children}</Providers>
       </body>
     </html>
