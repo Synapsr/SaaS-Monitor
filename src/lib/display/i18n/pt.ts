@@ -130,7 +130,7 @@ export const pt: DisplayText = {
   },
   demo: {
     label: "Demo ao vivo · dados simulados",
-    pitch: (metric) => `Coloque o seu próprio ${metric} na parede`,
+    pitch: (metric) => `Coloque seu próprio ${metric} na parede`,
     start: "Comece grátis",
   },
 };

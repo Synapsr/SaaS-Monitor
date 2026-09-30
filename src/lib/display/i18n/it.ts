@@ -129,7 +129,7 @@ export const it: DisplayText = {
   },
   demo: {
     label: "Demo in diretta · dati simulati",
-    pitch: (metric) => `Porta il tuo ${metric} sulla parete`,
+    pitch: (metric) => `Appendi il tuo ${metric} alla parete`,
     start: "Inizia gratis",
   },
 };
