@@ -18,6 +18,11 @@ const clips = new Map<string, Promise<AudioBuffer>>();
 /** When, in the audio context's time, the phrase being said ends. */
 let busyUntil = 0;
 
+/** Phrases being said, or scheduled to be: `hush()` stops them. */
+const saying = new Set<AudioBufferSourceNode>();
+/** Counts `hush()` calls: a phrase asked for before the last one stays unsaid. */
+let hushes = 0;
+
 /** Fetches and decodes a recorded clip, once. */
 export function recordedClip(url: string): Promise<AudioBuffer> {
   let clip = clips.get(url);
@@ -64,13 +69,16 @@ export interface SpeakOptions {
  */
 export function speak(speech: Promise<AudioBuffer>, { volume, delayMs }: SpeakOptions): void {
   const requestedAt = Date.now();
+  const hushed = hushes;
   speech
     .then(async (buffer) => {
       const graph = getAudioGraph();
       if (!graph || volume <= 0 || Date.now() - requestedAt > MAX_LATENESS_MS) return;
+      if (hushed !== hushes) return;
       const { context } = graph;
       // Inside a click (the settings' play buttons), resuming works right away.
       if (context.state !== "running") await context.resume();
+      if (hushed !== hushes) return;
 
       const now = context.currentTime;
       const due = now + Math.max(0, delayMs - (Date.now() - requestedAt)) / 1000;
@@ -84,10 +92,25 @@ export function speak(speech: Promise<AudioBuffer>, { volume, delayMs }: SpeakOp
       // Squared, like sounds: the slider then feels even to the ear.
       gain.gain.value = volume ** 2;
       source.connect(gain).connect(graph.input);
-      source.onended = () => gain.disconnect();
+      source.onended = () => {
+        saying.delete(source);
+        gain.disconnect();
+      };
       source.start(start);
+      saying.add(source);
     })
     .catch(() => {
       // Nothing to say after all: the moment still has its sound and card.
     });
+}
+
+/**
+ * Stops what voices are saying, and drops the phrases still on their way: they would otherwise
+ * resume a context that was suspended to silence them (the landing page's demo, muted).
+ */
+export function hush(): void {
+  hushes += 1;
+  busyUntil = 0;
+  for (const source of saying) source.stop();
+  saying.clear();
 }

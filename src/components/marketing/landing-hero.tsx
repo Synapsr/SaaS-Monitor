@@ -25,7 +25,7 @@ export function LandingHero() {
           on the wall.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl animate-in text-lg text-balance text-(--ink-2) delay-200 duration-700 fill-mode-both fade-in slide-in-from-bottom-3 motion-reduce:animate-none">
-          {siteConfig.name} turns your Stripe account into a beautiful screen for the office. Hear
+          {siteConfig.name} turns your Stripe account into a live dashboard for the office TV. Hear
           the ka-ching of every sale, watch your MRR climb and celebrate every milestone with your
           team.
         </p>
@@ -50,9 +50,6 @@ export function LandingHero() {
 
       <div className="relative mx-auto mt-14 max-w-6xl animate-in px-4 delay-500 duration-1000 fill-mode-both fade-in slide-in-from-bottom-6 motion-reduce:animate-none sm:mt-20 sm:px-6">
         <DemoTv />
-        <p className="mt-6 text-center text-sm text-(--ink-3)">
-          The live demo, with a fictional SaaS. A sale lands every few seconds.
-        </p>
       </div>
     </section>
   );

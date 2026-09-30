@@ -3,19 +3,22 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import { Analytics } from "@/components/analytics";
 import { Providers } from "@/components/providers";
+import { appUrl } from "@/env";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  // Social previews need absolute URLs, set at build time: Docker builds receive APP_URL as a
-  // build argument (compose.yaml), which may be empty.
-  metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
-  title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
-  description: siteConfig.description,
-  openGraph: { type: "website", siteName: siteConfig.name },
-  twitter: { card: "summary_large_image" },
-};
+export function generateMetadata(): Metadata {
+  return {
+    // Social previews and canonical links need absolute URLs, written into static pages at build
+    // time: Docker builds receive APP_URL as a build argument (compose.yaml).
+    metadataBase: new URL(appUrl()),
+    title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
+    description: siteConfig.description,
+    openGraph: { type: "website", siteName: siteConfig.name },
+    twitter: { card: "summary_large_image" },
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -2,6 +2,7 @@
 
 import { PlayIcon } from "lucide-react";
 import { useState } from "react";
+import { VoiceBoard } from "@/components/marketing/voice-board";
 import { SOUND_PACKS, type SoundPack } from "@/lib/screens/settings";
 import { playSound, SOUND_PACK_NAMES, type SoundEvent } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,10 @@ const EVENTS: { id: SoundEvent; label: string }[] = [
   { id: "milestone", label: "Milestone" },
 ];
 
-/** Every sound of every pack, one click away. Sounds are synthesized in the browser. */
+/**
+ * Every sound of every pack, one click away, then every voice. Sounds are synthesized in the
+ * browser; voices are the recorded clips screens play.
+ */
 export function SoundBoard() {
   const [playing, setPlaying] = useState<string | null>(null);
 
@@ -32,43 +36,46 @@ export function SoundBoard() {
   }
 
   return (
-    <ul className="grid gap-4 md:grid-cols-3">
-      {SOUND_PACKS.map((pack) => (
-        <li
-          key={pack}
-          className="flex flex-col gap-5 rounded-2xl bg-white/[0.03] p-6 ring-1 ring-white/[0.08]"
-        >
-          <div>
-            <h3 className="font-medium text-(--ink)">{SOUND_PACK_NAMES[pack]}</h3>
-            <p className="mt-1 text-sm text-(--ink-3)">{PACK_DESCRIPTIONS[pack]}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {EVENTS.map((event) => {
-              const active = playing === `${pack}:${event.id}`;
-              return (
-                <button
-                  key={event.id}
-                  type="button"
-                  onClick={() => play(pack, event.id)}
-                  aria-label={`Play the ${event.label} sound of the ${SOUND_PACK_NAMES[pack]} pack`}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-(--ink-2) ring-1 ring-white/10 transition-colors outline-none hover:bg-white/[0.06] hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow)",
-                    // The fanfare gets the last row to itself.
-                    event.id === "milestone" && "col-span-2",
-                    active && "bg-(--glow)/10 text-(--ink) ring-(--glow)/50",
-                  )}
-                >
-                  <PlayIcon
-                    aria-hidden
-                    className={cn("size-3.5 fill-current", active && "text-(--glow)")}
-                  />
-                  {event.label}
-                </button>
-              );
-            })}
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-4">
+      <ul className="grid gap-4 md:grid-cols-3">
+        {SOUND_PACKS.map((pack) => (
+          <li
+            key={pack}
+            className="flex flex-col gap-5 rounded-2xl bg-white/[0.03] p-6 ring-1 ring-white/[0.08]"
+          >
+            <div>
+              <h3 className="font-medium text-(--ink)">{SOUND_PACK_NAMES[pack]}</h3>
+              <p className="mt-1 text-sm text-(--ink-3)">{PACK_DESCRIPTIONS[pack]}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {EVENTS.map((event) => {
+                const active = playing === `${pack}:${event.id}`;
+                return (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => play(pack, event.id)}
+                    aria-label={`Play the ${event.label} sound of the ${SOUND_PACK_NAMES[pack]} pack`}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-(--ink-2) ring-1 ring-white/10 transition-colors outline-none hover:bg-white/[0.06] hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow)",
+                      // The fanfare gets the last row to itself.
+                      event.id === "milestone" && "col-span-2",
+                      active && "bg-(--glow)/10 text-(--ink) ring-(--glow)/50",
+                    )}
+                  >
+                    <PlayIcon
+                      aria-hidden
+                      className={cn("size-3.5 fill-current", active && "text-(--glow)")}
+                    />
+                    {event.label}
+                  </button>
+                );
+              })}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <VoiceBoard />
+    </div>
   );
 }

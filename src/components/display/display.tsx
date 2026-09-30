@@ -40,6 +40,11 @@ export interface DisplayProps {
    * hiding, no reload), and following the editor's unsaved changes.
    */
   preview: boolean;
+  /**
+   * Moments play no sound and say nothing. Defaults to `preview`: the landing page's demo is a
+   * preview that visitors can turn up.
+   */
+  muted?: boolean;
   /** Reload when the server runs another build. Off for the demo, which has no server. */
   followServerVersion: boolean;
   /**
@@ -62,6 +67,7 @@ export function Display({
   state: fetched,
   online,
   preview,
+  muted = preview,
   followServerVersion,
   announcementEndpoint,
   demoFooter,
@@ -74,9 +80,9 @@ export function Display({
 
   const { canvasRef, fire: fireConfetti } = useConfetti();
   const { moment: playing, idle: quiet } = useMoments(state, (started) => {
-    const sound = preview ? null : momentSound(started, settings);
+    const sound = muted ? null : momentSound(started, settings);
     if (sound) playSound(sound, { pack: settings.sound.pack, volume: settings.sound.volume });
-    if (!preview) announceMoment(started, state, { endpoint: announcementEndpoint, sound });
+    if (!muted) announceMoment(started, state, { endpoint: announcementEndpoint, sound });
     const celebration = momentCelebration(started);
     if (celebration && settings.celebrations && momentPlays(started, settings, "moment")) {
       fireConfetti(celebration, palette.confetti);
