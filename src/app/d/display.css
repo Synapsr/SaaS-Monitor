@@ -51,6 +51,12 @@
       color-mix(in oklab, var(--glow) 36%, transparent),
     var(--moment-shadow);
 
+  /*
+   * What the screen keeps free along its bottom edge: its margin, or the standalone demo's footer.
+   * The footer is sized for a phone too, where everything else is drawn small.
+   */
+  --bottom-band: calc(var(--rem) * 3);
+
   font-size: var(--text-base);
   background: var(--screen);
   color: var(--ink);
@@ -83,6 +89,10 @@
   .display {
     --u: min(1dvw, 0.5625dvh);
   }
+}
+
+.display[data-demo-footer] {
+  --bottom-band: max(calc(var(--rem) * 6.5), 64px);
 }
 
 /* Film grain: dithers the soft gradients, which band badly on large TVs. Dark specks on light. */

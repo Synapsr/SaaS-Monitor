@@ -126,4 +126,9 @@ export const de: DisplayText = {
     wrongPassword: "Falsches Passwort. Versuch es noch einmal.",
     tooManyAttempts: "Zu viele Versuche. Warte ein paar Minuten und versuch es dann erneut.",
   },
+  demo: {
+    label: "Live-Demo · simulierte Daten",
+    pitch: (metric) => `Bring deinen eigenen ${metric} an die Wand`,
+    start: "Kostenlos starten",
+  },
 };

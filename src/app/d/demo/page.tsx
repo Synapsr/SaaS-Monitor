@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DemoDisplay } from "@/components/display/demo-display";
+import { env } from "@/env";
 import { parseDemoOptions } from "@/lib/display/demo/options";
 import { siteConfig } from "@/lib/site";
 
@@ -8,6 +9,12 @@ export const metadata: Metadata = {
   description: `A ${siteConfig.name} wall display with simulated data from a fictional SaaS.`,
   robots: { index: false, follow: false },
 };
+
+/**
+ * Where the demo invites visitors to sign up: this server, so that a self-hosted demo leads to its
+ * own instance. `ref` says where they came from, since screens send no referrer.
+ */
+const SIGN_UP_HREF = "/sign-up?ref=demo";
 
 /** The time the demo's history ends at, fixed by the server so that hydration matches. */
 function renderTime(): string {
@@ -21,5 +28,13 @@ function renderTime(): string {
  */
 export default async function DemoPage({ searchParams }: PageProps<"/d/demo">) {
   const { options, preview } = parseDemoOptions(await searchParams);
-  return <DemoDisplay options={options} startedAt={renderTime()} preview={preview} />;
+  return (
+    <DemoDisplay
+      options={options}
+      startedAt={renderTime()}
+      preview={preview}
+      // A server open to invited people only has nothing to offer visitors.
+      signUpHref={env().DISABLE_SIGNUPS ? null : SIGN_UP_HREF}
+    />
+  );
 }
