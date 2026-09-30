@@ -1,4 +1,5 @@
 import { CheckIcon } from "lucide-react";
+import Link from "next/link";
 import { LogoMark } from "@/components/logo";
 import {
   formatCheckedDate,
@@ -144,6 +145,76 @@ export function SourcesNote({ names, sources }: { names: string; sources: string
           ))}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Every tool the site compares, with what it is and what it costs: the index of comparisons. */
+export function AlternativesTable({ alternatives }: { alternatives: readonly Alternative[] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl ring-1 ring-white/[0.08]">
+      <table className="w-full text-left text-sm">
+        <caption className="sr-only">Tools compared with {siteConfig.name}</caption>
+        <thead className="hidden bg-white/[0.03] md:table-header-group">
+          <tr>
+            <th scope="col" className="w-48 px-5 py-4 font-medium text-(--ink-3)">
+              Tool
+            </th>
+            <th scope="col" className="px-5 py-4 font-medium text-(--ink-3)">
+              What it does
+            </th>
+            <th scope="col" className="w-72 px-5 py-4 font-medium text-(--ink-3)">
+              Price
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-white/[0.06]">
+          <tr className="flex flex-col gap-2 bg-(--glow)/[0.04] px-5 py-4 md:table-row md:p-0">
+            <th scope="row" className="font-medium md:px-5 md:py-4 md:align-top">
+              <span className="flex items-center gap-2">
+                <LogoMark className="size-4" />
+                {siteConfig.name}
+              </span>
+            </th>
+            <td className="text-(--ink) md:px-5 md:py-4 md:align-top">
+              A live screen for the office: your Stripe revenue, with sounds and celebrations.
+            </td>
+            <td className="text-(--ink) md:px-5 md:py-4 md:align-top">
+              Free during the public beta, and free for good on your own server.
+            </td>
+          </tr>
+          {alternatives.map((alternative) => (
+            <tr
+              key={alternative.slug}
+              className="flex flex-col gap-2 px-5 py-4 md:table-row md:p-0"
+            >
+              <th scope="row" className="font-medium md:px-5 md:py-4 md:align-top">
+                <Link
+                  href={`/alternatives/${alternative.slug}`}
+                  className="underline decoration-white/20 underline-offset-4 hover:decoration-current"
+                >
+                  {alternative.name}
+                </Link>
+              </th>
+              <td className="text-(--ink-2) md:px-5 md:py-4 md:align-top">
+                {alternative.summary.text}{" "}
+                <SourceLink href={alternative.summary.source} className="text-xs whitespace-nowrap">
+                  Source
+                  <span className="sr-only">: {alternative.name}</span>
+                </SourceLink>
+              </td>
+              <td className="text-(--ink-2) md:px-5 md:py-4 md:align-top">
+                <span className="mb-1 block text-xs text-(--ink-3) md:hidden">Price</span>
+                {alternative.price.text}.{" "}
+                <SourceLink href={alternative.price.source} className="text-xs whitespace-nowrap">
+                  Source
+                  <span className="sr-only">: {alternative.name} pricing</span>
+                </SourceLink>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
