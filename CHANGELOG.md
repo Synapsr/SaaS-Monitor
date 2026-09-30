@@ -25,8 +25,8 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   board plays every voice in its own language, and a FAQ answers what founders ask before
   connecting Stripe.
 - New pages: Stripe notification sounds, with every sound to download as MP3; comparisons with
-  Baremetrics, ChartMogul, Geckoboard, PingBell and ProfitWell; this changelog, with an RSS feed;
-  the privacy policy, terms of service and legal notice of saas-monitor.com.
+  Baremetrics, ChartMogul, Geckoboard, PingBell and ProfitWell Metrics; this changelog, with an RSS
+  feed; the privacy policy, terms of service and legal notice of saas-monitor.com.
 - A sitemap, structured data, `llms.txt` and an Apple touch icon, for search engines and
   assistants.
 - After a test celebration, the dashboard offers once to share a photo of the wall or to star the
