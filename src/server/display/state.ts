@@ -4,6 +4,7 @@ import { z } from "zod";
 import { BUILD_ID } from "@/lib/build-id";
 import { calendarDay, chartStart, displayCalendar } from "@/lib/display/calendar";
 import { shownEmail } from "@/lib/display/customer";
+import { FEED_EVENTS } from "@/lib/display/events";
 import type { DisplayState, DisplayWarning, FeedItem } from "@/lib/display/types";
 import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
@@ -14,6 +15,7 @@ import {
   customersCreatedSince,
   findScreen,
   latestActivity,
+  newestFirst,
   linkedAccounts,
   movementsByDay,
   newCustomerCounts,
@@ -74,7 +76,7 @@ export async function getDisplayStateByToken(
           revenueByDay(accountIds, timeZone, calendar.previousMonthStart),
           newCustomerCounts(accountIds, timeZone, calendar.monthStart),
           customersCreatedSince(accountIds, timeZone, calendar.today),
-          latestActivity(accountIds, FEED_LENGTH),
+          feedActivity(accountIds, settings),
         ])
       : [[], new Map(), [], [], new Map(), new Map(), []];
 
@@ -127,6 +129,22 @@ export async function getDisplayStateByToken(
     personalizedVoice: settings.voice.enabled && settings.voice.personalized && canSynthesize(),
     warnings: displayWarnings(converter.unavailable, accounts),
   };
+}
+
+/**
+ * The latest activity, for displays to play what just happened, and enough of the events the
+ * screen shows in its feed to fill it when it leaves frequent ones out (payments made for Stripe
+ * Connect accounts, often): newest first.
+ */
+async function feedActivity(accountIds: string[], settings: ScreenSettings) {
+  const shown = new Set(FEED_EVENTS.filter((event) => settings.events[event].feed));
+  if (shown.size === FEED_EVENTS.length) return latestActivity(accountIds, FEED_LENGTH);
+  const [latest, feed] = await Promise.all([
+    latestActivity(accountIds, FEED_LENGTH),
+    latestActivity(accountIds, FEED_LENGTH, shown),
+  ]);
+  const rows = new Map([...latest, ...feed].map((row) => [`${row.source}:${row.id}`, row]));
+  return [...rows.values()].sort(newestFirst);
 }
 
 /** Daily amounts in the screen currency, without those that cannot be converted. */

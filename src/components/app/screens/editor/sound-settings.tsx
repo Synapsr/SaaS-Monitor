@@ -3,13 +3,7 @@
 import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 import { useId } from "react";
 import { Switch } from "@/components/ui/switch";
-import { recurringMetric, type RecurringMetric } from "@/lib/display/metric";
-import {
-  SOUND_PACKS,
-  type Metric,
-  type ScreenSettings,
-  type SoundPack,
-} from "@/lib/screens/settings";
+import { SOUND_PACKS, type ScreenSettings, type SoundPack } from "@/lib/screens/settings";
 import { playSound, SOUND_PACK_NAMES, unlockAudio, type SoundEvent } from "@/lib/sounds";
 import { ChoiceCard } from "./choice-card";
 import { PreviewButton } from "./preview-button";
@@ -24,55 +18,20 @@ const PACK_HINTS: Record<SoundPack, string> = {
   arcade: "8-bit coins",
 };
 
-/** Recurring revenue events are named after the screen's metric: "ARR goes up". */
-const EVENTS = [
-  {
-    key: "onPayment",
-    event: "payment",
-    label: () => "Payment received",
-    description: "Every successful charge.",
-  },
-  {
-    key: "onCustomer",
-    event: "customer",
-    label: () => "New customer",
-    description: "Created in Stripe, often at sign-up, before they pay.",
-  },
-  {
-    key: "onMrrUp",
-    event: "mrrUp",
-    label: (metric) => `${metric} goes up`,
-    description: "New subscription, upgrade or reactivation.",
-  },
-  {
-    key: "onMrrDown",
-    event: "mrrDown",
-    label: (metric) => `${metric} goes down`,
-    description: "Downgrade or cancellation.",
-  },
-] as const satisfies readonly {
-  key: keyof Sound;
-  event: SoundEvent;
-  label: (metric: RecurringMetric["label"]) => string;
-  description: string;
-}[];
-
 /** Plays a sound from a click: browsers only allow audio after a user gesture. */
 function preview(event: SoundEvent, pack: SoundPack, volume: number) {
   void unlockAudio().then(() => playSound(event, { pack, volume }));
 }
 
+/** How the screen sounds: which events play is chosen in Events. */
 export function SoundSettings({
   sound,
-  metric,
   onChange,
 }: {
   sound: Sound;
-  metric: Metric;
   onChange: (patch: Partial<Sound>) => void;
 }) {
   const id = useId();
-  const metricLabel = recurringMetric(metric).label;
 
   return (
     <div className="flex flex-col gap-6">
@@ -131,33 +90,6 @@ export function SoundSettings({
           onChange={(volume) => onChange({ volume })}
           onCommit={(volume) => preview("payment", sound.pack, volume)}
         />
-
-        <div className="flex flex-col gap-4">
-          <p className="text-sm font-medium">Play a sound when</p>
-          {EVENTS.map(({ key, event, label: labelFor, description }) => {
-            const label = labelFor(metricLabel);
-            return (
-              <SettingRow
-                key={key}
-                htmlFor={`${id}-${key}`}
-                label={label}
-                description={description}
-              >
-                <PreviewButton
-                  label={label}
-                  disabled={!sound.enabled}
-                  onClick={() => preview(event, sound.pack, sound.volume)}
-                />
-                <Switch
-                  id={`${id}-${key}`}
-                  checked={sound[key]}
-                  disabled={!sound.enabled}
-                  onCheckedChange={(checked) => onChange({ [key]: checked })}
-                />
-              </SettingRow>
-            );
-          })}
-        </div>
       </fieldset>
     </div>
   );

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { ActionResult } from "@/lib/action-result";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 import { PHRASE_MAX_LENGTH } from "@/lib/screens/settings";
-import { ANNOUNCEMENTS } from "@/lib/voice/announcements";
+import { SCREEN_EVENTS } from "@/lib/display/events";
 import { previewValues } from "@/lib/voice/moment-speech";
 import { fillPhrase, phraseProblem } from "@/lib/voice/phrases";
 import { VOICE_IDS, VOICES } from "@/lib/voice/voices";
@@ -14,7 +14,7 @@ import { recentSpeech, synthesizeSpeech } from "./speech";
 /** A phrase of the screen editor, said with sample details. */
 export const phrasePreviewSchema = z.object({
   voiceId: z.enum(VOICE_IDS),
-  announcement: z.enum(ANNOUNCEMENTS),
+  event: z.enum(SCREEN_EVENTS),
   phrase: z.string().trim().min(1, "Write a phrase to hear it.").max(PHRASE_MAX_LENGTH),
   currency: z.string().regex(/^[a-z]{3}$/),
   /** Stands for `{product}`: the screen's first Stripe account, or its name. */
@@ -35,11 +35,11 @@ export async function previewPhrase(
   if (!canSynthesize()) {
     return { ok: false, error: "Add a Gradium API key to the server to hear your own phrases." };
   }
-  const problem = phraseProblem(input.phrase, input.announcement);
+  const problem = phraseProblem(input.phrase, input.event);
   if (problem) return { ok: false, error: problem };
 
   const voice = VOICES.find(({ id }) => id === input.voiceId) ?? VOICES[0];
-  const values = previewValues(input.announcement, voice.language, input);
+  const values = previewValues(input.event, voice.language, input);
   const text = fillPhrase(input.phrase, values);
   if (text === null) return { ok: false, error: "Write a phrase to hear it." };
 

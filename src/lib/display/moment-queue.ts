@@ -16,18 +16,12 @@ export class MomentQueue {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly listeners = new Set<() => void>();
 
-  /**
-   * `durationOf` says how long a moment stays, knowing how many others wait behind it and the
-   * screen's setting (`seconds`).
-   */
-  constructor(
-    private readonly durationOf: (moment: Moment, waiting: number, seconds: number) => number,
-    private seconds: number,
-  ) {}
+  /** `durationOf` says how long a moment lasts, knowing how many others wait behind it. */
+  constructor(private durationOf: (moment: Moment, waiting: number) => number) {}
 
-  /** The screen's setting changed: it applies from the next moment. */
-  setSeconds(seconds: number): void {
-    this.seconds = seconds;
+  /** The screen's settings changed: they apply from the next moment. */
+  setDurationOf(durationOf: (moment: Moment, waiting: number) => number): void {
+    this.durationOf = durationOf;
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -64,10 +58,7 @@ export class MomentQueue {
     this.timer = undefined;
     this.current = this.pending.shift() ?? null;
     if (this.current !== null) {
-      this.timer = setTimeout(
-        this.finish,
-        this.durationOf(this.current, this.pending.length, this.seconds),
-      );
+      this.timer = setTimeout(this.finish, this.durationOf(this.current, this.pending.length));
     }
     this.notify();
   };
@@ -85,10 +76,7 @@ export class MomentQueue {
 
   private resume() {
     if (this.current !== null) {
-      this.timer = setTimeout(
-        this.finish,
-        this.durationOf(this.current, this.pending.length, this.seconds),
-      );
+      this.timer = setTimeout(this.finish, this.durationOf(this.current, this.pending.length));
     } else if (this.pending.length > 0) {
       this.advance();
     }

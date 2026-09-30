@@ -86,7 +86,7 @@ describe("theme, language and rotation", () => {
       theme: "dark",
       language: "en",
       rotation: { enabled: false, seconds: 15, includeTotal: true },
-      sound: { onCustomer: true },
+      events: { customer: { feed: true, moment: true, sound: true, voice: true } },
       momentSeconds: 10,
     });
   });
@@ -129,14 +129,16 @@ describe("voice", () => {
       personalized: false,
       phrases: {},
     });
-    expect(defaultScreenSettings.voice.announce).toMatchObject({
-      payment: true,
-      connectPayment: true,
-      subscription: true,
-      downgrade: false,
-      cancellation: false,
-      unpaid: false,
-    });
+    const said = Object.entries(defaultScreenSettings.events).filter(([, { voice }]) => voice);
+    expect(said.map(([event]) => event)).toEqual([
+      "payment",
+      "connectPayment",
+      "subscription",
+      "upgrade",
+      "reactivation",
+      "customer",
+      "milestone",
+    ]);
   });
 
   it("keeps a screen's own phrases, per announcement", () => {
@@ -175,5 +177,42 @@ describe("customer emails", () => {
       customerEmails: "hidden",
       showCustomerNames: true,
     });
+  });
+});
+
+describe("events", () => {
+  it("show everywhere by default, with losses not said out loud", () => {
+    expect(defaultScreenSettings.events.connectPayment).toEqual({
+      feed: true,
+      moment: true,
+      sound: true,
+      voice: true,
+    });
+    expect(defaultScreenSettings.events.unpaid).toEqual({
+      feed: true,
+      moment: true,
+      sound: true,
+      voice: false,
+    });
+  });
+
+  it("carry over the sounds and voice screens chose before events existed", () => {
+    const { events } = parseScreenSettings({
+      sound: { enabled: true, onPayment: false, onMrrDown: false },
+      voice: { enabled: true, announce: { customer: false, cancellation: true } },
+    });
+    expect(events.payment).toMatchObject({ feed: true, moment: true, sound: false });
+    expect(events.connectPayment.sound).toBe(false);
+    expect(events.cancellation).toMatchObject({ sound: false, voice: true });
+    expect(events.unpaid).toMatchObject({ sound: false, voice: false });
+    expect(events.customer).toMatchObject({ sound: true, voice: false });
+    expect(events.milestone).toMatchObject({ sound: true, voice: true });
+  });
+
+  it("keep what screens choose, once they have events", () => {
+    const stored = { events: { connectPayment: { feed: false } }, sound: { onPayment: false } };
+    const { events } = parseScreenSettings(stored);
+    expect(events.connectPayment).toMatchObject({ feed: false, sound: true });
+    expect(events.payment.sound).toBe(true);
   });
 });

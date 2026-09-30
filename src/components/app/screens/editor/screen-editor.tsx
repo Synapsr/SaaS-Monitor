@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 import type { ScreenSettings } from "@/lib/screens/settings";
+import { screenVoice } from "@/lib/voice/voices";
 import type { AccountOption, Screen } from "@/server/screens";
 import { AccountPicker } from "./account-picker";
 import { CurrencySelect } from "./currency-select";
 import { DeleteScreen } from "./delete-screen";
+import { EventSettings } from "./event-settings";
 import { GoalSettings } from "./goal-settings";
 import { LanguageSelect } from "./language-select";
 import { LookSettings } from "./look-settings";
@@ -67,6 +69,8 @@ export function ScreenEditor({
   const url = screenUrl(appUrl, publicToken);
   const accountCurrencies = accounts.flatMap((account) => account.currency ?? []);
   const selectedAccounts = accounts.filter((account) => draft.accountIds.includes(account.id));
+  const speaker = screenVoice(draft.settings.language, draft.settings.voice.voiceId);
+  const personalizedVoice = draft.settings.voice.personalized && canPersonalizeVoice;
 
   return (
     <div className="flex flex-col gap-8">
@@ -201,10 +205,27 @@ export function ScreenEditor({
             />
           </SettingsSection>
 
+          <SettingsSection title="Events">
+            <EventSettings
+              events={draft.settings.events}
+              metric={draft.settings.metric}
+              soundOn={draft.settings.sound.enabled}
+              voiceOn={draft.settings.voice.enabled && speaker !== null}
+              previews={{
+                sound: draft.settings.sound.enabled ? draft.settings.sound : null,
+                // Recorded phrases only: checking a box is no reason to synthesize one.
+                voice:
+                  draft.settings.voice.enabled && speaker && !personalizedVoice
+                    ? { voice: speaker, volume: draft.settings.voice.volume }
+                    : null,
+              }}
+              onChange={(events) => setSettings({ events })}
+            />
+          </SettingsSection>
+
           <SettingsSection title="Sound">
             <SoundSettings
               sound={draft.settings.sound}
-              metric={draft.settings.metric}
               onChange={(patch) =>
                 setDraft((current) => ({
                   ...current,
@@ -217,6 +238,7 @@ export function ScreenEditor({
           <SettingsSection title="Voice">
             <VoiceSettings
               voice={draft.settings.voice}
+              events={draft.settings.events}
               language={draft.settings.language}
               metric={draft.settings.metric}
               showCustomerNames={draft.settings.showCustomerNames}

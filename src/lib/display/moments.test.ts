@@ -84,6 +84,7 @@ describe("moment planning", () => {
       expect.objectContaining({
         kind: "summary",
         accountId: "a1",
+        events: ["payment", "subscription", "cancellation"],
         payments: 2,
         changes: 2,
         customers: 0,
@@ -197,6 +198,22 @@ describe("moment tracking", () => {
     const payment = feedItem();
     const [, moments] = track([state, withActivity(state, [payment])]);
     expect(moments).toEqual([expect.objectContaining({ kind: "payment", payment })]);
+  });
+
+  it("lets events that neither show nor play go by", () => {
+    const { events } = defaultScreenSettings;
+    const state = withSettings(displayState(), {
+      events: {
+        ...events,
+        connectPayment: { feed: true, moment: false, sound: false, voice: false },
+        customer: { feed: false, moment: false, sound: true, voice: false },
+      },
+    });
+    const connect = feedItem({ connect: { applicationFee: null } });
+    const signUp = feedItem({ kind: "customer", amount: 0, customerKey: "customer_2" });
+    const [, moments] = track([state, withActivity(state, [connect, signUp])]);
+    // Kept off screen but heard: its sound plays without a card.
+    expect(moments).toEqual([expect.objectContaining({ kind: "customer", customer: signUp })]);
   });
 
   it("celebrates a crossed milestone once, after the activity that crossed it", () => {
@@ -367,7 +384,7 @@ describe("moment tracking", () => {
 });
 
 describe("moment sounds", () => {
-  const sound = defaultScreenSettings.sound;
+  const settings = defaultScreenSettings;
   const payment: Moment = { id: "p", kind: "payment", payment: feedItem(), movement: null };
   const churn: Moment = {
     id: "c",
@@ -380,52 +397,78 @@ describe("moment sounds", () => {
     id: "s",
     kind: "summary",
     accountId: "a1",
+    events: ["payment", "customer"],
     payments: 0,
     changes: 0,
     ...fields,
   });
 
   it("maps moments to sounds", () => {
-    expect(momentSound(payment, sound)).toBe("payment");
-    expect(momentSound(churn, sound)).toBe("mrrDown");
-    expect(momentSound(customer, sound)).toBe("customer");
+    expect(momentSound(payment, settings)).toBe("payment");
+    expect(momentSound(churn, settings)).toBe("mrrDown");
+    expect(momentSound(customer, settings)).toBe("customer");
     expect(
       momentSound(
         { id: "m", kind: "milestone", amount: 1, metric: "mrr", isGoal: false, accountId: null },
-        sound,
+        settings,
       ),
     ).toBe("milestone");
   });
 
   it("sounds a summary like the best news it brings", () => {
-    expect(momentSound(summary({ revenue: 4_900, mrrChange: -900, customers: 2 }), sound)).toBe(
+    expect(momentSound(summary({ revenue: 4_900, mrrChange: -900, customers: 2 }), settings)).toBe(
       "payment",
     );
-    expect(momentSound(summary({ revenue: 0, mrrChange: 900, customers: 2 }), sound)).toBe("mrrUp");
-    expect(momentSound(summary({ revenue: 0, mrrChange: 0, customers: 2 }), sound)).toBe(
+    expect(momentSound(summary({ revenue: 0, mrrChange: 900, customers: 2 }), settings)).toBe(
+      "mrrUp",
+    );
+    expect(momentSound(summary({ revenue: 0, mrrChange: 0, customers: 2 }), settings)).toBe(
       "customer",
     );
-    expect(momentSound(summary({ revenue: 0, mrrChange: -900, customers: 2 }), sound)).toBe(
+    expect(momentSound(summary({ revenue: 0, mrrChange: -900, customers: 2 }), settings)).toBe(
       "mrrDown",
     );
   });
 
-  it("respects the master switch and each event's toggle", () => {
-    expect(momentSound(payment, { ...sound, enabled: false })).toBeNull();
-    expect(momentSound(payment, { ...sound, onPayment: false })).toBeNull();
-    expect(momentSound(churn, { ...sound, onMrrDown: false })).toBeNull();
-    expect(momentSound(customer, { ...sound, onCustomer: false })).toBeNull();
-    expect(momentSound({ id: "t", kind: "test" }, { ...sound, onPayment: false })).toBe("payment");
+  it("follows the sound switch and each event's own", () => {
+    const quiet = (event: "payment" | "cancellation" | "customer") => ({
+      ...settings,
+      events: { ...settings.events, [event]: { ...settings.events[event], sound: false } },
+    });
+    expect(
+      momentSound(payment, { ...settings, sound: { ...settings.sound, enabled: false } }),
+    ).toBeNull();
+    expect(momentSound(payment, quiet("payment"))).toBeNull();
+    expect(momentSound(churn, quiet("cancellation"))).toBeNull();
+    expect(momentSound(customer, quiet("customer"))).toBeNull();
+    // A test celebration was asked for: only the sound switch applies.
+    expect(momentSound({ id: "t", kind: "test" }, quiet("payment"))).toBe("payment");
+  });
+
+  it("sounds a summary when one of the events it sums up does", () => {
+    const burst = summary({ revenue: 4_900, mrrChange: 0, customers: 1 });
+    const silent = { ...settings.events.payment, sound: false };
+    expect(
+      momentSound(burst, { ...settings, events: { ...settings.events, payment: silent } }),
+    ).toBe("payment");
+    expect(
+      momentSound(burst, {
+        ...settings,
+        events: { ...settings.events, payment: silent, customer: silent },
+      }),
+    ).toBeNull();
   });
 
   it("shortens moments while others are waiting", () => {
-    expect(momentDuration(payment, 2, 10)).toBeLessThan(momentDuration(payment, 0, 10));
-    expect(momentDuration(payment, 5, 3)).toBe(3_200);
+    expect(momentDuration(payment, 2, { seconds: 10, seen: true })).toBeLessThan(
+      momentDuration(payment, 0, { seconds: 10, seen: true }),
+    );
+    expect(momentDuration(payment, 5, { seconds: 3, seen: true })).toBe(3_200);
   });
 
   it("stays on screen as long as the screen's setting says, milestones a little longer", () => {
-    expect(momentDuration(payment, 0, 10)).toBe(10_000);
-    expect(momentDuration(payment, 0, 30)).toBe(30_000);
+    expect(momentDuration(payment, 0, { seconds: 10, seen: true })).toBe(10_000);
+    expect(momentDuration(payment, 0, { seconds: 30, seen: true })).toBe(30_000);
     const milestone: Moment = {
       id: "m",
       kind: "milestone",
@@ -434,8 +477,12 @@ describe("moment sounds", () => {
       isGoal: false,
       accountId: null,
     };
-    expect(momentDuration(milestone, 0, 3)).toBe(6_500);
-    expect(momentDuration(milestone, 0, 15)).toBe(15_000);
+    expect(momentDuration(milestone, 0, { seconds: 3, seen: true })).toBe(6_500);
+    expect(momentDuration(milestone, 0, { seconds: 15, seen: true })).toBe(15_000);
+  });
+
+  it("only takes the time of its sound and voice without a card", () => {
+    expect(momentDuration(payment, 0, { seconds: 30, seen: false })).toBe(2_500);
   });
 });
 
@@ -445,6 +492,7 @@ describe("moment celebrations", () => {
       id: "s",
       kind: "summary",
       accountId: "a1",
+      events: ["payment", "cancellation"],
       payments: 1,
       changes: 3,
       customers: 0,

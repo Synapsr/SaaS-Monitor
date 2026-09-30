@@ -1,3 +1,4 @@
+import { eventPlays, itemEvent, momentPlays, type FeedEvent } from "@/lib/display/events";
 import { diffFeed } from "@/lib/display/feed-diff";
 import { recurringMetric } from "@/lib/display/metric";
 import { crossedMilestone } from "@/lib/display/milestones";
@@ -33,6 +34,8 @@ export type Moment =
       kind: "summary";
       /** The account whose burst it sums up: one summary per account of a screen. */
       accountId: string;
+      /** The events of the items it sums up, each once. */
+      events: FeedEvent[];
       payments: number;
       /** Subscription changes: new, upgraded, downgraded, canceled… */
       changes: number;
@@ -147,6 +150,7 @@ function planAccountMoments(items: readonly FeedItem[]): Moment[] {
       id: `summary:${last.id}`,
       kind: "summary",
       accountId: last.accountId,
+      events: [...new Set(items.map(itemEvent))],
       payments: payments.length,
       changes: movements.length,
       customers: customers.length,
@@ -212,7 +216,8 @@ export const initialMomentTracker: MomentTracker = {
 /**
  * Compares a new state with the previous one. The first state, and any state that follows an
  * import, a currency change or a change of the screen's accounts, only sets the baseline: moments
- * come from what happens next. A new metric or goal is a new baseline for milestones only.
+ * come from what happens next. A new metric or goal is a new baseline for milestones only. Events
+ * the screen neither shows as moments nor plays are left out.
  */
 export function trackMoments(
   tracker: MomentTracker,
@@ -226,11 +231,12 @@ export function trackMoments(
     previous.currency === state.currency &&
     showSameAccounts(previous, state);
 
+  const { settings } = state.screen;
   const { fresh, seen } = diffFeed(comparable ? tracker.seen : null, state.feed);
-  const moments = planMoments(fresh);
+  const moments = planMoments(fresh.filter((item) => eventPlays(itemEvent(item), settings)));
 
   let celebrated = tracker.celebrated;
-  if (comparable && showSameMetricAndGoal(previous, state)) {
+  if (comparable && showSameMetricAndGoal(previous, state) && eventPlays("milestone", settings)) {
     for (const moment of crossedMilestones(previous, state)) {
       if (celebrated.has(moment.id)) continue;
       celebrated = new Set(celebrated).add(moment.id);
@@ -319,29 +325,27 @@ function showSameMetricAndGoal(a: DisplayState, b: DisplayState): boolean {
   );
 }
 
-/** The sound of a moment, and whether the screen's settings let it play. */
-export function momentSound(moment: Moment, sound: ScreenSettings["sound"]): SoundEvent | null {
-  if (!sound.enabled) return null;
+/** The sound of a moment, when the screen's settings let it play (see `momentPlays`). */
+export function momentSound(
+  moment: Moment,
+  settings: Pick<ScreenSettings, "events" | "sound" | "voice">,
+): SoundEvent | null {
+  if (!momentPlays(moment, settings, "sound")) return null;
   switch (moment.kind) {
     case "payment":
-      return sound.onPayment ? "payment" : null;
+    case "test":
+      return "payment";
     case "movement":
-      if (isMrrIncrease(moment.movement)) return sound.onMrrUp ? "mrrUp" : null;
-      return sound.onMrrDown ? "mrrDown" : null;
+      return isMrrIncrease(moment.movement) ? "mrrUp" : "mrrDown";
     case "customer":
-      return sound.onCustomer ? "customer" : null;
+      return "customer";
     case "milestone":
       return "milestone";
     case "summary":
-      if (moment.revenue > 0) return sound.onPayment ? "payment" : null;
-      if (moment.mrrChange < 0) return sound.onMrrDown ? "mrrDown" : null;
-      if (moment.mrrChange === 0 && moment.customers > 0) {
-        return sound.onCustomer ? "customer" : null;
-      }
-      return sound.onMrrUp ? "mrrUp" : null;
-    case "test":
-      // The founder asked to hear it: only the master switch applies.
-      return "payment";
+      if (moment.revenue > 0) return "payment";
+      if (moment.mrrChange < 0) return "mrrDown";
+      if (moment.mrrChange === 0 && moment.customers > 0) return "customer";
+      return "mrrUp";
   }
 }
 
@@ -382,11 +386,19 @@ const MILESTONE_MS = 6500;
 /** However many moments wait, each stays long enough to be read. */
 const SHORTEST_MS = 3200;
 
+/** A moment without a card only plays its sound and says its phrase: a breath is enough. */
+const UNSEEN_MS = 2500;
+
 /**
- * How long a moment stays on screen, from the screen's setting (`momentSeconds`); shorter when
- * others are waiting, to never lag behind.
+ * How long a moment lasts, from the screen's setting (`momentSeconds`) when it shows a card
+ * (`seen`); shorter when others are waiting, to never lag behind.
  */
-export function momentDuration(moment: Moment, waiting: number, seconds: number): number {
+export function momentDuration(
+  moment: Moment,
+  waiting: number,
+  { seconds, seen }: { seconds: number; seen: boolean },
+): number {
+  if (!seen) return UNSEEN_MS;
   const setting = seconds * 1000;
   const base = moment.kind === "milestone" ? Math.max(setting, MILESTONE_MS) : setting;
   return waiting > 0 ? Math.max(SHORTEST_MS, base * 0.5) : base;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ANNOUNCEMENTS } from "@/lib/voice/announcements";
+import { SCREEN_EVENTS, type ScreenEvent } from "@/lib/display/events";
 import { VOICE_IDS } from "@/lib/voice/voices";
 
 export const SOUND_PACKS = ["register", "chime", "arcade"] as const;
@@ -65,6 +65,31 @@ export function isTimeZone(value: string): boolean {
   }
 }
 
+/** Where an event shows and plays by default: everywhere, but losses are not said out loud. */
+function eventSchema({ voice = true }: { voice?: boolean } = {}) {
+  return z
+    .object({
+      feed: z.boolean().default(true),
+      moment: z.boolean().default(true),
+      sound: z.boolean().default(true),
+      voice: z.boolean().default(voice),
+    })
+    .prefault({});
+}
+
+const eventsShape = {
+  payment: eventSchema(),
+  connectPayment: eventSchema(),
+  subscription: eventSchema(),
+  upgrade: eventSchema(),
+  reactivation: eventSchema(),
+  downgrade: eventSchema({ voice: false }),
+  cancellation: eventSchema({ voice: false }),
+  unpaid: eventSchema({ voice: false }),
+  customer: eventSchema(),
+  milestone: eventSchema(),
+} satisfies Record<ScreenEvent, z.ZodType>;
+
 /**
  * Everything a founder can tune on a screen. Stored as JSON on `screens.settings`, so new fields
  * must come with a default: existing screens pick it up without a migration.
@@ -92,11 +117,6 @@ export const screenSettingsSchema = z.object({
       enabled: z.boolean().default(true),
       pack: z.enum(SOUND_PACKS).default("register"),
       volume: z.number().min(0).max(1).default(0.7),
-      onPayment: z.boolean().default(true),
-      onMrrUp: z.boolean().default(true),
-      onMrrDown: z.boolean().default(true),
-      /** A Stripe customer created, paying or not: often a sign-up. */
-      onCustomer: z.boolean().default(true),
     })
     .prefault({}),
   /**
@@ -112,33 +132,20 @@ export const screenSettingsSchema = z.object({
       volume: z.number().min(0).max(1).default(0.8),
       /** Say the screen's phrases, synthesized as moments happen, rather than recorded ones. */
       personalized: z.boolean().default(false),
-      /** Which announcements are said. Losses stay quiet unless asked for. */
-      announce: z
-        .object({
-          payment: z.boolean().default(true),
-          connectPayment: z.boolean().default(true),
-          subscription: z.boolean().default(true),
-          upgrade: z.boolean().default(true),
-          reactivation: z.boolean().default(true),
-          downgrade: z.boolean().default(false),
-          cancellation: z.boolean().default(false),
-          unpaid: z.boolean().default(false),
-          customer: z.boolean().default(true),
-          milestone: z.boolean().default(true),
-        })
-        .prefault({}),
       /**
-       * The screen's own phrases for an announcement, with `{variables}`: one of them is said at
-       * random. None: the default phrases of the screen's language.
+       * The screen's own phrases for an event, with `{variables}`: one of them is said at random.
+       * None: the default phrases of the screen's language.
        */
       phrases: z
         .partialRecord(
-          z.enum(ANNOUNCEMENTS),
+          z.enum(SCREEN_EVENTS),
           z.array(z.string().max(PHRASE_MAX_LENGTH)).max(MAX_PHRASES),
         )
         .default({}),
     })
     .prefault({}),
+  /** Where each event shows, and whether it plays its sound and its voice (`CHANNELS`). */
+  events: z.object(eventsShape).prefault({}),
   /** Confetti on new revenue and a full-screen moment when a milestone is crossed. */
   celebrations: z.boolean().default(true),
   /**
@@ -181,7 +188,8 @@ export const defaultScreenSettings: ScreenSettings = screenSettingsSchema.parse(
  * Reads settings stored by any past version: sections that no longer validate are reset to their
  * defaults instead of breaking the screen.
  */
-export function parseScreenSettings(value: unknown): ScreenSettings {
+export function parseScreenSettings(stored: unknown): ScreenSettings {
+  const value = withLegacyEvents(stored);
   const result = screenSettingsSchema.safeParse(value);
   if (result.success) return result.data;
 
@@ -192,4 +200,41 @@ export function parseScreenSettings(value: unknown): ScreenSettings {
     if (typeof section === "string") delete input[section];
   }
   return screenSettingsSchema.safeParse(input).data ?? defaultScreenSettings;
+}
+
+/**
+ * Screens saved before `events` chose their sounds by group (`sound.onPayment`, `onMrrUp`,
+ * `onMrrDown`, `onCustomer`) and their voice by event (`voice.announce`): their choices carry
+ * over. Everything they showed, they keep showing.
+ */
+function withLegacyEvents(stored: unknown): unknown {
+  if (typeof stored !== "object" || stored === null || "events" in stored) return stored;
+  const settings = stored as Record<string, unknown>;
+  const sound = fieldsOf(settings.sound);
+  const announce = fieldsOf(fieldsOf(settings.voice).announce);
+  const soundGroups: Record<ScreenEvent, unknown> = {
+    payment: sound.onPayment,
+    connectPayment: sound.onPayment,
+    subscription: sound.onMrrUp,
+    upgrade: sound.onMrrUp,
+    reactivation: sound.onMrrUp,
+    downgrade: sound.onMrrDown,
+    cancellation: sound.onMrrDown,
+    unpaid: sound.onMrrDown,
+    customer: sound.onCustomer,
+    milestone: true,
+  };
+  const events = Object.fromEntries(
+    SCREEN_EVENTS.map((event) => {
+      const channels: Record<string, boolean> = {};
+      if (typeof soundGroups[event] === "boolean") channels.sound = soundGroups[event];
+      if (typeof announce[event] === "boolean") channels.voice = announce[event];
+      return [event, channels];
+    }),
+  );
+  return { ...settings, events };
+}
+
+function fieldsOf(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
 }

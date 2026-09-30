@@ -19,6 +19,7 @@ import { useRotation } from "@/hooks/use-rotation";
 import { useVersionReload } from "@/hooks/use-version-reload";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { accentPalette, accentVariables } from "@/lib/display/accents";
+import { momentPlays } from "@/lib/display/events";
 import { displayLocale } from "@/lib/display/i18n";
 import { momentAccount, momentCelebration, momentSound } from "@/lib/display/moments";
 import { rotationSlides, screenView, TOTAL } from "@/lib/display/rotation";
@@ -64,15 +65,17 @@ export function Display({
   const palette = accentPalette(settings.accent, settings.theme);
 
   const { canvasRef, fire: fireConfetti } = useConfetti();
-  const { moment, idle: quiet } = useMoments(state, (started) => {
-    const sound = preview ? null : momentSound(started, settings.sound);
+  const { moment: playing, idle: quiet } = useMoments(state, (started) => {
+    const sound = preview ? null : momentSound(started, settings);
     if (sound) playSound(sound, { pack: settings.sound.pack, volume: settings.sound.volume });
     if (!preview) announceMoment(started, state, { endpoint: announcementEndpoint, sound });
     const celebration = momentCelebration(started);
-    if (celebration && settings.celebrations) {
+    if (celebration && settings.celebrations && momentPlays(started, settings, "moment")) {
       fireConfetti(celebration, palette.confetti);
     }
   });
+  // Events kept off screen only play their sound and voice.
+  const moment = playing && momentPlays(playing, settings, "moment") ? playing : null;
 
   // A moment brings the slide of its account on screen: the numbers behind it are the ones it moves.
   const slides = rotationSlides(state);

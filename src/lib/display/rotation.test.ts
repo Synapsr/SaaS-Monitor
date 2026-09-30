@@ -65,8 +65,24 @@ describe("screen views", () => {
       const view = screenView(state, slide);
       expect(view.account).toBeNull();
       expect(view.metrics).toBe(state.metrics);
-      expect(view.feed).toBe(state.feed);
+      expect(view.feed).toEqual(state.feed);
       expect(view.goal).toBe(15_000);
     }
+  });
+
+  it("list only the events the screen shows in its feed", () => {
+    const state = twoAccounts();
+    const { settings } = state.screen;
+    const hidden = {
+      ...state,
+      screen: {
+        ...state.screen,
+        settings: {
+          ...settings,
+          events: { ...settings.events, payment: { ...settings.events.payment, feed: false } },
+        },
+      },
+    };
+    expect(screenView(hidden, TOTAL).feed).toEqual([]);
   });
 });

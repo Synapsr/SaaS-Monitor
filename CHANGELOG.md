@@ -13,6 +13,15 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   subscriptions set not to renew or paused.
 - Customers without a name can be named by their email, masked (`j•••@gmail.com`) or in full,
   on screens that show names and allow it.
+- **Events**, in the screen settings: for each kind of event, whether it is listed in the feed,
+  shown as a card, plays its sound and is said out loud, each on its own. Payments made for Stripe
+  Connect accounts have their own row: they may stay off the feed, which still fills up with the
+  account's own activity.
+
+### Changed
+
+- Sound and voice settings keep to how they sound: which events play moved to **Events**. Screens
+  keep the sounds and voice they had chosen.
 
 ## [1.1.0] - 2026-09-29
 

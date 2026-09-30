@@ -9,11 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MAX_PHRASES, PHRASE_MAX_LENGTH } from "@/lib/screens/settings";
 import { unlockAudio } from "@/lib/sounds";
-import {
-  ANNOUNCEMENT_VARIABLES,
-  type Announcement,
-  type Variable,
-} from "@/lib/voice/announcements";
+import type { ScreenEvent } from "@/lib/display/events";
+import { EVENT_VARIABLES, type Variable } from "@/lib/voice/announcements";
 import { previewValues } from "@/lib/voice/moment-speech";
 import { fillPhrase, phraseProblem, phraseVariables } from "@/lib/voice/phrases";
 import { decodeSpeech, decodesOpus, speak } from "@/lib/voice/player";
@@ -34,12 +31,12 @@ function toArrayBuffer(base64: string): ArrayBuffer {
 }
 
 /**
- * The phrases of an announcement, each with the details it says (`{name}`), and how it sounds
- * with sample ones. Until the founder changes them, they are the defaults of the screen's
+ * The phrases of an event, each with the details it says (`{name}`), and how it sounds with
+ * sample ones. Until the founder changes them, they are the defaults of the screen's
  * language (`phrases` is `undefined`).
  */
 export function PhraseEditor({
-  announcement,
+  event,
   label,
   phrases,
   defaults,
@@ -50,7 +47,7 @@ export function PhraseEditor({
   showCustomerNames,
   onChange,
 }: {
-  announcement: Announcement;
+  event: ScreenEvent;
   /** Names the inputs: "New subscriber, phrase 1". */
   label: string;
   phrases: readonly string[] | undefined;
@@ -68,8 +65,8 @@ export function PhraseEditor({
   const focused = useRef(0);
   const [playing, setPlaying] = useState<number | null>(null);
   const [, startPreview] = useTransition();
-  const sample = previewValues(announcement, voice.language, { currency, product });
-  const variables = ANNOUNCEMENT_VARIABLES[announcement];
+  const sample = previewValues(event, voice.language, { currency, product });
+  const variables = EVENT_VARIABLES[event];
   const namesHidden =
     !showCustomerNames &&
     shown.some((phrase) => phraseVariables(phrase).variables.includes("name"));
@@ -102,7 +99,7 @@ export function PhraseEditor({
     startPreview(async () => {
       const result = await previewPhraseAction({
         voiceId: voice.id,
-        announcement,
+        event,
         phrase: shown[index],
         currency,
         product,
@@ -121,7 +118,7 @@ export function PhraseEditor({
     <div className="flex flex-col gap-3 rounded-lg bg-muted/40 p-3">
       <ul className="flex flex-col gap-3">
         {shown.map((phrase, index) => {
-          const problem = phrase.trim() === "" ? null : phraseProblem(phrase, announcement);
+          const problem = phrase.trim() === "" ? null : phraseProblem(phrase, event);
           const said = problem ? null : fillPhrase(phrase, sample);
           const name = `${label}, phrase ${index + 1}`;
           return (

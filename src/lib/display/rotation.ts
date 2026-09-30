@@ -1,3 +1,4 @@
+import { itemEvent } from "@/lib/display/events";
 import type { DisplayAccount, DisplayMetrics, DisplayState, FeedItem } from "@/lib/display/types";
 
 /*
@@ -38,8 +39,13 @@ export interface ScreenView {
   goal: number | null;
 }
 
-/** The numbers and activity of a slide, falling back to the total for a slide that is gone. */
+/**
+ * The numbers and activity of a slide, falling back to the total for a slide that is gone. Its feed
+ * only has the events the screen shows in it.
+ */
 export function screenView(state: DisplayState, slide: string): ScreenView {
+  const { events } = state.screen.settings;
+  const shown = state.feed.filter((item) => events[itemEvent(item)].feed);
   const view = state.views.find(({ accountId }) => accountId === slide);
   const account = view && state.accounts.find(({ id }) => id === view.accountId);
   if (!view || !account) {
@@ -47,7 +53,7 @@ export function screenView(state: DisplayState, slide: string): ScreenView {
       account: null,
       metrics: state.metrics,
       series: state.series,
-      feed: state.feed,
+      feed: shown,
       goal: state.screen.settings.goal,
     };
   }
@@ -55,7 +61,7 @@ export function screenView(state: DisplayState, slide: string): ScreenView {
     account,
     metrics: view.metrics,
     series: view.series,
-    feed: state.feed.filter((item) => item.accountId === account.id),
+    feed: shown.filter((item) => item.accountId === account.id),
     goal: null,
   };
 }

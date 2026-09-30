@@ -4,7 +4,11 @@ import { db } from "@/db";
 import { customers, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
 import { calendarDay, chartDays, daysBetween } from "@/lib/display/calendar";
 import type { ChurnReason, MrrMovementKind } from "@/lib/display/types";
-import { isTimeZone, type ScreenSettingsInput } from "@/lib/screens/settings";
+import {
+  defaultScreenSettings,
+  isTimeZone,
+  type ScreenSettingsInput,
+} from "@/lib/screens/settings";
 import type { RateSource } from "@/server/fx";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
 import { createScreen } from "@/test/screens";
@@ -790,6 +794,29 @@ describe("display state", () => {
     expect((await displayOf([accountId], { showCustomerNames: true })).feed[0].customerName).toBe(
       "Grace Hopper",
     );
+  });
+
+  it("fills the feed with the events it shows, and keeps the latest for moments", async () => {
+    const accountId = await readyAccount();
+    for (let day = 1; day <= 3; day += 1) {
+      await addPayment(accountId, { amount: 4900, at: `2026-03-0${day}T10:00:00Z` });
+    }
+    for (let minute = 10; minute < 35; minute += 1) {
+      await addPayment(accountId, {
+        amount: 15_000,
+        at: `2026-03-14T10:${minute}:00Z`,
+        connect: { account: "acct_photographer", fee: 1_500 },
+      });
+    }
+    const { events } = defaultScreenSettings;
+    const { feed } = await displayOf([accountId], {
+      events: { ...events, connectPayment: { ...events.connectPayment, feed: false } },
+    });
+
+    // The latest activity, for displays to play it, and every payment of the account's own.
+    expect(feed.filter((item) => item.connect)).toHaveLength(20);
+    expect(feed.filter((item) => !item.connect)).toHaveLength(3);
+    expect(feed[0].occurredAt).toBe("2026-03-14T10:34:00.000Z");
   });
 
   it("says why a subscription stopped counting, and when a scheduled cancellation ends", async () => {

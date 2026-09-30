@@ -67,6 +67,7 @@ describe("announcement requests", () => {
         id: "s",
         kind: "summary",
         accountId: "a1",
+        events: ["payment"],
         payments: 4,
         changes: 0,
         customers: 0,

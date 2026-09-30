@@ -1,11 +1,6 @@
 import { createRandom } from "@/lib/display/random";
-import {
-  ANNOUNCEMENT_VARIABLES,
-  VARIABLES,
-  type Announcement,
-  type Phrase,
-  type Variable,
-} from "./announcements";
+import type { ScreenEvent } from "@/lib/display/events";
+import { EVENT_VARIABLES, VARIABLES, type Phrase, type Variable } from "./announcements";
 import type { VoiceLanguage } from "./voices";
 
 /**
@@ -394,12 +389,12 @@ export function phraseVariables(phrase: string): { variables: Variable[]; unknow
 }
 
 /**
- * Why a phrase can't be said for an announcement, in a sentence for the settings; `null` when it
- * can. Details Stripe may lack (a hidden name) are fine: the phrase is skipped when they are.
+ * Why a phrase can't be said for an event, in a sentence for the settings; `null` when it can.
+ * Details Stripe may lack (a hidden name) are fine: the phrase is skipped when they are.
  */
-export function phraseProblem(phrase: string, announcement: Announcement): string | null {
+export function phraseProblem(phrase: string, event: ScreenEvent): string | null {
   const { variables, unknown } = phraseVariables(phrase);
-  const known = ANNOUNCEMENT_VARIABLES[announcement];
+  const known = EVENT_VARIABLES[event];
   const list = known.map((variable) => `{${variable}}`).join(", ");
   if (unknown.length > 0) return `{${unknown[0]}} is not a detail. Use ${list}.`;
   const unavailable = variables.find((variable) => !known.includes(variable));

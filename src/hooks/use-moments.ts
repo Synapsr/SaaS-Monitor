@@ -1,4 +1,12 @@
-import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { momentPlays } from "@/lib/display/events";
 import { MomentQueue } from "@/lib/display/moment-queue";
 import {
   initialMomentTracker,
@@ -12,18 +20,26 @@ const noMoment = () => null;
 const idleOnServer = () => true;
 
 /**
- * Detects what just happened between two states and plays it as moments, one at a time, each for
- * as long as the screen's settings say. `onStart` runs once when each moment appears (sound,
- * confetti).
+ * Detects what just happened between two states and plays it as moments, one at a time: those
+ * with a card for as long as the screen's settings say, the others for their sound and voice.
+ * `onStart` runs once when each moment starts (sound, voice, confetti).
  */
 export function useMoments(
   state: DisplayState,
   onStart: (moment: Moment) => void,
 ): { moment: Moment | null; idle: boolean } {
-  const { momentSeconds } = state.screen.settings;
-  const [queue] = useState(() => new MomentQueue(momentDuration, momentSeconds));
-  // Before new moments are queued below: a new setting applies from the next one.
-  useEffect(() => queue.setSeconds(momentSeconds), [queue, momentSeconds]);
+  const { settings } = state.screen;
+  const durationOf = useCallback(
+    (moment: Moment, waiting: number) =>
+      momentDuration(moment, waiting, {
+        seconds: settings.momentSeconds,
+        seen: momentPlays(moment, settings, "moment"),
+      }),
+    [settings],
+  );
+  const [queue] = useState(() => new MomentQueue(durationOf));
+  // Before new moments are queued below: new settings apply from the next moment.
+  useEffect(() => queue.setDurationOf(durationOf), [queue, durationOf]);
   const tracker = useRef(initialMomentTracker);
 
   useEffect(() => {

@@ -9,6 +9,10 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
+  isNull,
+  ne,
+  or,
   sql,
   sum,
   type AnyColumn,
@@ -25,6 +29,7 @@ import {
   subscriptions,
 } from "@/db/schema";
 import { dayToUtcDate } from "@/lib/display/calendar";
+import type { FeedEvent } from "@/lib/display/events";
 import type { ChurnReason, FeedItemKind } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 
@@ -305,12 +310,57 @@ export interface ActivityRow {
 }
 
 /** Newest first, and rows of the same instant by descending id, like the queries below. */
-function newestFirst(a: { occurredAt: Date; id: string }, b: { occurredAt: Date; id: string }) {
+export function newestFirst(
+  a: { occurredAt: Date; id: string },
+  b: { occurredAt: Date; id: string },
+) {
   return b.occurredAt.getTime() - a.occurredAt.getTime() || b.id.localeCompare(a.id);
 }
 
+/**
+ * Which rows of each source are the given feed events: `undefined` for all of them, `null` for
+ * none. A feed that leaves some events out still fills up with the others.
+ */
+function eventConditions(events: ReadonlySet<FeedEvent> | undefined) {
+  if (!events) return { movements: undefined, payments: undefined, customers: undefined };
+  const kinds = MOVEMENT_KINDS.filter((kind) => events.has(MOVEMENT_EVENTS[kind]));
+  const churns = [
+    events.has("cancellation") &&
+      or(isNull(mrrMovements.churnReason), ne(mrrMovements.churnReason, "unpaid")),
+    events.has("unpaid") && eq(mrrMovements.churnReason, "unpaid"),
+  ].filter((condition): condition is SQL => Boolean(condition));
+  const movementConditions = [
+    kinds.length > 0 && inArray(mrrMovements.kind, kinds),
+    churns.length > 0 && and(eq(mrrMovements.kind, "churn"), or(...churns)),
+  ].filter((condition): condition is SQL => Boolean(condition));
+
+  const own = events.has("payment");
+  const connect = events.has("connectPayment");
+  return {
+    movements: movementConditions.length > 0 ? or(...movementConditions) : null,
+    payments:
+      own && connect
+        ? undefined
+        : own
+          ? isNull(payments.connectedAccountId)
+          : connect
+            ? isNotNull(payments.connectedAccountId)
+            : null,
+    customers: events.has("customer") ? undefined : null,
+  };
+}
+
+/** The feed event of each kind of movement but churns, which depend on their reason. */
+const MOVEMENT_KINDS = ["new", "expansion", "reactivation", "contraction"] as const;
+const MOVEMENT_EVENTS: Record<(typeof MOVEMENT_KINDS)[number], FeedEvent> = {
+  new: "subscription",
+  expansion: "upgrade",
+  reactivation: "reactivation",
+  contraction: "downgrade",
+};
+
 /** An account's latest movements, newest first. */
-function latestMovements(accountId: string, limit: number) {
+function latestMovements(accountId: string, limit: number, condition?: SQL) {
   return db()
     .select({
       id: mrrMovements.id,
@@ -328,7 +378,7 @@ function latestMovements(accountId: string, limit: number) {
       endsAt: mrrMovements.endsAt,
     })
     .from(mrrMovements)
-    .where(eq(mrrMovements.accountId, accountId))
+    .where(and(eq(mrrMovements.accountId, accountId), condition))
     .orderBy(desc(mrrMovements.occurredAt), desc(mrrMovements.id))
     .limit(limit);
 }
@@ -337,7 +387,7 @@ function latestMovements(accountId: string, limit: number) {
  * An account's latest payments, newest first, net of refunds. Fully refunded payments are not
  * worth showing.
  */
-function latestPayments(accountId: string, limit: number) {
+function latestPayments(accountId: string, limit: number, condition?: SQL) {
   return db()
     .select({
       id: payments.id,
@@ -354,7 +404,13 @@ function latestPayments(accountId: string, limit: number) {
       applicationFee: payments.applicationFee,
     })
     .from(payments)
-    .where(and(eq(payments.accountId, accountId), gt(payments.amount, payments.amountRefunded)))
+    .where(
+      and(
+        eq(payments.accountId, accountId),
+        gt(payments.amount, payments.amountRefunded),
+        condition,
+      ),
+    )
     .orderBy(desc(payments.occurredAt), desc(payments.id))
     .limit(limit);
 }
@@ -392,12 +448,26 @@ async function newestOfEachAccount<Row extends { occurredAt: Date; id: string }>
   return rows.flat().sort(newestFirst).slice(0, limit);
 }
 
-/** The latest movements, payments and new customers, newest first. */
-export async function latestActivity(accountIds: string[], limit: number): Promise<ActivityRow[]> {
+/** The latest movements, payments and new customers, newest first: all, or those of `events`. */
+export async function latestActivity(
+  accountIds: string[],
+  limit: number,
+  events?: ReadonlySet<FeedEvent>,
+): Promise<ActivityRow[]> {
+  const conditions = eventConditions(events);
+  const newest = <Row extends { occurredAt: Date; id: string }>(
+    condition: SQL | null | undefined,
+    latest: (accountId: string, limit: number, condition?: SQL) => Promise<Row[]>,
+  ) =>
+    condition === null
+      ? Promise.resolve([])
+      : newestOfEachAccount(accountIds, limit, (accountId, rows) =>
+          latest(accountId, rows, condition),
+        );
   const [movementRows, paymentRows, customerRows] = await Promise.all([
-    newestOfEachAccount(accountIds, limit, latestMovements),
-    newestOfEachAccount(accountIds, limit, latestPayments),
-    newestOfEachAccount(accountIds, limit, latestCustomers),
+    newest(conditions.movements, latestMovements),
+    newest(conditions.payments, latestPayments),
+    newest(conditions.customers, latestCustomers),
   ]);
 
   const profiles = await customerProfiles(

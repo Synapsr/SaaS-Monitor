@@ -23,6 +23,23 @@ Each sale, new customer or subscription change gets a large card in the middle o
 as long as you choose in the screen settings (**Moments stay on screen**, 10 seconds by default).
 When several arrive at once, they play one after the other, a little faster.
 
+## Events
+
+**Events**, in the screen settings, decides what each kind of event does: payments, payments made
+for a [Stripe Connect account](stripe.md#stripe-connect-platforms), new subscribers, upgrades,
+reactivations, downgrades, cancellations, failed payments, new customers and milestones. For each
+one, four boxes:
+
+- **Feed**: listed in the activity feed on the side of the screen.
+- **Card**: shown as a card in the middle of the screen (the whole screen for a milestone).
+- **Sound**: plays its sound, from the screen's sound pack.
+- **Voice**: said out loud by the screen's [voice](#voice).
+
+Every box is its own choice: a payment may ring without a card, and a Connect platform may keep
+the payments made for its connected accounts off the feed, while the feed still shows its latest
+own payments. Checking a sound or a voice plays it, to hear what you chose. Sound and voice only
+play once turned on in their own sections.
+
 ## Sound
 
 Browsers block audio until someone interacts with the page. When sound is enabled, the screen
@@ -37,12 +54,9 @@ test celebration**: every open screen plays a sample payment within a few second
 
 A screen can also say what just happened, out loud, right after the sound: "New subscriber!",
 "Payment received!". Turn on **Announce out loud** in the screen settings, pick a voice (two per
-language) and choose what it announces: payments, payments made for a
-[Stripe Connect account](stripe.md#stripe-connect-platforms) (apart from your own), new
-subscribers, upgrades, reactivations, downgrades, cancellations (including subscriptions set not
-to renew), failed payments, new customers and milestones.
-Voice has its own switch and volume, so a screen can speak without playing sounds. Voices speak
-English, French, German, Spanish and Portuguese, the screen's language.
+language), and check what it says in [Events](#events): losses are not said out loud unless you
+check them. Voice has its own switch and volume, so a screen can speak without playing sounds.
+Voices speak English, French, German, Spanish and Portuguese, the screen's language.
 
 Out of the box, voices say recorded phrases that ship with SaaS Monitor: nothing is sent anywhere.
 

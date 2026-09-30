@@ -1,3 +1,4 @@
+import { momentEvents, momentPlays, type ScreenEvent } from "@/lib/display/events";
 import { countryName } from "@/lib/display/format";
 import { displayLocale } from "@/lib/display/i18n";
 import { recurringMetric } from "@/lib/display/metric";
@@ -5,76 +6,37 @@ import { testPaymentAmount, type Moment } from "@/lib/display/moments";
 import type { DisplayState, FeedItem } from "@/lib/display/types";
 import { formatMoney, minorUnitDigits, toMinorUnits } from "@/lib/money";
 import type { ScreenSettings } from "@/lib/screens/settings";
-import { ANNOUNCEMENT_VARIABLES, type Announcement, type Phrase } from "./announcements";
+import { EVENT_VARIABLES, type Phrase } from "./announcements";
 import { chooseSpeech, defaultPhrases, type PhraseValues } from "./phrases";
 import { speaksLanguage, type VoiceId, type VoiceLanguage } from "./voices";
 
 /** What a voice says about a moment, and how a screen's settings choose it. */
 
-/** What a moment announces; `null` for the summary of a burst, which the sound and card cover. */
-export function momentAnnouncement(moment: Moment): Announcement | null {
-  switch (moment.kind) {
-    case "payment":
-      if (moment.payment.connect) return "connectPayment";
-      // A payment that started or upgraded a subscription is announced by what it started.
-      return moment.movement ? movementAnnouncement(moment.movement) : "payment";
-    case "movement":
-      return movementAnnouncement(moment.movement);
-    case "customer":
-      return "customer";
-    case "milestone":
-      return "milestone";
-    case "test":
-      return "payment";
-    case "summary":
-      return null;
-  }
-}
-
-function movementAnnouncement(item: FeedItem): Announcement {
-  switch (item.kind) {
-    case "new":
-      return "subscription";
-    case "expansion":
-      return "upgrade";
-    case "reactivation":
-      return "reactivation";
-    case "contraction":
-      return "downgrade";
-    case "churn":
-      // A failed payment is no customer leaving: it has its own announcement.
-      return item.churn?.reason === "unpaid" ? "unpaid" : "cancellation";
-    default:
-      return "payment";
-  }
-}
-
 /**
- * What a screen announces about a moment, and in which phrase; `null` when its settings keep the
- * moment quiet or no voice speaks its language.
+ * What a screen says about a moment, and in which phrase; `null` when its settings keep the
+ * moment's event quiet or no voice speaks its language. The summary of a burst is left to its
+ * sound and card.
  */
 export function momentSpeech(
   moment: Moment,
-  settings: Pick<ScreenSettings, "voice" | "language">,
-): { announcement: Announcement; phrase: Phrase; language: VoiceLanguage } | null {
-  const { voice, language } = settings;
-  if (!voice.enabled || !speaksLanguage(language)) return null;
-  const announcement = momentAnnouncement(moment);
-  if (announcement === null) return null;
-  // The founder asked to hear it: only the main switch applies.
-  if (moment.kind !== "test" && !voice.announce[announcement]) return null;
-  return { announcement, phrase: momentPhrase(moment, announcement), language };
+  settings: Pick<ScreenSettings, "events" | "sound" | "voice" | "language">,
+): { event: ScreenEvent; phrase: Phrase; language: VoiceLanguage } | null {
+  const { language } = settings;
+  if (moment.kind === "summary" || !speaksLanguage(language)) return null;
+  if (!momentPlays(moment, settings, "voice")) return null;
+  const [event] = momentEvents(moment);
+  return { event, phrase: momentPhrase(moment, event), language };
 }
 
-/** The phrase of an announcement that says the most about the moment. */
-function momentPhrase(moment: Moment, announcement: Announcement): Phrase {
+/** The phrase of an event that says the most about the moment. */
+function momentPhrase(moment: Moment, event: ScreenEvent): Phrase {
   if (moment.kind === "milestone" && moment.isGoal) return "goal";
-  if (moment.kind === "movement" && announcement === "cancellation") {
+  if (moment.kind === "movement" && event === "cancellation") {
     const reason = moment.movement.churn?.reason;
     if (reason === "scheduled") return "cancellationScheduled";
     if (reason === "paused") return "pause";
   }
-  return announcement;
+  return event;
 }
 
 /** Where the recorded clip of a phrase is served from (`scripts/generate-voices.ts`). */
@@ -117,16 +79,14 @@ export function sampleValues(
  * name even when the screen hides them, to hear how the phrase sounds with one.
  */
 export function previewValues(
-  announcement: Announcement,
+  event: ScreenEvent,
   language: VoiceLanguage,
   sample: { currency: string; product: string },
 ): PhraseValues {
-  const amount = toMinorUnits(announcement === "milestone" ? 10_000 : 49, sample.currency);
+  const amount = toMinorUnits(event === "milestone" ? 10_000 : 49, sample.currency);
   const values = sampleValues(language, { ...sample, amount, showCustomerNames: true });
-  // Only what the announcement knows: `{plan}` means nothing for a new customer.
-  return Object.fromEntries(
-    ANNOUNCEMENT_VARIABLES[announcement].map((variable) => [variable, values[variable]]),
-  );
+  // Only what the event knows: `{plan}` means nothing for a new customer.
+  return Object.fromEntries(EVENT_VARIABLES[event].map((variable) => [variable, values[variable]]));
 }
 
 /**
@@ -185,7 +145,7 @@ export function momentText(moment: Moment, state: DisplayState): string | null {
   const speech = momentSpeech(moment, settings);
   if (speech === null) return null;
   return chooseSpeech({
-    own: settings.voice.phrases[speech.announcement] ?? [],
+    own: settings.voice.phrases[speech.event] ?? [],
     defaults: defaultPhrases(speech.language, speech.phrase, {
       severalProducts: state.accounts.length > 1,
     }),

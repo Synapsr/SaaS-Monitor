@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { ScreenEvent } from "@/lib/display/events";
 import type { Moment } from "@/lib/display/moments";
 import type { DisplayState } from "@/lib/display/types";
 import { defaultScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { displayState, feedItem } from "@/test/display";
 import {
-  momentAnnouncement,
   momentSpeech,
   momentText,
   previewValues,
@@ -31,6 +31,12 @@ function screen(
   };
 }
 
+/** The screen's events, with `event` said out loud or not. */
+function withVoice(event: ScreenEvent, voice: boolean): ScreenSettings["events"] {
+  const { events } = defaultScreenSettings;
+  return { ...events, [event]: { ...events[event], voice } };
+}
+
 const payment = (overrides: Parameters<typeof feedItem>[0] = {}): Moment => ({
   id: "payment:1",
   kind: "payment",
@@ -38,67 +44,42 @@ const payment = (overrides: Parameters<typeof feedItem>[0] = {}): Moment => ({
   movement: null,
 });
 
-describe("momentAnnouncement", () => {
-  it("names what a moment announces", () => {
-    expect(momentAnnouncement(payment())).toBe("payment");
-    expect(momentAnnouncement(payment({ connect: { applicationFee: 490 } }))).toBe(
-      "connectPayment",
-    );
-    expect(
-      momentAnnouncement({ ...payment(), movement: feedItem({ kind: "new" }) } as Moment),
-    ).toBe("subscription");
-    const movement = (kind: "expansion" | "reactivation" | "contraction" | "churn"): Moment => ({
-      id: "m",
-      kind: "movement",
-      movement: feedItem({ kind }),
-    });
-    expect(momentAnnouncement(movement("expansion"))).toBe("upgrade");
-    expect(momentAnnouncement(movement("reactivation"))).toBe("reactivation");
-    expect(momentAnnouncement(movement("contraction"))).toBe("downgrade");
-    expect(momentAnnouncement(movement("churn"))).toBe("cancellation");
-    // A failed payment is no customer leaving.
-    const unpaid: Moment = {
-      id: "m",
-      kind: "movement",
-      movement: feedItem({ kind: "churn", churn: { reason: "unpaid", endsAt: null } }),
-    };
-    expect(momentAnnouncement(unpaid)).toBe("unpaid");
-    expect(momentAnnouncement({ id: "t", kind: "test" })).toBe("payment");
-  });
-
-  it("leaves the summary of a burst to its sound and card", () => {
-    expect(
-      momentAnnouncement({
-        id: "s",
-        kind: "summary",
-        accountId: "a1",
-        payments: 4,
-        changes: 0,
-        customers: 0,
-        revenue: 10_000,
-        mrrChange: 0,
-      }),
-    ).toBeNull();
-  });
-});
-
 describe("momentSpeech", () => {
-  const settings = (voice: Partial<ScreenSettings["voice"]>, language = "en" as const) => ({
+  const settings = (
+    voice: Partial<ScreenSettings["voice"]>,
+    events = defaultScreenSettings.events,
+  ) => ({
+    ...defaultScreenSettings,
+    events,
     voice: { ...defaultScreenSettings.voice, enabled: true, ...voice },
-    language,
   });
 
-  it("follows the main switch and each announcement's own", () => {
+  it("follows the voice switch and each event's own", () => {
     expect(momentSpeech(payment(), settings({}))).toEqual({
-      announcement: "payment",
+      event: "payment",
       phrase: "payment",
       language: "en",
     });
     expect(momentSpeech(payment(), settings({ enabled: false }))).toBeNull();
-    const quiet = { ...defaultScreenSettings.voice.announce, payment: false };
-    expect(momentSpeech(payment(), settings({ announce: quiet }))).toBeNull();
-    // A test celebration was asked for: only the main switch applies.
-    expect(momentSpeech({ id: "t", kind: "test" }, settings({ announce: quiet }))).not.toBeNull();
+    const quiet = withVoice("payment", false);
+    expect(momentSpeech(payment(), settings({}, quiet))).toBeNull();
+    // A test celebration was asked for: only the voice switch applies.
+    expect(momentSpeech({ id: "t", kind: "test" }, settings({}, quiet))).not.toBeNull();
+  });
+
+  it("leaves the summary of a burst to its sound and card", () => {
+    const summary: Moment = {
+      id: "s",
+      kind: "summary",
+      accountId: "a1",
+      events: ["payment"],
+      payments: 4,
+      changes: 0,
+      customers: 0,
+      revenue: 10_000,
+      mrrChange: 0,
+    };
+    expect(momentSpeech(summary, settings({}))).toBeNull();
   });
 
   it("says more for a goal than for a milestone", () => {
@@ -120,9 +101,7 @@ describe("momentSpeech", () => {
       kind: "movement",
       movement: feedItem({ kind: "churn", churn: { reason, endsAt: null } }),
     });
-    const loud = settings({
-      announce: { ...defaultScreenSettings.voice.announce, cancellation: true },
-    });
+    const loud = settings({}, withVoice("cancellation", true));
     expect(momentSpeech(churn("canceled"), loud)?.phrase).toBe("cancellation");
     expect(momentSpeech(churn("scheduled"), loud)?.phrase).toBe("cancellationScheduled");
     expect(momentSpeech(churn("paused"), loud)?.phrase).toBe("pause");
@@ -184,11 +163,8 @@ describe("momentText", () => {
       movement: feedItem({ kind: "churn", amount: -4_900, planName: "Pro" }),
     };
     const state = screen(
-      {
-        announce: { ...defaultScreenSettings.voice.announce, cancellation: true },
-        phrases: { cancellation: ["{amount} of ARR lost."] },
-      },
-      { metric: "arr" },
+      { phrases: { cancellation: ["{amount} of ARR lost."] } },
+      { metric: "arr", events: withVoice("cancellation", true) },
     );
     expect(momentText(churn, state)).toBe("$588 of ARR lost.");
   });
@@ -205,7 +181,7 @@ describe("spoken amounts and samples", () => {
     expect(spokenMoney(150_000_000, "usd", "en-US")).toBe("$1,500,000");
   });
 
-  it("previews only the details an announcement knows", () => {
+  it("previews only the details an event knows", () => {
     expect(previewValues("customer", "en", { currency: "usd", product: "Acme" })).toEqual({
       name: "Ada Lovelace",
       country: "United States",
