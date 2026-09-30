@@ -4,6 +4,7 @@ import { Volume2Icon, VolumeXIcon } from "lucide-react";
 import { useRef } from "react";
 import { DisplayFrame } from "@/components/display-frame";
 import { useDemoSound } from "@/hooks/use-demo-sound";
+import { track } from "@/lib/analytics/track";
 import type { DemoSoundStatus } from "@/lib/demo-sound";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,10 @@ export function DemoTv({ className }: { className?: string }) {
         {status !== "loading" && (
           <button
             type="button"
-            onClick={toggle}
+            onClick={() => {
+              if (!on) track("Hear it");
+              toggle();
+            }}
             className={cn(
               "absolute right-[clamp(0.875rem,2vw,1.75rem)] bottom-[clamp(0.875rem,2vw,1.75rem)] flex h-9 animate-in items-center gap-2 rounded-full bg-black/60 pr-4 pl-3 text-sm font-medium text-(--ink) ring-1 ring-white/15 backdrop-blur-md transition-[background-color,box-shadow,scale] duration-500 outline-none fade-in hover:bg-black/75 focus-visible:ring-2 focus-visible:ring-(--glow) active:scale-[0.96] motion-reduce:animate-none sm:h-10 sm:pr-4.5 sm:pl-3.5",
               on
