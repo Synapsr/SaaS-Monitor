@@ -53,8 +53,8 @@ const QUESTIONS: Question[] = [
       <p>
         Your Stripe key, encrypted, and a copy of what your screens need: subscriptions and their
         MRR changes, payments and new customers, with customers’ names, emails and countries. No
-        card or bank details. Disconnecting an account deletes its data, and self-hosted, all of it
-        stays on your server.
+        card or bank details. Disconnecting an account deletes its data, and self-hosted, it all
+        stays on your server (custom voice phrases, if you turn them on, go to Gradium).
       </p>
     ),
   },
@@ -93,7 +93,8 @@ const QUESTIONS: Question[] = [
     answer: (
       <p>
         Yes. {siteConfig.name} runs with Docker Compose, next to its MySQL database, on any server
-        or a Raspberry Pi, and your Stripe data never leaves it.{" "}
+        or a Raspberry Pi with a 64-bit OS. Your Stripe data stays on it; only the optional custom
+        voice phrases are sent to Gradium to be spoken.{" "}
         <FaqLink href={siteConfig.selfHostingUrl}>Self-hosting guide</FaqLink>
       </p>
     ),

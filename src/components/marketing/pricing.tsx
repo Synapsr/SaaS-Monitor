@@ -33,7 +33,7 @@ export function Pricing() {
         points={[
           "Every feature, with no limits",
           "Docker in two commands, on any server or a Raspberry Pi",
-          "Your Stripe data never leaves your server",
+          "Your Stripe data stays on your server",
         ]}
       >
         <Button asChild variant="outline">
