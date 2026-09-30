@@ -142,3 +142,33 @@ privileges on its database: it applies the migrations when it starts.
 
 The app also runs on platforms such as Vercel or Railway: syncs are triggered by open screens
 and dashboards, so no background worker is needed.
+
+## Analytics (optional, off by default)
+
+A self-hosted instance loads no analytics script and sends no event anywhere. Its pages only ask
+the app itself (`/api/pa`) whether analytics are on.
+
+To measure visits with [Plausible](https://plausible.io), for example on a public instance with
+its landing page, set in `.env` and restart the app (no rebuild needed):
+
+```bash
+# The site's domain as registered in Plausible.
+PLAUSIBLE_DOMAIN=monitor.example.com
+# Optional: your own Plausible Community Edition (default https://plausible.io).
+PLAUSIBLE_HOST=https://plausible.example.com
+```
+
+- **First party, no cookies.** Browsers only talk to your instance: it serves Plausible's script
+  at `/js/pa.js` and relays events from `/api/pa`, so the Content-Security-Policy stays `'self'`.
+  Plausible tells visitors apart without cookies, from their address and browser, which the relay
+  passes on: behind a reverse proxy, make sure it sets `X-Forwarded-For` (see above), or
+  Plausible drops the events as coming from a server.
+- **No ids, no tokens.** URLs are redacted in the browser, then again by the server: ids in
+  dashboard and invitation links become `:id`, and query strings keep only `ref`, `source` and
+  `utm_*` parameters. Screens (`/d/<token>`) and pages shown in a frame are never counted; the
+  demo (`/d/demo`) is.
+- **Goals.** Besides pageviews, the app sends these custom events, to add as goals in Plausible:
+  `Demo opened`, `Demo sound on`, `Signup` (with the properties `method` and `invited`),
+  `Stripe connected`, `Test celebration` and `Hear it`.
+
+Plausible's script ignores `localhost`: check it on the real domain.

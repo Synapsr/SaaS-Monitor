@@ -45,6 +45,8 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       MIGRATE_ON_START: ${MIGRATE_ON_START:-true}
       FX_RATES_URL: ${FX_RATES_URL:-https://api.frankfurter.dev/v1}
+      PLAUSIBLE_DOMAIN: ${PLAUSIBLE_DOMAIN:-}
+      PLAUSIBLE_HOST: ${PLAUSIBLE_HOST:-}
     depends_on:
       db:
         condition: service_healthy
