@@ -29,7 +29,10 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   },
 ];
 
-/** The license and who makes it, then links to the product's pages, its code and the legal pages. */
+/**
+ * The license, who makes it and whose trademark Stripe is, then links to the product's pages, its
+ * code and the legal pages.
+ */
 export function LandingFooter() {
   return (
     <footer className="border-t border-white/[0.06]">
@@ -46,6 +49,10 @@ export function LandingFooter() {
               {siteConfig.maker.name}
             </a>
             .
+          </p>
+          <p className="max-w-sm text-xs text-pretty">
+            Stripe is a trademark of Stripe, Inc. {siteConfig.name} is not affiliated with or
+            endorsed by Stripe.
           </p>
         </div>
         <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:gap-14">

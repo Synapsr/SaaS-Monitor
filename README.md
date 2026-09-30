@@ -106,7 +106,8 @@ feel them. Keep Baremetrics or ChartMogul for the board deck, and put SaaS Monit
 | Open source, self-hostable | Yes                                                       | No                                                  | No                                                                                            | No                                             |
 
 Checked on each product's own pages on 2026-09-30. Side-by-side comparisons:
-[saas-monitor.com/alternatives](https://saas-monitor.com/alternatives).
+[saas-monitor.com/alternatives](https://saas-monitor.com/alternatives). Product names are
+trademarks of their owners; SaaS Monitor is not affiliated with them.
 
 ## Self-hosting
 
