@@ -19,6 +19,8 @@ interface DisplayFrameProps {
   /** Called whenever the display finishes loading. */
   onLoad?: () => void;
   frameRef?: RefObject<HTMLIFrameElement | null>;
+  /** Permissions of the frame, such as `autoplay` for a display that plays sound. */
+  allow?: string;
 }
 
 /** A wall display embedded in a page, scaled down to the width of its container. */
@@ -29,6 +31,7 @@ export function DisplayFrame({
   placeholder,
   onLoad,
   frameRef: givenFrameRef,
+  allow,
 }: DisplayFrameProps) {
   const [viewportRef, { width }] = useElementSize<HTMLDivElement>();
   const ownFrameRef = useRef<HTMLIFrameElement>(null);
@@ -68,6 +71,7 @@ export function DisplayFrame({
         ref={frameRef}
         src={src}
         title={title}
+        allow={allow}
         tabIndex={-1}
         onLoad={handleLoad}
         className={cn(
