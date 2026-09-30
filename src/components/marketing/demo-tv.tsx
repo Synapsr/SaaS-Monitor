@@ -10,15 +10,15 @@ import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const CAPTIONS: Record<DemoSoundStatus, string> = {
-  loading: "The live demo, with a fictional SaaS. A sale lands every few seconds.",
-  off: "The live demo, with a fictional SaaS. A sale lands every few seconds.",
+  loading: "The live demo, with a fictional SaaS. A sale lands every 20 seconds or so.",
+  off: "The live demo, with a fictional SaaS. A sale lands every 20 seconds or so.",
   on: "Sound on: every sale rings, then a voice says what happened.",
   blocked: "Your browser kept the sound off. Click “Hear it” to try again.",
 };
 
 /**
- * The live demo display (`/d/demo`, a silent preview) in a wall-mounted TV: a sale lands every few
- * seconds, with its card and confetti. "Hear it" turns its sound and voice on.
+ * The live demo display (`/d/demo`, a silent preview) in a wall-mounted TV: a sale lands every 20
+ * seconds or so, with its card and confetti. "Hear it" turns its sound and voice on.
  */
 export function DemoTv({ className }: { className?: string }) {
   const frame = useRef<HTMLIFrameElement>(null);

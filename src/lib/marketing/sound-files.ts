@@ -25,7 +25,7 @@ export const SOUND_EVENT_LABELS: Record<SoundEvent, string> = {
 };
 
 export const SOUND_PACK_DESCRIPTIONS: Record<SoundPack, string> = {
-  register: "The classic cha-ching: a drawer and a till bell.",
+  register: "The classic ka-ching: a drawer and a till bell.",
   chime: "Soft bells for a calm office.",
   arcade: "8-bit coins and power-ups.",
 };

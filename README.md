@@ -81,7 +81,7 @@ cross $10K MRR.
 ## Try it
 
 - **Live demo**: <https://saas-monitor.com/d/demo> is a screen fed by a simulated SaaS, where
-  something happens every few seconds. No account needed. Add
+  something happens every 20 seconds or so. No account needed. Add
   [`?theme=light&lang=fr&accent=ff6b35`](https://saas-monitor.com/d/demo?theme=light&lang=fr&accent=ff6b35)
   for a light screen in French and your color,
   [`?accounts=2`](https://saas-monitor.com/d/demo?accounts=2) for two products taking turns, or

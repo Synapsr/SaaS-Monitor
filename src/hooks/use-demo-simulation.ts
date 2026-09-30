@@ -13,7 +13,7 @@ const SOON_MS = 1_500;
 
 /**
  * The demo screen, live: its history is generated from `startedAt` (identically on the server and
- * during hydration), then something happens every few seconds in the browser. `playSoon` brings
+ * during hydration), then something happens every 12 to 25 seconds in the browser. `playSoon` brings
  * the next event forward.
  */
 export function useDemoSimulation(

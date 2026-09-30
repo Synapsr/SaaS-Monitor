@@ -41,7 +41,7 @@ export function generateMetadata(
     {
       title: "Stripe notification sound: how to change it",
       description:
-        "Stripe’s app documents no sound setting: your phone picks the sound. How to change it on iPhone and Android, plus free cha-ching sounds for every sale.",
+        "Stripe’s app documents no sound setting: your phone picks the sound. How to change it on iPhone and Android, plus free cha-ching (or ka-ching) sounds for every sale.",
       path: "/stripe-notification-sound",
     },
     parent,
@@ -127,7 +127,7 @@ export default function StripeNotificationSoundPage() {
             A phone’s ping is easy to miss, and only you hear it. SaaS Monitor puts your Stripe
             revenue on a screen in the office and plays a sound for every payment, new customer and
             change of MRR, from one of three packs. Play them here, or download them as MP3 files,
-            free to use under the MIT license.
+            free to use under the MIT license, which asks you to keep its notice with them.
           </p>
         }
       >
@@ -175,7 +175,7 @@ export default function StripeNotificationSoundPage() {
             {
               question: "Can I use the MP3 files elsewhere?",
               answer:
-                "Yes. They are rendered from SaaS Monitor’s open-source code, under the MIT license: use them in your own alerts, bots or videos.",
+                "Yes. They are rendered from SaaS Monitor’s open-source code, under the MIT license, which asks you to keep its notice with them. Use them in your own alerts, bots or videos.",
             },
           ]}
         />
@@ -204,8 +204,8 @@ export default function StripeNotificationSoundPage() {
           </>
         }
       >
-        The live demo runs a fictional SaaS with a sale every few seconds. Click once on the screen
-        to turn the sound on.
+        The live demo runs a fictional SaaS where a sale lands every 20 seconds or so. Click once on
+        the screen to turn the sound on.
       </ClosingCall>
     </ContentPage>
   );

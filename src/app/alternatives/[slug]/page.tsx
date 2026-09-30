@@ -134,8 +134,8 @@ export default async function AlternativePage({ params }: PageProps<"/alternativ
           </>
         }
       >
-        The demo runs a fictional SaaS with a sale every few seconds. Click once on the screen to
-        turn the sound on.
+        The demo runs a fictional SaaS where a sale lands every 20 seconds or so. Click once on the
+        screen to turn the sound on.
       </ClosingCall>
     </ContentPage>
   );
