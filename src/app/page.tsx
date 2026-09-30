@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Faq } from "@/components/marketing/faq";
 import { FeatureGrid } from "@/components/marketing/feature-grid";
 import { FinalCallToAction } from "@/components/marketing/final-call-to-action";
 import { LandingFooter } from "@/components/marketing/landing-footer";
 import { LandingHeader } from "@/components/marketing/landing-header";
 import { LandingHero } from "@/components/marketing/landing-hero";
 import { LandingSection } from "@/components/marketing/landing-section";
+import { MakerNote } from "@/components/marketing/maker-note";
 import { Pricing } from "@/components/marketing/pricing";
 import { SelfHost } from "@/components/marketing/self-host";
 import { SetupSteps } from "@/components/marketing/setup-steps";
@@ -61,6 +63,14 @@ export default function LandingPage() {
         </LandingSection>
 
         <SelfHost />
+
+        <LandingSection id="faq" title="Frequently asked questions">
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-16">
+            <Faq />
+            <MakerNote />
+          </div>
+        </LandingSection>
+
         <FinalCallToAction />
       </main>
       <LandingFooter />
