@@ -4,6 +4,7 @@ import {
   BulletList,
   EmailLink,
   Emphasis,
+  HostedDomain,
   LegalSummary,
   TextLink,
 } from "@/components/legal/legal-prose";
@@ -26,7 +27,7 @@ export default function TermsPage() {
       updated="2026-09-30"
       lead={
         <>
-          The rules for using {siteConfig.name} as we host it at saas-monitor.com. The code is open
+          The rules for using {siteConfig.name} as we host it at <HostedDomain />. The code is open
           source under the MIT license; these terms cover the service we run for you.
         </>
       }
@@ -49,7 +50,7 @@ export default function TermsPage() {
           content: (
             <>
               <p>
-                These terms govern your use of {siteConfig.name} as hosted at saas-monitor.com (the
+                These terms govern your use of {siteConfig.name} as hosted at <HostedDomain /> (the
                 service), provided by {publisher.name} (we, us). By creating an account, you accept
                 them. If you create it for a company, you accept them on its behalf and confirm you
                 may.

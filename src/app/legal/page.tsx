@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/legal/legal-document";
-import { EmailLink, FactList, TextLink } from "@/components/legal/legal-prose";
+import { EmailLink, FactList, HostedDomain, TextLink } from "@/components/legal/legal-prose";
 import { host, postalAddress, publisher, supervisoryAuthority } from "@/lib/legal";
 import { siteConfig } from "@/lib/site";
 
@@ -18,7 +18,7 @@ export default function LegalNoticePage() {
       updated="2026-09-30"
       lead={
         <>
-          Who publishes and hosts saas-monitor.com, as French law requires (law no. 2004-575 of 21
+          Who publishes and hosts <HostedDomain />, as French law requires (law no. 2004-575 of 21
           June 2004, known as the LCEN). The French version follows.
         </>
       }
@@ -90,7 +90,7 @@ export default function LegalNoticePage() {
             <p>
               {siteConfig.name}’s code is published under the MIT license{" "}
               <TextLink href={siteConfig.repositoryUrl}>on GitHub</TextLink>. This notice covers
-              saas-monitor.com only: an instance hosted elsewhere is published by whoever runs it.
+              <HostedDomain /> only: an instance hosted elsewhere is published by whoever runs it.
             </p>
           ),
         },
@@ -160,7 +160,13 @@ export default function LegalNoticePage() {
                   },
                   {
                     term: "Code source",
-                    description: `Le code de ${siteConfig.name} est publié sous licence MIT. Une instance hébergée ailleurs que sur saas-monitor.com est éditée par la personne qui l’exploite.`,
+                    description: (
+                      <>
+                        Le code de {siteConfig.name} est publié sous licence MIT. Une instance
+                        hébergée ailleurs que sur <HostedDomain /> est éditée par la personne qui
+                        l’exploite.
+                      </>
+                    ),
                   },
                 ]}
               />

@@ -1,5 +1,6 @@
 import { CheckIcon } from "lucide-react";
 import Link from "next/link";
+import { HOSTED_DOMAIN } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 
 /** The building blocks of the legal pages' prose, on the landing page's palette. */
@@ -21,6 +22,11 @@ export function TextLink({ href, children }: { href: string; children: React.Rea
       {children}
     </a>
   );
+}
+
+/** The hosted service's domain, kept on one line: browsers would break it after its hyphen. */
+export function HostedDomain() {
+  return <span className="whitespace-nowrap">{HOSTED_DOMAIN}</span>;
 }
 
 export function EmailLink({ email }: { email: string }) {

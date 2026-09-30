@@ -5,6 +5,7 @@ import {
   Code,
   EmailLink,
   FactList,
+  HostedDomain,
   LegalSummary,
   Subheading,
   TextLink,
@@ -43,7 +44,7 @@ export default function PrivacyPage() {
       updated="2026-09-30"
       lead={
         <>
-          What saas-monitor.com collects, why, who handles it and how long it is kept.{" "}
+          What <HostedDomain /> collects, why, who handles it and how long it is kept.{" "}
           {siteConfig.name} is also open source: an instance you run yourself sends us nothing, and
           this policy doesn’t cover it.
         </>
@@ -67,7 +68,7 @@ export default function PrivacyPage() {
           content: (
             <>
               <p>
-                saas-monitor.com is published by {publisher.name},{" "}
+                <HostedDomain /> is published by {publisher.name},{" "}
                 {postalAddress(publisher.address)}, registered in {publisher.registryCity} under
                 number {publisher.siren} (see the <TextLink href="/legal">legal notice</TextLink>
                 ). We decide how the personal data of the people who use the service is handled: we
