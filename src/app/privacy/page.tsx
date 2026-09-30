@@ -23,7 +23,8 @@ export const metadata: Metadata = {
  * Every statement here describes what the code does: update this page with the code. The facts
  * behind it: src/db/schema (what is stored), src/server/auth.ts (sessions, sign-in providers),
  * src/server/screen-access.ts (the screen password cookie), src/server/voice (what Gradium
- * receives), src/server/stripe/accounts.ts and workspace-admin.ts (what deleting removes).
+ * receives), src/lib/analytics and src/app/api/pa (what Plausible receives),
+ * src/server/stripe/accounts.ts and workspace-admin.ts (what deleting removes).
  */
 
 /** Better Auth's cookies, their prefix kept whole: a narrow column breaks them after it. */
@@ -57,7 +58,7 @@ export default function PrivacyPage() {
             "Your Stripe key is stored encrypted. The restricted key we recommend only reads your data, apart from managing the webhook endpoint the service adds.",
             "Customer names and email addresses stay off your screens unless you turn them on.",
             "No ads, no tracking cookies, and we never sell your data. Our analytics use no cookies and identify no one.",
-            "Disconnect a Stripe account, and everything imported from it is deleted right away.",
+            "Disconnect a Stripe account, and everything imported from it is deleted from the live database right away; backups that may still hold it are overwritten over time.",
           ]}
         />
       }
@@ -154,9 +155,11 @@ export default function PrivacyPage() {
               <p>
                 For each session you sign in to: its IP address, your browser’s user agent and the
                 workspace you have open. To slow down password guessing, the server counts recent
-                sign-in attempts and screen password attempts by IP address, in memory only. Like
-                any web server, ours receives your IP address with every request, and may keep it
-                briefly in technical logs, for troubleshooting and security.
+                sign-in attempts and screen password attempts by IP address, in memory only. It
+                counts requests to its analytics relay (<Code>/api/pa</Code>) the same way, per IP
+                address over one-minute windows, so that no one can flood it. Like any web server,
+                ours receives your IP address with every request, and may keep it briefly in
+                technical logs, for troubleshooting and security.
               </p>
 
               <Subheading>When you write to us</Subheading>
@@ -164,17 +167,20 @@ export default function PrivacyPage() {
 
               <Subheading>Visits to this site</Subheading>
               <p>
-                We count visits with Plausible Analytics, through our own domain. It uses no cookies
-                and stores nothing on your device. It records the page, with any identifier in its
-                address removed, the site you came from, how long you stayed, and your browser,
-                operating system, type of device and country. It also counts a few steps, such as
+                We count visits with Plausible Analytics, without cookies and without any script
+                from Plausible: each page sends its events to our own server, which relays them to
+                Plausible. Nothing is stored on or read from your device. What is counted is the
+                page, the dashboard’s pages included, with ids and any other identifier removed from
+                its address, the site you came from, how long you stayed, and your browser,
+                operating system, type of device and country. A few steps are counted too, such as
                 opening the demo, signing up or connecting Stripe, without anything that says who
-                took them. Screens are never counted.
+                took them. Your screens are never counted.
               </p>
               <p>
-                Your IP address and user agent only serve to tell visitors of the same day apart,
-                through a hash whose salt is deleted every 24 hours; they are never stored. What
-                remains are statistics that identify no one.
+                Our server passes your IP address and user agent on to Plausible, which only uses
+                them to tell visitors of the same day apart, through a hash whose salt is deleted
+                every 24 hours; they are never stored. What remains are statistics that identify no
+                one.
               </p>
             </>
           ),
@@ -195,7 +201,7 @@ export default function PrivacyPage() {
                   {
                     term: "Keep it secure",
                     description:
-                      "Sessions with their IP address and user agent, password hashes, counts of recent attempts.",
+                      "Sessions with their IP address and user agent, password hashes, counts of recent attempts and requests.",
                     note: "Our legitimate interest in protecting the service and your data (article 6(1)(f)).",
                   },
                   {
@@ -301,7 +307,8 @@ export default function PrivacyPage() {
                   },
                   {
                     term: "Plausible Insights OÜ",
-                    description: "Counts visits to this site, without cookies.",
+                    description:
+                      "Counts visits to this site, from the events our server relays to it, without cookies.",
                     note: "Västriku tn 2, 50403 Tartu, Estonia",
                   },
                   {
@@ -332,12 +339,17 @@ export default function PrivacyPage() {
           id: "location",
           title: "Where it is processed",
           content: (
-            <p>
-              Our server and database are in France, and Plausible keeps its data in the European
-              Union. Gradium sends each request to its nearest servers, which may be outside the
-              European Union, and Google may process emails outside it, under the European
-              Commission’s standard contractual clauses.
-            </p>
+            <>
+              <p>
+                Our server and database are in France, with {host.name}. Plausible keeps its data in
+                the European Union.
+              </p>
+              <p>
+                Gradium may process phrases outside the European Union, under standard contractual
+                clauses or the EU-US Data Privacy Framework. Google may process emails outside the
+                European Union, under the European Commission’s standard contractual clauses.
+              </p>
+            </>
           ),
         },
         {
@@ -358,7 +370,7 @@ export default function PrivacyPage() {
                 {
                   term: "Stripe keys and imported data",
                   description:
-                    "Until you disconnect the Stripe account or delete its workspace. Either deletes the key and everything imported from the account right away, and removes the webhook endpoint the service created in Stripe while the key still allows it. Re-importing an account deletes its data before importing it again.",
+                    "Until you disconnect the Stripe account or delete its workspace. Either deletes the key and everything imported from the account from the live database right away, and removes the webhook endpoint the service created in Stripe while the key still allows it; backups that may still hold them are overwritten over time. Re-importing an account deletes its data before importing it again.",
                 },
                 {
                   term: "Sessions",
@@ -366,7 +378,7 @@ export default function PrivacyPage() {
                     "A session expires 7 days after its last use, and signing out ends it at once. Its record, with its IP address and user agent, is deleted when you sign out, when the browser comes back after it expired, or with your account.",
                 },
                 {
-                  term: "Attempt counts",
+                  term: "Attempt and request counts",
                   description:
                     "In the server’s memory only, never on disk, for windows of 15 minutes at most.",
                 },

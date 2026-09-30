@@ -218,7 +218,8 @@ export default function TermsPage() {
                 </li>
                 <li>
                   <Emphasis>End.</Emphasis> Disconnecting a Stripe account or deleting its workspace
-                  deletes this data right away. It stays in your Stripe account, so nothing needs to
+                  deletes this data from the live database right away; backups that may still hold
+                  it are overwritten over time. It stays in your Stripe account, so nothing needs to
                   be returned.
                 </li>
                 <li>
