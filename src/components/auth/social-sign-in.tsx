@@ -8,12 +8,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { markSignup } from "@/lib/analytics/signup";
 import { authClient } from "@/lib/auth-client";
 import { withRedirect } from "@/lib/safe-redirect";
-import type { SocialProvider } from "@/lib/social-providers";
+import { SOCIAL_PROVIDER_NAMES, type SocialProvider } from "@/lib/social-providers";
 import { authErrorMessage } from "./auth-errors";
 
-const PROVIDER_BUTTONS: Record<SocialProvider, { label: string; Icon: typeof GitHubIcon }> = {
-  github: { label: "GitHub", Icon: GitHubIcon },
-  google: { label: "Google", Icon: GoogleIcon },
+const PROVIDER_ICONS: Record<SocialProvider, typeof GitHubIcon> = {
+  github: GitHubIcon,
+  google: GoogleIcon,
 };
 
 export function SocialSignIn({ providers, next }: { providers: SocialProvider[]; next: string }) {
@@ -37,7 +37,7 @@ export function SocialSignIn({ providers, next }: { providers: SocialProvider[];
   return (
     <div className="grid gap-2">
       {providers.map((provider) => {
-        const { label, Icon } = PROVIDER_BUTTONS[provider];
+        const Icon = PROVIDER_ICONS[provider];
         return (
           <Button
             key={provider}
@@ -48,7 +48,7 @@ export function SocialSignIn({ providers, next }: { providers: SocialProvider[];
             onClick={() => signIn(provider)}
           >
             {pending === provider ? <Spinner /> : <Icon className="size-4" />}
-            Continue with {label}
+            Continue with {SOCIAL_PROVIDER_NAMES[provider]}
           </Button>
         );
       })}
