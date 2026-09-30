@@ -94,13 +94,15 @@ Any Raspberry Pi 4 or 5 connected to a TV over HDMI does the job. With Raspberry
    Pi**: add the final `&` so that the session keeps starting.
 
    ```bash
-   chromium --kiosk --noerrdialogs --disable-infobars --incognito \
+   chromium --kiosk --noerrdialogs --disable-infobars --hide-crash-restore-bubble \
      --autoplay-policy=no-user-gesture-required \
      --check-for-update-interval=31536000 \
      "https://monitor.example.com/d/your-screen-token" &
    ```
 
-   On older releases the browser binary is called `chromium-browser`.
+   On older releases the browser binary is called `chromium-browser`. Don't add `--incognito`:
+   a screen with a password remembers it in a cookie, which incognito forgets at every reboot.
+   After a power cut, the browser opens the screen again without asking to restore pages.
 
 5. Reboot: the screen opens full screen, with sound, without keyboard or mouse.
 
