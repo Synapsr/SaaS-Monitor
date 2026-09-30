@@ -10,7 +10,7 @@ export type ShareChannel = "x" | "linkedin";
 
 /** What a founder posts about their wall, before the link. Their words once the composer opens. */
 export const WALL_SHARE_TEXT =
-  "Our MRR is now live on the office TV, with a cash register for every sale 🔔 Built with SaaS Monitor, open source:";
+  "Our MRR is now live on the office TV, and every sale rings. Made with SaaS Monitor, open source:";
 
 /** The homepage, tagged with the channel so visits from shares can be told apart. */
 export function sharedHomepageUrl(channel: ShareChannel): string {
