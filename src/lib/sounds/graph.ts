@@ -31,8 +31,16 @@ export function getAudioGraph(): AudioGraph | null {
   return graph;
 }
 
-/** The master chain: the dry input and the reverb send, into one compressor. */
 function createAudioGraph(context: AudioContext): AudioGraph {
+  return { context, ...createMasterChain(context) };
+}
+
+/**
+ * The master chain: the dry input and the reverb send, into one compressor. Any context will do:
+ * `scripts/render-sounds.ts` renders the downloadable sounds through it offline, so the files
+ * sound like the screens.
+ */
+export function createMasterChain(context: BaseAudioContext): Omit<AudioGraph, "context"> {
   const compressor = context.createDynamicsCompressor();
   compressor.threshold.value = -16;
   compressor.knee.value = 10;
@@ -53,7 +61,7 @@ function createAudioGraph(context: AudioContext): AudioGraph {
   wet.gain.value = 0.5;
   reverb.connect(wet).connect(compressor);
 
-  return { context, input, reverb };
+  return { input, reverb };
 }
 
 /** A soft, short room (decaying stereo noise): enough air for bells, no audio file needed. */
