@@ -1,8 +1,11 @@
 import type { DisplayState } from "@/contract/display/types";
-import { registerScreens, unregisterScreen } from "@/notifications/devices";
+import type { ScreenEvent } from "@/contract/display/events";
+import { unregisterScreen } from "@/notifications/devices";
+import { installationId } from "@/notifications/preferences";
 import { notificationsStore } from "@/notifications/status";
 import { fetchScreenState, unlockScreen, type UnlockResult } from "@/screens/api";
 import { screenKey } from "@/screens/key";
+import { cacheState } from "@/screens/state-cache";
 import type { ScreenLink } from "@/screens/link";
 import { screensStore } from "@/screens/store";
 import type { ScreenAppearance } from "@/screens/types";
@@ -18,11 +21,6 @@ export type AddResult =
 export function appearanceOf(state: DisplayState): ScreenAppearance {
   const { theme, accent, language } = state.screen.settings;
   return { theme, accent, language };
-}
-
-function currentPushToken(): string | null {
-  const status = notificationsStore.getSnapshot();
-  return status.kind === "ready" ? status.pushToken : null;
 }
 
 /**
@@ -50,6 +48,7 @@ export async function addScreen(link: ScreenLink, password?: string): Promise<Ad
     name: result.state.screen.name,
     alias: existing?.alias ?? null,
     notify: existing?.notify ?? true,
+    mutedEvents: existing?.mutedEvents ?? [],
     appearance: appearanceOf(result.state),
     addedAt: existing?.addedAt ?? new Date().toISOString(),
   });
@@ -67,6 +66,7 @@ export async function unlockSavedScreen(key: string, password: string): Promise<
 
 /** Keeps the name and look of a screen as its instance sends them. */
 export function rememberState(key: string, state: DisplayState): void {
+  cacheState(key, state);
   screensStore.update(key, { name: state.screen.name, appearance: appearanceOf(state) });
 }
 
@@ -77,17 +77,20 @@ export function renameScreen(key: string, alias: string): void {
   screensStore.update(key, { alias: trimmed === "" || trimmed === screen.name ? null : trimmed });
 }
 
-/** "Notifications on this device", for one screen. */
-export async function setScreenNotifications(key: string, notify: boolean): Promise<void> {
-  const screen = screensStore.find(key);
-  if (!screen || screen.notify === notify) return;
+/**
+ * "Notifications on this device", for one screen. The registrations follow the screens: the
+ * instance hears of it at once.
+ */
+export function setScreenNotifications(key: string, notify: boolean): void {
   screensStore.update(key, { notify });
-  const pushToken = currentPushToken();
-  if (notify) {
-    if (pushToken !== null) await registerScreens([{ ...screen, notify }], pushToken);
-  } else {
-    await unregisterScreen(screen, pushToken);
-  }
+}
+
+/** Whether this device hears of one of the screen's events. */
+export function setEventMuted(key: string, event: ScreenEvent, muted: boolean): void {
+  const screen = screensStore.find(key);
+  if (!screen) return;
+  const others = screen.mutedEvents.filter((other) => other !== event);
+  screensStore.update(key, { mutedEvents: muted ? [...others, event] : others });
 }
 
 /** Forgets a screen on this device, and its notifications. The screen itself stays. */
@@ -95,5 +98,8 @@ export async function removeScreen(key: string): Promise<void> {
   const screen = screensStore.find(key);
   if (!screen) return;
   screensStore.remove(key);
-  if (screen.notify) await unregisterScreen(screen, currentPushToken());
+  // Without tokens, its instance never heard of this device.
+  if (notificationsStore.getSnapshot().kind === "ready") {
+    await unregisterScreen(screen, await installationId());
+  }
 }

@@ -83,9 +83,17 @@ describe("unlockScreen", () => {
 });
 
 describe("devices", () => {
-  const registration = { pushToken: "ExponentPushToken[abc]", platform: "ios" as const };
+  const registration = {
+    installationId: "6f1c2d3e-4b5a-4c6d-8e9f-0a1b2c3d4e5f",
+    platform: "ios" as const,
+    pushToken: "ExponentPushToken[abc]",
+    deviceToken: "a1b2c3",
+    apnsEnvironment: "development" as const,
+    enabled: true,
+    mutedEvents: ["customer" as const],
+  };
 
-  it("registers the device for the screen's notifications", async () => {
+  it("registers the device with its tokens and choices", async () => {
     respond(200, { ok: true });
     expect(await registerDevice(screen, { ...registration, locale: "fr-FR" })).toBe(true);
     const [url, init] = fetchMock.mock.calls[0];
@@ -95,13 +103,16 @@ describe("devices", () => {
     expect(JSON.parse(String(init.body))).toEqual({ ...registration, locale: "fr-FR" });
   });
 
-  it("unregisters it, a screen that is gone included", async () => {
+  it("unregisters it by its installation, a screen that is gone included", async () => {
     respond(204);
-    expect(await unregisterDevice(screen, registration.pushToken)).toBe(true);
+    expect(await unregisterDevice(screen, registration.installationId)).toBe(true);
     expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual({
+      installationId: registration.installationId,
+    });
     respond(404);
-    expect(await unregisterDevice(screen, registration.pushToken)).toBe(true);
+    expect(await unregisterDevice(screen, registration.installationId)).toBe(true);
     respond(500);
-    expect(await unregisterDevice(screen, registration.pushToken)).toBe(false);
+    expect(await unregisterDevice(screen, registration.installationId)).toBe(false);
   });
 });

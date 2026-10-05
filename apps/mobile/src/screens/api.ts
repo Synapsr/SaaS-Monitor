@@ -1,3 +1,4 @@
+import type { ScreenEvent } from "@/contract/display/events";
 import type { DisplayState } from "@/contract/display/types";
 import type { ScreenLink } from "@/screens/link";
 import { readDisplayState } from "@/screens/state";
@@ -28,11 +29,26 @@ export type UnlockResult =
   | { kind: "gone" }
   | { kind: "failed" };
 
+/**
+ * What a device tells a screen's instance (`PUT …/devices`): its tokens, at least one, and its
+ * choices for the screen.
+ */
 export interface DeviceRegistration {
-  pushToken: string;
+  /** Generated once by the app: names this device on every instance. */
+  installationId: string;
   platform: "ios" | "android";
+  /** Expo's push token, `ExponentPushToken[…]`. */
+  pushToken?: string;
+  /** The native token: APNs on iOS, FCM on Android. */
+  deviceToken?: string;
+  /** Which APNs environment `deviceToken` belongs to, on iOS. */
+  apnsEnvironment?: "development" | "production";
   /** BCP 47 tag of the device, e.g. `fr-FR`. Notifications speak the screen's language anyway. */
   locale?: string;
+  /** "Notifications on this device", unless they are paused for every screen. */
+  enabled: boolean;
+  /** Events of the screen this device doesn't want. */
+  mutedEvents: ScreenEvent[];
 }
 
 /** A display waits this long for an answer before trying again. */
@@ -116,7 +132,7 @@ export async function unlockScreen(link: ScreenLink, password: string): Promise<
   }
 }
 
-/** `PUT …/devices`: this device gets the screen's notifications. Idempotent. */
+/** `PUT …/devices`: this device follows the screen, as it chose. Idempotent. */
 export async function registerDevice(
   access: ScreenAccess,
   registration: DeviceRegistration,
@@ -134,15 +150,15 @@ export async function registerDevice(
 }
 
 /**
- * `DELETE …/devices`: no more notifications of the screen. A screen that is gone sends none
- * already: that is done too.
+ * `DELETE …/devices`: this device no longer follows the screen. A screen that is gone has no
+ * devices any more: that is done too.
  */
-export async function unregisterDevice(access: ScreenAccess, pushToken: string): Promise<boolean> {
+export async function unregisterDevice(access: ScreenAccess, installationId: string): Promise<boolean> {
   try {
     const response = await send(endpoint(access, "devices"), {
       method: "DELETE",
       headers: headers(access, true),
-      body: JSON.stringify({ pushToken }),
+      body: JSON.stringify({ installationId }),
     });
     return response.ok || response.status === 404;
   } catch {

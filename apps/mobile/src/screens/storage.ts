@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { z } from "zod";
+import { SCREEN_EVENTS } from "@/contract/display/events";
 import { ACCENTS, isCustomAccent, LANGUAGES, THEMES } from "@/contract/screens/settings";
 import type { SavedScreen } from "@/screens/types";
 
@@ -31,6 +32,7 @@ const savedScreenSchema = z.object({
   name: z.string(),
   alias: z.string().nullable().catch(null),
   notify: z.boolean().catch(true),
+  mutedEvents: z.array(z.enum(SCREEN_EVENTS)).catch([]),
   // A language or an accent this version doesn't know is only a lost look.
   appearance: appearanceSchema.nullable().catch(null),
   addedAt: z.string(),

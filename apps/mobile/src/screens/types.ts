@@ -1,3 +1,4 @@
+import type { ScreenEvent } from "@/contract/display/events";
 import type { Accent, Language, Theme } from "@/contract/screens/settings";
 
 /**
@@ -18,6 +19,8 @@ export interface SavedScreen {
   alias: string | null;
   /** "Notifications on this device", on by default. */
   notify: boolean;
+  /** Events of the screen this device doesn't want to hear about. */
+  mutedEvents: ScreenEvent[];
   /** How the screen looked last time, for what shows before its state arrives (a lock, a loader). */
   appearance: ScreenAppearance | null;
   addedAt: string;

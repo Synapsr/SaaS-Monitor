@@ -9,9 +9,9 @@ export function notificationsNote(status: NotificationsStatus): string | null {
       return null;
     case "denied":
       return "Notifications are off for SaaS Monitor. Turn them on in Settings to get your screens’ moments.";
-    case "unconfigured":
-      return "This build of the app can’t receive notifications: it has no push configuration.";
     case "unavailable":
-      return "Notifications can’t be set up right now. The app tries again next time it opens.";
+      return status.configured
+        ? "Notifications can’t be set up right now. The app tries again next time it opens."
+        : "This build of the app can’t receive notifications: it has no push configuration.";
   }
 }

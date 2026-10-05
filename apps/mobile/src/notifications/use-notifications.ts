@@ -1,37 +1,48 @@
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { registerScreens, retryUnregistrations } from "@/notifications/devices";
 import { notificationScreen } from "@/notifications/moment-data";
+import { installationId, pauseStore, useNotificationsPaused } from "@/notifications/preferences";
 import { notificationsStore, useNotificationsStatus } from "@/notifications/status";
 import { reloadWidgets } from "@/screens/bridge";
 import { screensStore, useScreens } from "@/screens/store";
 
 /**
- * Everything notifications need while the app runs: the permission and push token (read again
- * when the app comes back, as Settings may have changed them), the registration of each screen
- * with its instance, opening the screen of a tapped notification, and fresh widgets when one
- * arrives.
+ * Everything notifications need while the app runs: the permission and push tokens (read again
+ * when the app comes back, as Settings may have changed them, and when the system rolls a token),
+ * the registration of each screen with its instance, opening the screen of a tapped notification
+ * (from Expo, APNs or FCM alike), and fresh widgets when one arrives.
  */
 export function useNotifications(): void {
   const router = useRouter();
   const { ready, screens } = useScreens();
   const status = useNotificationsStatus();
-  const pushToken = status.kind === "ready" ? status.pushToken : null;
+  const tokens = status.kind === "ready" ? status.tokens : null;
+  const paused = useNotificationsPaused();
+  const [installation, setInstallation] = useState<string | null>(null);
 
   useEffect(() => {
+    void pauseStore.load();
+    void installationId().then(setInstallation);
     void notificationsStore.refresh();
     void retryUnregistrations();
-    const subscription = AppState.addEventListener("change", (state) => {
+    const appState = AppState.addEventListener("change", (state) => {
       if (state === "active") void notificationsStore.refresh();
     });
-    return () => subscription.remove();
+    // A rolled token makes the old one fail: every screen hears of the new one at once.
+    const rolled = Notifications.addPushTokenListener(() => void notificationsStore.refresh());
+    return () => {
+      appState.remove();
+      rolled.remove();
+    };
   }, []);
 
   useEffect(() => {
-    if (ready && pushToken !== null) void registerScreens(screens, pushToken);
-  }, [ready, screens, pushToken]);
+    if (!ready || tokens === null || paused === null || installation === null) return;
+    void registerScreens(screens, { installationId: installation, tokens, paused });
+  }, [ready, screens, tokens, paused, installation]);
 
   useEffect(() => {
     if (!ready) return;

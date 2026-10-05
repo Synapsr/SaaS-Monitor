@@ -2,10 +2,11 @@ import Constants from "expo-constants";
 import { Linking, ScrollView } from "react-native";
 import { CONTRACT_SOURCE } from "@/contract/source";
 import { notificationsNote } from "@/notifications/describe";
+import { pauseStore, useNotificationsPaused } from "@/notifications/preferences";
 import { notificationsStore, useNotificationsStatus, type NotificationsStatus } from "@/notifications/status";
 import { useScreens } from "@/screens/store";
 import { ExternalLinkIcon } from "@/ui/icons";
-import { SettingsGroup, SettingsRow } from "@/ui/settings-group";
+import { SettingsGroup, SettingsRow, SwitchRow } from "@/ui/settings-group";
 import { AppText } from "@/ui/text";
 import { colors } from "@/ui/theme";
 
@@ -18,13 +19,13 @@ const STATUS_LABELS: Record<NotificationsStatus["kind"], string> = {
   ready: "On",
   undetermined: "Not set up",
   denied: "Off",
-  unconfigured: "Unavailable",
   unavailable: "Unavailable",
 };
 
 /** The app itself: notifications, where SaaS Monitor lives, and what the app keeps. */
 export default function Settings() {
   const status = useNotificationsStatus();
+  const paused = useNotificationsPaused() === true;
   const { screens } = useScreens();
   const muted = screens.filter((screen) => !screen.notify).length;
 
@@ -34,17 +35,27 @@ export default function Settings() {
         title="Notifications"
         footer={
           notificationsNote(status) ??
-          (muted > 0 ? `${muted} of your screens ${muted === 1 ? "is" : "are"} silenced on this device.` : null)
+          (!paused && muted > 0
+            ? `${muted} of your screens ${muted === 1 ? "is" : "are"} silenced on this device.`
+            : null)
         }
       >
         <SettingsRow
           label="Notifications"
           accessory={
             <AppText variant="body" tone="ink3">
-              {STATUS_LABELS[status.kind]}
+              {status.kind === "ready" && paused ? "Paused" : STATUS_LABELS[status.kind]}
             </AppText>
           }
         />
+        {status.kind === "ready" && (
+          <SwitchRow
+            label="Pause notifications"
+            detail="Every screen stays silent on this device; their own choices come back when you resume."
+            value={paused}
+            onValueChange={(value) => pauseStore.setPaused(value)}
+          />
+        )}
         {status.kind === "undetermined" && (
           <SettingsRow label="Turn on notifications" tone="accentInk" onPress={() => void notificationsStore.request()} />
         )}
