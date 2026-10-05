@@ -319,6 +319,7 @@ describe("phone notifications", () => {
             "interruption-level": "time-sensitive",
             "thread-id": screenKey(token),
           },
+          body: { type: "moment", screen: screenKey(token), event: "subscription" },
           type: "moment",
           screen: screenKey(token),
           event: "subscription",

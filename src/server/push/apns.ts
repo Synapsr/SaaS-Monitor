@@ -53,6 +53,8 @@ export function apnsJwt(
 }
 
 export interface ApnsPayload extends MomentData {
+  /** The app's data where expo-notifications reads it on iOS, as Expo's own pushes carry it. */
+  body: MomentData;
   aps: {
     alert: { title: string; body: string };
     sound: "default";
@@ -71,6 +73,7 @@ export function apnsPayload(item: Notice): ApnsPayload {
       "interruption-level": "time-sensitive",
       "thread-id": item.screen,
     },
+    body: momentData(item),
     ...momentData(item),
   };
 }

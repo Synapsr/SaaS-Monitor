@@ -63,6 +63,7 @@ describe("APNs payloads", () => {
         "interruption-level": "time-sensitive",
         "thread-id": "0123456789abcdef",
       },
+      body: { type: "moment", screen: "0123456789abcdef", event: "payment" },
       type: "moment",
       screen: "0123456789abcdef",
       event: "payment",
