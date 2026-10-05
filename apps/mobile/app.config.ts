@@ -40,6 +40,8 @@ const config: ExpoConfig = {
       "expo-camera",
       { cameraPermission: "Scan the QR code of a screen to add it to SaaS Monitor." },
     ],
+    // Before `@bacons/apple-targets`, whose targets it edits (see the file).
+    "./targets/with-shared-code",
     "@bacons/apple-targets",
   ],
   experiments: { typedRoutes: true },
