@@ -32,9 +32,9 @@ struct ScreenListView: View {
 /// A screen and its last known number.
 private struct ScreenRow: View {
   let screen: SharedScreen
+  @State private var figures: ScreenFigures?
 
   var body: some View {
-    let figures = ScreenLoader().cached(screen)?.state.map(ScreenFigures.init)
     VStack(alignment: .leading, spacing: 2) {
       Text(screen.name).font(.headline).lineLimit(1)
       if let figures, figures.hasNumbers {
@@ -46,6 +46,8 @@ private struct ScreenRow: View {
       }
     }
     .padding(.vertical, 2)
+    // Again on each return from a screen, which has just fetched its numbers.
+    .task { figures = ScreenLoader().cached(screen)?.state.map(ScreenFigures.init) }
   }
 }
 
