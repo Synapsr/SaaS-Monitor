@@ -135,7 +135,8 @@ data class FeedLine(
 
 /**
  * The icon of a feed item, as the web display picks it (`feed-kind-icon.tsx`): its kind's, the
- * Connect one, or why a subscription stopped. Drawables are `sm_kind_*` and `sm_churn_*`.
+ * Connect one, or why a subscription stopped. Drawables are `sm_kind_*`, `sm_churn_*` and
+ * `sm_party`.
  */
 enum class FeedIcon {
   PAYMENT,
@@ -148,7 +149,9 @@ enum class FeedIcon {
   CHURN,
   WONT_RENEW,
   UNPAID,
-  PAUSED;
+  PAUSED,
+  /** Celebrations: a test, a milestone (`sm_party`). */
+  PARTY;
 
   companion object {
     fun of(entry: FeedEntry): FeedIcon =

@@ -22,6 +22,7 @@ object DisplayStateJson {
     val settings = screen.optJSONObject("settings") ?: JSONObject()
     val metrics = root.getJSONObject("metrics")
     val feed = root.optJSONArray("feed") ?: JSONArray()
+    val accounts = root.optJSONArray("accounts") ?: JSONArray()
     return ScreenSnapshot(
       screenName = screen.optString("name"),
       status = enumOf(root.optString("status"), ScreenSnapshot.Status.READY) { it.wire },
@@ -34,14 +35,17 @@ object DisplayStateJson {
           theme = enumOf(settings.optString("theme"), Theme.DARK) { it.wire },
           language = enumOf(settings.optString("language"), Language.EN) { it.code },
           timeZone = settings.optString("timeZone", "UTC"),
+          momentEvents = momentEvents(settings.optJSONObject("events")),
         ),
       mrr = metrics.optLong("mrr"),
       mrr30DaysAgo = metrics.optLong("mrr30DaysAgo"),
       revenueToday = metrics.optJSONObject("revenue")?.optLong("today") ?: 0,
-      feed =
-        (0 until feed.length())
-          .mapNotNull { feed.optJSONObject(it)?.let(::parseFeedEntry) }
-          .take(ScreenSnapshot.MAX_FEED_ITEMS),
+      arpu = metrics.optLong("arpu"),
+      customersCreatedToday = metrics.optLong("customersCreatedToday"),
+      feed = (0 until feed.length()).mapNotNull { feed.optJSONObject(it)?.let(::parseFeedEntry) },
+      accounts =
+        (0 until accounts.length()).mapNotNull { accounts.optJSONObject(it)?.let(::parseAccount) },
+      testEventId = root.optJSONObject("testEvent")?.optNullableString("id"),
       generatedAt = IsoInstant.parse(root.optString("generatedAt")) ?: System.currentTimeMillis(),
     )
   }
@@ -63,7 +67,15 @@ object DisplayStateJson {
               .put("accent", settings.accent)
               .put("theme", settings.theme.wire)
               .put("language", settings.language.code)
-              .put("timeZone", settings.timeZone),
+              .put("timeZone", settings.timeZone)
+              .put(
+                "events",
+                JSONObject(
+                  ScreenEvent.entries.associate {
+                    it.wire to JSONObject().put("moment", it in settings.momentEvents)
+                  }
+                ),
+              ),
           ),
       )
       .put("currency", snapshot.currency)
@@ -73,15 +85,27 @@ object DisplayStateJson {
         JSONObject()
           .put("mrr", snapshot.mrr)
           .put("mrr30DaysAgo", snapshot.mrr30DaysAgo)
-          .put("revenue", JSONObject().put("today", snapshot.revenueToday)),
+          .put("revenue", JSONObject().put("today", snapshot.revenueToday))
+          .put("arpu", snapshot.arpu)
+          .put("customersCreatedToday", snapshot.customersCreatedToday),
       )
-      .put("feed", JSONArray(snapshot.feed.map(::encodeFeedEntry)))
+      // Widgets and watches show a few items: a cache keeps no more.
+      .put(
+        "feed",
+        JSONArray(snapshot.feed.take(ScreenSnapshot.MAX_FEED_ITEMS).map(::encodeFeedEntry)),
+      )
+      .put(
+        "accounts",
+        JSONArray(snapshot.accounts.map { JSONObject().put("id", it.id).put("name", it.name) }),
+      )
+      .put("testEvent", snapshot.testEventId?.let { JSONObject().put("id", it) } ?: JSONObject.NULL)
       .toString()
   }
 
   private fun parseFeedEntry(item: JSONObject): FeedEntry? {
     val kind = FeedKind.entries.firstOrNull { it.wire == item.optString("kind") } ?: return null
     val churn = item.optJSONObject("churn")
+    val connect = item.optJSONObject("connect")
     return FeedEntry(
       id = item.optString("id"),
       kind = kind,
@@ -90,11 +114,34 @@ object DisplayStateJson {
       customer = item.optNullableString("customerName") ?: item.optNullableString("customerEmail"),
       planName = item.optNullableString("planName"),
       country = item.optNullableString("country"),
-      connect = item.optJSONObject("connect") != null,
+      connect = connect != null,
       churnReason =
         churn?.let { enumOf(it.optString("reason"), ChurnReason.CANCELED) { r -> r.wire } },
+      live = item.optBoolean("live"),
+      customerKey = item.optNullableString("customerKey"),
+      customerSubscribed =
+        if (item.isNull("customerSubscribed")) null else item.optBoolean("customerSubscribed"),
+      applicationFee =
+        connect?.takeUnless { it.isNull("applicationFee") }?.optLong("applicationFee"),
+      churnEndsAt = churn?.optNullableString("endsAt")?.let(IsoInstant::parse),
+      accountId = item.optString("accountId"),
+      accountName = item.optString("accountName"),
     )
   }
+
+  private fun parseAccount(account: JSONObject): ScreenSnapshot.Account? =
+    account
+      .optString("id")
+      .takeIf { it.isNotEmpty() }
+      ?.let {
+        ScreenSnapshot.Account(it, account.optString("name"))
+      }
+
+  /** Events whose `moment` channel is on; missing ones keep the default, on. */
+  private fun momentEvents(events: JSONObject?): Set<ScreenEvent> =
+    ScreenEvent.entries
+      .filter { events?.optJSONObject(it.wire)?.optBoolean("moment", true) ?: true }
+      .toSet()
 
   private fun encodeFeedEntry(entry: FeedEntry): JSONObject =
     JSONObject()
@@ -105,11 +152,25 @@ object DisplayStateJson {
       .put("customerName", entry.customer ?: JSONObject.NULL)
       .put("planName", entry.planName ?: JSONObject.NULL)
       .put("country", entry.country ?: JSONObject.NULL)
-      .put("connect", if (entry.connect) JSONObject() else JSONObject.NULL)
+      .put(
+        "connect",
+        if (entry.connect)
+          JSONObject().put("applicationFee", entry.applicationFee ?: JSONObject.NULL)
+        else JSONObject.NULL,
+      )
       .put(
         "churn",
-        entry.churnReason?.let { JSONObject().put("reason", it.wire) } ?: JSONObject.NULL,
+        entry.churnReason?.let { reason ->
+          JSONObject()
+            .put("reason", reason.wire)
+            .put("endsAt", entry.churnEndsAt?.let(IsoInstant::format) ?: JSONObject.NULL)
+        } ?: JSONObject.NULL,
       )
+      .put("live", entry.live)
+      .put("customerKey", entry.customerKey ?: JSONObject.NULL)
+      .put("customerSubscribed", entry.customerSubscribed ?: JSONObject.NULL)
+      .put("accountId", entry.accountId)
+      .put("accountName", entry.accountName)
 
   private inline fun <reified T : Enum<T>> enumOf(
     value: String,

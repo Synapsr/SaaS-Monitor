@@ -292,4 +292,5 @@ internal val FeedIcon.drawable: Int
       FeedIcon.WONT_RENEW -> R.drawable.sm_churn_scheduled
       FeedIcon.UNPAID -> R.drawable.sm_churn_unpaid
       FeedIcon.PAUSED -> R.drawable.sm_churn_paused
+      FeedIcon.PARTY -> R.drawable.sm_party
     }

@@ -62,3 +62,30 @@ fun goalProgress(
     eta = if (days <= MAX_ETA_DAYS) now + (days * DAY_MILLIS).toLong() else null,
   )
 }
+
+/** Ladder milestones in `(from, to]`, in major units, ascending. */
+fun milestonesBetween(from: Double, to: Double): List<Double> {
+  val milestones = mutableListOf<Double>()
+  var magnitude = FIRST_MILESTONE
+  while (magnitude <= to) {
+    for (step in LADDER_STEPS) {
+      val milestone = step * magnitude
+      if (milestone > from && milestone <= to) milestones += milestone
+    }
+    magnitude *= 10
+  }
+  return milestones
+}
+
+/**
+ * The milestone (minor units) crossed when the value moved from [before] to [after]: the highest
+ * ladder step or [goal] (major units) in between, or `null` when none was crossed.
+ */
+fun crossedMilestone(before: Long, after: Long, goal: Long?, currency: String): Long? {
+  if (after <= before) return null
+  val from = Money.toMajorUnits(before, currency)
+  val to = Money.toMajorUnits(after, currency)
+  val candidates = milestonesBetween(from, to).toMutableList()
+  if (goal != null && goal > from && goal <= to) candidates += goal.toDouble()
+  return candidates.maxOrNull()?.let { Money.toMinorUnits(it, currency) }
+}

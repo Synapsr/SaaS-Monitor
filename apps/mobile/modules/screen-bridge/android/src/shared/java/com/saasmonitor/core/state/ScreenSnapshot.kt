@@ -16,11 +16,21 @@ data class ScreenSnapshot(
   val mrr: Long,
   val mrr30DaysAgo: Long,
   val revenueToday: Long,
-  /** Most recent first, at most [MAX_FEED_ITEMS]. */
+  /** Average revenue per paying customer: a test celebration plays a typical payment. */
+  val arpu: Long = 0,
+  /** Stripe customers created today, in the screen's time zone. */
+  val customersCreatedToday: Long = 0,
+  /** Most recent first: as sent when fetched, at most [MAX_FEED_ITEMS] once cached. */
   val feed: List<FeedEntry>,
+  /** The screen's Stripe accounts: a moment names its account when there are several. */
+  val accounts: List<Account> = emptyList(),
+  /** Changes when "Send a test celebration" is clicked in the screen's settings. */
+  val testEventId: String? = null,
   /** When the server made the state, in epoch milliseconds. */
   val generatedAt: Long,
 ) {
+  data class Account(val id: String, val name: String)
+
   enum class Status(val wire: String) {
     /** No Stripe account linked yet. */
     EMPTY("empty"),
@@ -41,6 +51,8 @@ data class ScreenSnapshot(
     val language: Language,
     /** IANA time zone defining "today". */
     val timeZone: String,
+    /** Events shown as moments (`settings.events[event].moment`): every one by default. */
+    val momentEvents: Set<ScreenEvent> = ScreenEvent.entries.toSet(),
   )
 
   companion object {
@@ -62,6 +74,20 @@ enum class Theme(val wire: String) {
   LIGHT("light"),
 }
 
+/** What can happen on a screen (`SCREEN_EVENTS` of the web app), each shown as its settings say. */
+enum class ScreenEvent(val wire: String) {
+  PAYMENT("payment"),
+  CONNECT_PAYMENT("connectPayment"),
+  SUBSCRIPTION("subscription"),
+  UPGRADE("upgrade"),
+  REACTIVATION("reactivation"),
+  DOWNGRADE("downgrade"),
+  CANCELLATION("cancellation"),
+  UNPAID("unpaid"),
+  CUSTOMER("customer"),
+  MILESTONE("milestone"),
+}
+
 /** An item of the screen's live feed (`FeedItem`). */
 data class FeedEntry(
   val id: String,
@@ -77,7 +103,34 @@ data class FeedEntry(
   /** A payment collected for one of the account's Stripe Connect accounts. */
   val connect: Boolean,
   val churnReason: ChurnReason?,
-)
+  /** Detected by the live sync rather than imported: only these become moments. */
+  val live: Boolean = false,
+  /** The same for every item of a customer, and opaque. */
+  val customerKey: String? = null,
+  /** For a payment: whether its customer already had a subscription bringing MRR. */
+  val customerSubscribed: Boolean? = null,
+  /** What a Connect payment leaves the account, converted; `null` without a fee. */
+  val applicationFee: Long? = null,
+  /** When a subscription set not to renew ends. */
+  val churnEndsAt: Long? = null,
+  val accountId: String = "",
+  val accountName: String = "",
+) {
+  /** The event this item is, as the screen's settings name it (`itemEvent`). */
+  val event: ScreenEvent
+    get() =
+      when (kind) {
+        FeedKind.PAYMENT -> if (connect) ScreenEvent.CONNECT_PAYMENT else ScreenEvent.PAYMENT
+        FeedKind.CUSTOMER -> ScreenEvent.CUSTOMER
+        FeedKind.NEW -> ScreenEvent.SUBSCRIPTION
+        FeedKind.EXPANSION -> ScreenEvent.UPGRADE
+        FeedKind.REACTIVATION -> ScreenEvent.REACTIVATION
+        FeedKind.CONTRACTION -> ScreenEvent.DOWNGRADE
+        // A failed payment is no customer leaving.
+        FeedKind.CHURN ->
+          if (churnReason == ChurnReason.UNPAID) ScreenEvent.UNPAID else ScreenEvent.CANCELLATION
+      }
+}
 
 enum class FeedKind(val wire: String) {
   PAYMENT("payment"),

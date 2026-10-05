@@ -30,6 +30,9 @@ data class CachedScreen(
   }
 }
 
+/** What a fetch gave: the screen to show, and the whole state when one was just fetched. */
+data class Refresh(val cached: CachedScreen, val fetched: ScreenSnapshot?)
+
 /** How a [CachedScreen] is stored: on disk here, and in each phone widget's state. */
 object CachedScreenJson {
   fun encode(cached: CachedScreen): String =
@@ -78,18 +81,22 @@ class ScreenRepository(
     }
 
   /** Fetches [screen] and records the outcome; a failed fetch keeps the last known values. */
-  suspend fun refresh(screen: SharedScreen): CachedScreen {
+  suspend fun refresh(screen: SharedScreen): CachedScreen = fetch(screen).cached
+
+  /** [refresh], telling apart the state just fetched: moments only come from fresh states. */
+  suspend fun fetch(screen: SharedScreen): Refresh {
     val previous = cached(screen.key)
+    val result = client.fetch(screen)
     val next =
-      when (val result = client.fetch(screen)) {
+      when (result) {
         is FetchResult.Success ->
           CachedScreen(result.snapshot, fetchedAt = System.currentTimeMillis(), problem = null)
         FetchResult.Locked -> previous.copy(problem = ScreenProblem.LOCKED)
         FetchResult.Gone -> previous.copy(problem = ScreenProblem.GONE)
-        is FetchResult.Failed -> return previous
+        is FetchResult.Failed -> return Refresh(previous, fetched = null)
       }
     write(screen.key, next)
-    return next
+    return Refresh(next, fetched = (result as? FetchResult.Success)?.snapshot)
   }
 
   /** Forgets the states of screens the app no longer has. */

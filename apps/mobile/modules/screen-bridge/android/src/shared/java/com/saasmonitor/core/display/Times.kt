@@ -54,3 +54,7 @@ private fun format(at: Long, skeleton: String, timeZone: String, language: Langu
   DateFormat.getInstanceForSkeleton(skeleton, language.locale)
     .apply { this.timeZone = TimeZone.getTimeZone(timeZone) }
     .format(java.util.Date(at))
+
+/** A day in the screen's time zone, month in full: "October 29", "29 octobre". */
+fun formatDate(at: Long, timeZone: String, language: Language): String =
+  format(at, "MMMMd", timeZone, language)
