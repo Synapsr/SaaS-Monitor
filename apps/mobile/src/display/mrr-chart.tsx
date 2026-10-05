@@ -3,11 +3,13 @@ import { View, type GestureResponderEvent } from "react-native";
 import Animated, {
   Easing,
   useAnimatedProps,
+  useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Circle, ClipPath, Defs, Line, LinearGradient, Path, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from "react-native-svg";
+import { scheduleOnRN } from "react-native-worklets";
 import { chartRangeLabel, layoutMrrChart, nearestPoint } from "@/contract/display/chart";
 import { formatAmount, formatPercent, percentChange } from "@/contract/display/format";
 import type { RecurringMetric } from "@/contract/display/metric";
@@ -20,7 +22,6 @@ import { DisplayText } from "@/display/text";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { TrendingDownIcon, TrendingUpIcon } from "@/ui/icons";
 
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface MrrChartProps {
@@ -134,32 +135,40 @@ function Plot({ series, title, currency, target, width: fullWidth, height, fontS
   const reducedMotion = useReducedMotion();
   const id = useId().replace(/[^a-z0-9]/gi, "");
   const [touched, setTouched] = useState<number | null>(null);
+  const dot = 4.2 * scale;
+  // The curve ends short of the edge, where its live end and its pulse still fit: Android draws
+  // nothing outside the SVG.
+  const bleed = Math.ceil(dot * 2.4);
   // Value labels longer than the gutter ("14 k $US") would leave the screen: the plot moves right.
   const { chart, offset } = useMemo(() => {
     const options = { series, currency, target, locale, height, fontSize };
-    const full = layoutMrrChart({ ...options, width: fullWidth });
+    const full = layoutMrrChart({ ...options, width: fullWidth - bleed });
     const longest = Math.max(0, ...full.yTicks.map((tick) => tick.label.length));
     const overflow = Math.ceil(longest * fontSize * 0.58 - (full.gutter - fontSize * 0.9));
     return overflow > 0
-      ? { chart: layoutMrrChart({ ...options, width: fullWidth - overflow }), offset: overflow }
+      ? { chart: layoutMrrChart({ ...options, width: fullWidth - bleed - overflow }), offset: overflow }
       : { chart: full, offset: 0 };
-  }, [series, currency, target, locale, fullWidth, height, fontSize]);
+  }, [series, currency, target, locale, fullWidth, height, fontSize, bleed]);
   const width = fullWidth - offset;
 
-  // The curve draws itself from the left; then its live end starts to pulse.
-  const reveal = useSharedValue(reducedMotion ? 1 : 0);
+  // The curve draws itself from the left, behind a view that widens (an SVG clip path isn't
+  // redrawn on Android as it changes); then its live end starts to pulse.
+  const [drawn, setDrawn] = useState(false);
+  const revealed = drawn || reducedMotion;
+  const reveal = useSharedValue(0);
   useEffect(() => {
-    reveal.value = reducedMotion ? 1 : withTiming(1, { duration: 1600, easing: Easing.bezier(0.22, 1, 0.36, 1) });
-  }, [reveal, reducedMotion, series.length]);
-  const clip = useAnimatedProps(() => ({ width: reveal.value * width }));
+    if (reducedMotion) return;
+    reveal.value = withTiming(1, { duration: 1600, easing: Easing.bezier(0.22, 1, 0.36, 1) }, (finished) => {
+      if (finished) scheduleOnRN(setDrawn, true);
+    });
+  }, [reveal, reducedMotion]);
+  const revealStyle = useAnimatedStyle(() => ({ width: reveal.value * width }));
 
   const ping = useSharedValue(0);
   useEffect(() => {
-    ping.value = reducedMotion
-      ? 0
-      : withRepeat(withTiming(1, { duration: 2600, easing: Easing.bezier(0, 0, 0.2, 1) }), -1, false);
-  }, [ping, reducedMotion]);
-  const dot = 4.2 * scale;
+    if (!revealed || reducedMotion) return;
+    ping.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.bezier(0, 0, 0.2, 1) }), -1, false);
+  }, [ping, revealed, reducedMotion]);
   const pingProps = useAnimatedProps(() => ({
     r: dot * (1 + ping.value * 1.6),
     opacity: reducedMotion ? 0 : 0.55 * (1 - Math.min(1, ping.value / 0.8)),
@@ -192,18 +201,7 @@ function Plot({ series, title, currency, target, width: fullWidth, height, fontS
       onResponderRelease={() => setTouched(null)}
       onResponderTerminate={() => setTouched(null)}
     >
-      <Svg width={width} height={height} style={{ overflow: "visible" }}>
-        <Defs>
-          <LinearGradient id={`area${id}`} x1="0" x2="0" y1="0" y2="1">
-            <Stop offset="0" stopColor={palette.glow} stopOpacity={0.26} />
-            <Stop offset="0.7" stopColor={palette.glow} stopOpacity={0.05} />
-            <Stop offset="1" stopColor={palette.glow} stopOpacity={0} />
-          </LinearGradient>
-          <ClipPath id={`reveal${id}`}>
-            <AnimatedRect x={0} y={-height} height={height * 3} animatedProps={clip} />
-          </ClipPath>
-        </Defs>
-
+      <Svg width={width} height={height} style={{ position: "absolute" }}>
         {chart.yTicks.map((tick) => (
           <Line
             key={tick.y}
@@ -228,16 +226,31 @@ function Plot({ series, title, currency, target, width: fullWidth, height, fontS
             strokeWidth={2 * scale}
           />
         )}
-        <Path d={chart.areaPath} fill={`url(#area${id})`} clipPath={`url(#reveal${id})`} />
-        <Path
-          d={chart.linePath}
-          fill="none"
-          stroke={palette.glow}
-          strokeWidth={2.6 * scale}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          clipPath={`url(#reveal${id})`}
-        />
+      </Svg>
+      {/* Once drawn, a plain width: the whole curve shows, even if frames of the reveal were lost. */}
+      <Animated.View
+        style={[{ position: "absolute", height, overflow: "hidden" }, revealed ? { width } : revealStyle]}
+      >
+        <Svg width={width} height={height}>
+          <Defs>
+            <LinearGradient id={`area${id}`} x1="0" x2="0" y1="0" y2="1">
+              <Stop offset="0" stopColor={palette.glow} stopOpacity={0.26} />
+              <Stop offset="0.7" stopColor={palette.glow} stopOpacity={0.05} />
+              <Stop offset="1" stopColor={palette.glow} stopOpacity={0} />
+            </LinearGradient>
+          </Defs>
+          <Path d={chart.areaPath} fill={`url(#area${id})`} />
+          <Path
+            d={chart.linePath}
+            fill="none"
+            stroke={palette.glow}
+            strokeWidth={2.6 * scale}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </Animated.View>
+      <Svg width={width} height={height} style={{ position: "absolute", overflow: "visible" }}>
         {point && (
           <Line
             x1={chart.x(point.date)}
