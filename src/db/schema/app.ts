@@ -45,6 +45,12 @@ const timestamps = {
 /** How a row entered the database. Only `live` rows trigger sounds and celebrations. */
 export const DATA_ORIGINS = ["backfill", "live", "reconcile"] as const;
 
+/**
+ * When a `live` row was claimed to notify the phones following the account's screens
+ * (`src/server/push`): once only, so that no phone hears of it twice, whichever sync claims it.
+ */
+const notifiedAt = () => instant();
+
 /** Why a subscription stopped counting (see `ChurnReason`). */
 export const CHURN_REASONS = [
   "canceled",
@@ -221,6 +227,7 @@ export const mrrMovements = mysqlTable(
     currency: currency().notNull(),
     occurredAt: instant().notNull(),
     origin: mysqlEnum(DATA_ORIGINS).notNull(),
+    notifiedAt: notifiedAt(),
     /** Stripe event that revealed the change, when there is one. */
     stripeEventId: stripeId(),
     createdAt: instant().default(now).notNull(),
@@ -285,6 +292,7 @@ export const payments = mysqlTable(
     applicationFee: money(),
     occurredAt: instant().notNull(),
     origin: mysqlEnum(DATA_ORIGINS).notNull(),
+    notifiedAt: notifiedAt(),
     ...timestamps,
   },
   (table) => [
@@ -316,6 +324,7 @@ export const customers = mysqlTable(
     /** When Stripe created the customer. */
     occurredAt: instant().notNull(),
     origin: mysqlEnum(DATA_ORIGINS).notNull(),
+    notifiedAt: notifiedAt(),
     ...timestamps,
   },
   (table) => [
@@ -391,6 +400,22 @@ export const pushDevices = mysqlTable(
     // Expo tells which tokens no longer reach a phone: every screen forgets them.
     index("push_devices_push_token_index").on(table.pushToken),
   ],
+);
+
+/**
+ * The milestones a screen's phones were told about, named like the moments of displays
+ * (`milestone:mrr:1000000`): each is notified once, even when MRR hovers around it.
+ */
+export const pushMilestones = mysqlTable(
+  "push_milestones",
+  {
+    screenId: uuid()
+      .notNull()
+      .references(() => screens.id, { onDelete: "cascade" }),
+    milestone: identifier({ length: 100 }).notNull(),
+    createdAt: instant().default(now).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.screenId, table.milestone] })],
 );
 
 /**
