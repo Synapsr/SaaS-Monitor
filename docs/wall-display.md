@@ -4,8 +4,9 @@ A screen is a web page (`/d/<token>`) designed to run unattended, full screen, f
 device with a modern browser works: a Raspberry Pi behind a TV, a spare laptop, a monitor next to
 your desk, a tablet on a shelf.
 
-Copy the screen link from **Screens → your screen → Screen link** in the dashboard. Anyone with the
-link can view the screen, so treat it like a password; **Regenerate link** revokes the old one.
+Copy the screen link from **Screens → your screen → Screen link** in the dashboard, or open it on
+[your phone](#on-your-phone). Anyone with the link can view the screen, so treat it like a
+password; **Regenerate link** revokes the old one.
 For more safety, **Set a password** next to it: each device asks for it once, then remembers it,
 and changing it locks every device out again. Members of your workspace, signed in, never need it.
 
@@ -31,12 +32,16 @@ screen, in case its subscription follows.
 **Events**, in the screen settings, decides what each kind of event does: payments, payments made
 for a [Stripe Connect account](stripe.md#stripe-connect-platforms), new subscribers, upgrades,
 reactivations, downgrades, cancellations, failed payments, new customers and milestones. For each
-one, four boxes:
+one, five boxes:
 
 - **Feed**: listed in the activity feed on the side of the screen.
 - **Card**: shown as a card in the middle of the screen (the whole screen for a milestone).
 - **Sound**: plays its sound, from the screen's sound pack.
 - **Voice**: said out loud by the screen's [voice](#voice).
+- **Phone**: a notification on the phones that follow the screen with the
+  [SaaS Monitor app](#on-your-phone). On by default for good news (payments, new subscribers,
+  upgrades, reactivations, new customers, milestones), off for losses and for payments made for
+  Stripe Connect accounts.
 
 Every box is its own choice: a payment may ring without a card, and a Connect platform may keep
 the payments made for its connected accounts off the feed, while the feed still shows its latest
@@ -81,6 +86,34 @@ $49!". Write up to five variations per announcement: one is picked at random eac
 those whose details are known, so a phrase with `{name}` gives way to another one when the name is
 hidden. Each announcement is synthesized by Gradium when it happens (the text, customer's name
 included, is sent to Gradium), and every open copy of the screen says the same phrase.
+
+## On your phone
+
+The SaaS Monitor app (iOS and Android) shows a screen on your phone, in its widgets and on your
+watch, and notifies you of what happens. It has no account: the screen's link is all it needs, on
+saas-monitor.com or on your own instance. In the screen settings, under **Open on your phone**,
+scan the QR code with the app (or paste the link in it). A screen with a password asks for it
+once on each phone.
+
+**Notifications** say what the screen's cards say, in the screen's language and currency: "New
+subscriber, +$49 MRR", then "Payment received, $49". Which events notify is the **Phone** column
+of [Events](#events). Customers are named only if the screen shows names, and a screen of several
+Stripe accounts names the account of each notification. A burst of activity (after an outage,
+say) arrives as one notification summing it up, and each milestone is notified once. A phone
+following several screens of the same account hears of each thing once.
+
+Notifications go out when SaaS Monitor syncs the Stripe account, which happens when a Stripe
+webhook arrives, when a screen polls, or when the dashboard is open: there is no background
+worker. For notifications within seconds, turn on
+[instant updates](stripe.md#instant-updates) for the account. Without them, the account is only
+checked while a screen or the dashboard is open, every few minutes at best (about every 17
+minutes for small accounts), and notifications wait for it.
+
+Notifications reach phones through the Expo push service, which forwards them to Apple and
+Google: their title and text go through these services. Self-hosted instances need no setup or
+credentials, only outbound HTTPS access to `exp.host`. **Regenerate link** or a new password stops
+notifying every phone that followed the screen, like it locks out its displays; uninstalling the
+app stops them too.
 
 ## Raspberry Pi (recommended)
 

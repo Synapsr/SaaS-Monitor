@@ -6,6 +6,18 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ### Added
 
+- The server side of the SaaS Monitor app (iOS and Android): a phone opens a screen with its link,
+  scanned from the QR code of **Open on your phone** in the screen settings, and its password if
+  it has one, then gets notified of what happens, in the screen's language. **Events** gains a
+  **Phone** column: payments, new subscribers, upgrades, reactivations, new customers and
+  milestones notify by default. Each thing is notified once, a burst as a single summary.
+  Notifications go through the Expo push service, with nothing to configure; they are instant
+  with [instant updates](docs/stripe.md#instant-updates). A new link or a new password stops
+  notifying the phones that followed the screen.
+- `POST /api/screens/:token/access` (a screen's password for the proof that opens it, also
+  accepted by the state endpoint as an `X-Screen-Access` header) and
+  `PUT`/`DELETE /api/screens/:token/devices` (phones following a screen).
+
 - Lost subscriptions say why, in the feed, on their card and in the voice: canceled, won't renew
   (a cancellation at period end, with the date it ends), payment failed (Stripe's retries ran
   out) or paused. Churns recorded before take the reason their subscription shows.
