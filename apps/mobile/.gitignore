@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Generated native projects (Continuous Native Generation)
+/ios
+/android

@@ -1,3 +1,72 @@
+# SaaS Monitor mobile
+
+Companion app of [SaaS Monitor](https://github.com/Synapsr/SaaS-Monitor) (web repo: `../SaaS-Monitor`,
+read its `AGENTS.md`): it puts a SaaS Monitor screen everywhere a founder looks, and notifies every
+moment (a payment, a new subscriber…).
+
+- **Phone and tablet**: the screens of the app, portrait, and a landscape "TV mode" (kept awake).
+- **Widgets**: home screen and lock screen (iOS and Android), StandBy, and **CarPlay**: since iOS 26
+  CarPlay shows WidgetKit widgets and Live Activities of any app, no CarPlay entitlement needed.
+- **Watches**: an Apple Watch app with complications and Smart Stack widgets; a Wear OS app with a
+  tile and complications. Notifications reach both watches by themselves.
+- **Notifications**: Expo push, sent by the SaaS Monitor server for each moment, in the screen's
+  language. iOS marks them time-sensitive: Siri can announce them in CarPlay and on AirPods.
+- **Android Auto** shows no dashboards (only media, messaging, navigation, calls, reminders and
+  games): out of scope. Never pose as a messaging app to get in.
+
+There is no account in the app. A screen link, `https://<instance>/d/<token>`, is the key: scanned
+from its QR code (screen settings, "Open on your phone") or pasted. Any instance works, the hosted
+one (https://saas-monitor.com) or a self-hosted one; the same store apps serve them all.
+
+## Layout
+
+- `src/app/` — routes (Expo Router). Other app code lives in `src/`.
+- `src/contract/` — the web app's display contract (`DisplayState`…), copied from `../SaaS-Monitor`
+  by `scripts/sync-contract.mjs`: never edited by hand.
+- `modules/screen-bridge/` — local Expo module handing the app's screens to widgets and watches.
+  Its TypeScript API (`setScreens`, `reloadWidgets`, `SharedScreen`) is the contract between the
+  app and the native code: its Swift side (`ios/`) and Kotlin side (`android/`) implement it.
+- `targets/` — Apple targets (`@bacons/apple-targets`): `widget/` (WidgetKit, iOS and watchOS),
+  `watch/` (watchOS app). They share screens through the App Group `group.com.saasmonitor.app`.
+- `wear/` — the Wear OS app (Kotlin, Compose for Wear OS, Tiles, complications), its own Gradle
+  project with the same application id, `com.saasmonitor.app`.
+- `plugins/` — config plugins for anything native the app needs beyond Expo's.
+
+## Server API (v1)
+
+Every client (app, widgets, watches) talks to the instance of the screen, `{baseUrl}`:
+
+- `GET {baseUrl}/api/screens/{token}/state` → `200` the screen's `DisplayState` (see
+  `src/contract/`), `401 { error }` when it asks for its password, `404 { error }` when the link no
+  longer works. A password-protected screen takes the header `X-Screen-Access: {accessProof}`.
+  Displays poll it every 10 seconds; widgets as often as their platform lets them.
+- `POST {baseUrl}/api/screens/{token}/access` with `{ "password": string }` → `200 { "proof" }`,
+  `401 { "error": "wrong-password" }`, `429 { "error": "too-many-attempts" }`, `404`.
+- `PUT {baseUrl}/api/screens/{token}/devices` with
+  `{ "pushToken": "ExponentPushToken[…]", "platform": "ios" | "android", "locale"?: string }`
+  (and `X-Screen-Access` if needed) → `200 { "ok": true }`: the device gets the screen's
+  notifications. Idempotent: the app calls it on every launch.
+- `DELETE {baseUrl}/api/screens/{token}/devices` with `{ "pushToken" }` → `204`.
+
+Notifications come through the Expo push service, which needs no credentials from the instance:
+`title` and `body` in the screen's language, `data: { "type": "moment", "screen": key, "event" }`,
+where `key` is the first 16 hex characters of the SHA-256 of the screen's token and `event` one of
+the web app's screen events (`payment`, `connectPayment`, `subscription`…). iOS notifications are
+`time-sensitive`; Android ones use the channel `moments`. Which events notify is the screen's
+choice: its Events settings, column "Phone".
+
+## Conventions
+
+- TypeScript strict. Small modules with explicit names; comments explain why, not what.
+- UI copy in English, sentence case; what a screen shows speaks the screen's language, like the
+  web display (its words come with the contract).
+- Design like the wall display: calm and dark-first, near-black surfaces, the screen's accent glow,
+  large tabular numbers. Respect reduced motion and Dynamic Type.
+- npm (`.npmrc` sets `legacy-peer-deps`). Run `npm run typecheck` and `npm run lint` before
+  calling anything done; build what you touch (`npx expo prebuild`, Xcode or Gradle).
+- Commits: Conventional Commits (`feat:`, `fix:`…), no AI attribution or `Co-Authored-By`
+  trailers.
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data
