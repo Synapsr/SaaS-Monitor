@@ -364,6 +364,35 @@ export const screenAccounts = mysqlTable(
   (table) => [primaryKey({ columns: [table.screenId, table.accountId] })],
 );
 
+export const PUSH_PLATFORMS = ["ios", "android"] as const;
+
+/**
+ * A phone following a screen with the SaaS Monitor app: it is notified of the events the screen
+ * sends to phones (`settings.events`, channel `push`), through the Expo push service. The app
+ * registers it with the screen's link at every launch; a new link or a new password forgets it.
+ */
+export const pushDevices = mysqlTable(
+  "push_devices",
+  {
+    id: id(),
+    screenId: uuid()
+      .notNull()
+      .references(() => screens.id, { onDelete: "cascade" }),
+    /** Expo push token (`ExponentPushToken[…]`): what the Expo push service delivers to. */
+    pushToken: identifier({ length: 255 }).notNull(),
+    platform: mysqlEnum(PUSH_PLATFORMS).notNull(),
+    /** The phone's language (BCP 47). Notifications speak the screen's, like the screen itself. */
+    locale: varchar({ length: 35 }),
+    /** `updatedAt` is the last launch of the app: phones past a screen's limit go oldest first. */
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("push_devices_screen_id_push_token_index").on(table.screenId, table.pushToken),
+    // Expo tells which tokens no longer reach a phone: every screen forgets them.
+    index("push_devices_push_token_index").on(table.pushToken),
+  ],
+);
+
 /**
  * Cached exchange rates, refreshed every 12 hours (`src/server/fx.ts`), to combine accounts billed
  * in different currencies.

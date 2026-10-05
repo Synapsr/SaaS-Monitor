@@ -67,6 +67,25 @@ describe("display polling endpoint", () => {
     expect(response.status).toBe(200);
   });
 
+  it("opens a protected screen to the app, which sends the proof of its password in a header", async () => {
+    const { workspaceId } = await createUserWithWorkspace();
+    const { id, token } = await createScreen(workspaceId);
+    await setScreenPassword(workspaceId, id, "4321");
+    const unlocked = await unlockScreen(token, "4321", new Headers());
+    if (unlocked.outcome !== "unlocked" || !unlocked.cookie) throw new Error("Not unlocked.");
+
+    const withHeader = (proof: string) =>
+      GET(
+        new Request(`http://localhost/api/screens/${token}/state`, {
+          headers: { "x-screen-access": proof },
+        }),
+        { params: Promise.resolve({ token }) },
+      );
+
+    expect((await withHeader(unlocked.cookie.value)).status).toBe(200);
+    expect((await withHeader("forged")).status).toBe(401);
+  });
+
   it("answers 404 for an unknown screen", async () => {
     const response = await poll("unknown-token");
 

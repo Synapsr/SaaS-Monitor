@@ -63,6 +63,17 @@ describe("screen access", () => {
     expect(await canViewScreen(await lockOf(token), withCookie(unlocked.cookie))).toBe(true);
   });
 
+  it("takes the same proof in a header, for the app", async () => {
+    const { workspaceId, id, token } = await protectedScreen("4321");
+    const unlocked = await unlockScreen(token, "4321", device);
+    if (unlocked.outcome !== "unlocked" || !unlocked.cookie) throw new Error("Not unlocked.");
+    const app = new Headers({ "x-screen-access": unlocked.cookie.value });
+
+    expect(await canViewScreen(await lockOf(token), app)).toBe(true);
+    await setScreenPassword(workspaceId, id, "8765");
+    expect(await canViewScreen(await lockOf(token), app)).toBe(false);
+  });
+
   it("locks every device out again when the password changes", async () => {
     const { workspaceId, id, token } = await protectedScreen("4321");
     const unlocked = await unlockScreen(token, "4321", device);

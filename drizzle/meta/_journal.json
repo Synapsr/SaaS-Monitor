@@ -36,6 +36,13 @@
       "when": 1790753235489,
       "tag": "0004_churn_reasons_and_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1791222425312,
+      "tag": "0005_push_devices",
+      "breakpoints": true
     }
   ]
 }
