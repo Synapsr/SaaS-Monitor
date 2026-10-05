@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { screenAccounts, screens } from "@/db/schema";
 import { itemEvent } from "@/lib/display/events";
@@ -105,7 +105,9 @@ async function followedScreens(accountId: string): Promise<FollowedScreen[]> {
     .select({ id: screens.id, token: screens.publicToken, settings: screens.settings })
     .from(screenAccounts)
     .innerJoin(screens, eq(screens.id, screenAccounts.screenId))
-    .where(eq(screenAccounts.accountId, accountId));
+    .where(eq(screenAccounts.accountId, accountId))
+    // The first screen a phone follows names the notifications it shares with others.
+    .orderBy(asc(screens.createdAt));
   const devices = await screenDevices(rows.map((row) => row.id));
   return rows.flatMap((row) => {
     const pushTokens = devices.get(row.id);
