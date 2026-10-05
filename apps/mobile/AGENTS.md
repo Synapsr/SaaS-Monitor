@@ -9,8 +9,10 @@ moment (a payment, a new subscriber…).
   CarPlay shows WidgetKit widgets and Live Activities of any app, no CarPlay entitlement needed.
 - **Watches**: an Apple Watch app with complications and Smart Stack widgets; a Wear OS app with a
   tile and complications. Notifications reach both watches by themselves.
-- **Notifications**: Expo push, sent by the SaaS Monitor server for each moment, in the screen's
-  language. iOS marks them time-sensitive: Siri can announce them in CarPlay and on AirPods.
+- **Notifications**: sent by the SaaS Monitor server for each moment, in the screen's language,
+  through APNs and FCM directly or through Expo's push service; each device can mute a screen or
+  some of its events. iOS marks them time-sensitive: Siri can announce them in CarPlay and on
+  AirPods.
 - **Android Auto** shows no dashboards (only media, messaging, navigation, calls, reminders and
   games): out of scope. Never pose as a messaging app to get in.
 
@@ -26,11 +28,16 @@ one (https://saas-monitor.com) or a self-hosted one; the same store apps serve t
 - `modules/screen-bridge/` — local Expo module handing the app's screens to widgets and watches.
   Its TypeScript API (`setScreens`, `reloadWidgets`, `SharedScreen`) is the contract between the
   app and the native code: its Swift side (`ios/`) and Kotlin side (`android/`) implement it.
-- `targets/` — Apple targets (`@bacons/apple-targets`): `widget/` (WidgetKit, iOS and watchOS),
-  `watch/` (watchOS app). They share screens through the App Group `group.com.saasmonitor.app`.
+- `targets/` — Apple targets (`@bacons/apple-targets`): `widget/` (WidgetKit: home and lock
+  screen, StandBy, CarPlay), `watch/` (watchOS app), `watch-widget/` (complications and Smart
+  Stack). `shared/` holds the Swift they share (`Core`: models, networking, display; `Widgets`),
+  linked into them by `with-shared-code.js`. They get the screens through the App Group
+  `group.com.saasmonitor.app`.
 - `wear/` — the Wear OS app (Kotlin, Compose for Wear OS, Tiles, complications), its own Gradle
   project with the same application id, `com.saasmonitor.app`.
-- `plugins/` — config plugins for anything native the app needs beyond Expo's.
+- `plugins/` — config plugins for anything native the app needs beyond Expo's
+  (`withAndroidWidgets.ts`: the Glance widgets of `modules/screen-bridge/android`).
+- `docs/` — notes, such as why there is no Android Auto app (`android-auto.md`).
 
 ## Server API (v1)
 
@@ -56,9 +63,9 @@ Every client (app, widgets, watches) talks to the instance of the screen, `{base
 
 Notifications come from APNs or FCM directly, or through the Expo push service (which needs no
 credentials from the instance), handled alike: `title` and `body` in the screen's language,
-`data: { "type": "moment", "screen": key, "event" }`, where `key` is the first 16 hex characters
-of the SHA-256 of the screen's token and `event` one of the web app's screen events (`payment`,
-`connectPayment`, `subscription`…). iOS notifications are `time-sensitive`; Android ones use the
+`data: { "type": "moment" | "test", "screen": key, "event" }` (`test`: "Send a test celebration"
+on the dashboard), where `key` is the first 16 hex characters of the SHA-256 of the screen's token
+and `event` one of the web app's screen events (`payment`, `connectPayment`, `subscription`…). iOS notifications are `time-sensitive`; Android ones use the
 channel `moments`. Which events notify is the screen's choice: its Events settings, column
 "Phone" (`settings.events[event].push`); each device may mute more.
 
