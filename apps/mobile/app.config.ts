@@ -35,7 +35,8 @@ const config: ExpoConfig = {
     "expo-secure-store",
     "expo-localization",
     "expo-build-properties",
-    "expo-notifications",
+    // The logo's pulse in the brand emerald: Android and Wear OS draw notification icons as masks.
+    ["expo-notifications", { icon: "./assets/notification-icon.png", color: "#34d399" }],
     [
       "expo-camera",
       { cameraPermission: "Scan the QR code of a screen to add it to SaaS Monitor." },
