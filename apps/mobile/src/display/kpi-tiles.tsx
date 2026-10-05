@@ -125,8 +125,8 @@ function Tile({ label, value, details }: { label: string; value: string; details
           {value}
         </DisplayText>
       </View>
-      {/* Two lines at most: some languages need more words, and currencies more letters. */}
-      <DisplayText size={wall ? 9.5 : 12} tone="ink3" numberOfLines={2}>
+      {/* Two lines at most, one on a wall that must fit: languages need more words, currencies more letters. */}
+      <DisplayText size={wall ? 9.5 : 12} tone="ink3" numberOfLines={wall ? 1 : 2}>
         {details}
       </DisplayText>
     </View>

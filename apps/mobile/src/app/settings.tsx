@@ -73,7 +73,7 @@ export default function Settings() {
       <SettingsGroup title="Privacy">
         <SettingsRow
           label="No account, no tracking"
-          detail="Screens stay on this device, in its keychain. The app talks to your screens’ instances only, and to Expo’s push service when notifications are on. It collects nothing."
+          detail="Screens stay on this device, in its keychain. The app talks to your screens’ instances only, and to Apple’s, Google’s or Expo’s push services when notifications are on. It collects nothing."
         />
       </SettingsGroup>
 

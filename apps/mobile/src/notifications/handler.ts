@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { notificationScreen } from "@/notifications/moment-data";
+import { notificationRequestScreen } from "@/notifications/moment-data";
 
 /** The screen on display, whose moments already play as cards: no banner for them. */
 let focusedScreen: string | null = null;
@@ -15,7 +15,7 @@ export function setFocusedScreen(key: string | null): void {
 export function handleForegroundNotifications(): void {
   Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
-      const key = notificationScreen(notification.request.content.data);
+      const key = notificationRequestScreen(notification.request);
       const onScreen = key !== null && key === focusedScreen;
       return {
         shouldShowBanner: !onScreen,

@@ -48,7 +48,7 @@ export function GoalProgress({ progress, recurring, currency, timeZone, now }: G
         height={(layout === "wall" ? 6 : 8) * scale}
         colors={palette}
       />
-      <DisplayText size={size} tone="ink2" numberOfLines={1}>
+      <DisplayText size={size} tone="ink2" numberOfLines={layout === "wall" ? 1 : 2}>
         <DisplayText size={size} weight="500" tabular>
           {text.goal.toGo(formatAmount(progress.remaining, currency, locale))}
         </DisplayText>

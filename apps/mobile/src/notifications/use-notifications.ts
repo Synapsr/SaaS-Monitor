@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { registerScreens, retryUnregistrations } from "@/notifications/devices";
-import { notificationScreen } from "@/notifications/moment-data";
+import { notificationRequestScreen } from "@/notifications/moment-data";
 import { installationId, pauseStore, useNotificationsPaused } from "@/notifications/preferences";
 import { notificationsStore, useNotificationsStatus } from "@/notifications/status";
 import { reloadWidgets } from "@/screens/bridge";
@@ -49,7 +49,7 @@ export function useNotifications(): void {
     const open = (response: Notifications.NotificationResponse | null) => {
       if (response?.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
       Notifications.clearLastNotificationResponse();
-      const key = notificationScreen(response.notification.request.content.data);
+      const key = notificationRequestScreen(response.notification.request);
       if (key !== null && screensStore.find(key)) {
         router.navigate({ pathname: "/screen/[key]", params: { key } });
       }

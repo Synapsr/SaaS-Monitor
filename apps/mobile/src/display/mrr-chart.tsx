@@ -88,7 +88,7 @@ export function MrrChart({ series: mrrSeries, recurring, currency, range, target
         }}
         style={
           plotHeight === undefined
-            ? { flex: 1, minHeight: 60 * scale, marginBottom: fontSize * 2 }
+            ? { flex: 1, minHeight: 44 * scale, marginBottom: fontSize * 2 }
             : { height: plotHeight * scale, marginBottom: fontSize * 2 }
         }
       >

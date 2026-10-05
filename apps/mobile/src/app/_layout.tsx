@@ -43,7 +43,7 @@ export default function RootLayout() {
           headerBackButtonDisplayMode: "minimal",
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Screens", headerLargeTitleEnabled: true }} />
+        <Stack.Screen name="index" options={{ title: "Screens" }} />
         <Stack.Screen name="add" options={{ title: "Add a screen", presentation: "modal" }} />
         <Stack.Screen name="screen/[key]/index" options={{ headerShown: false }} />
         <Stack.Screen

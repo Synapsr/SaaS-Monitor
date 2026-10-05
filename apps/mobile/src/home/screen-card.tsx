@@ -1,4 +1,4 @@
-import { Pressable, View } from "react-native";
+import { Pressable, View, useWindowDimensions } from "react-native";
 import { accentSwatch } from "@/contract/display/accents";
 import { formatAmount, formatPercent, percentChange } from "@/contract/display/format";
 import { displayLocale } from "@/contract/display/i18n";
@@ -26,6 +26,8 @@ interface ScreenCardProps {
 /** A screen of the list: its name and instance, and its recurring revenue when it has some. */
 export function ScreenCard({ screen, summary, editing, first, last, onPress, onMove }: ScreenCardProps) {
   const accent = accentSwatch(screen.appearance?.accent ?? "emerald");
+  // With large text, the numbers go under the name rather than squeeze it.
+  const stacked = useWindowDimensions().fontScale >= 1.3;
   return (
     <Pressable
       accessibilityRole="button"
@@ -58,12 +60,17 @@ export function ScreenCard({ screen, summary, editing, first, last, onPress, onM
         <LogoPulse height={14} color={accent} />
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <AppText variant="headline" numberOfLines={1}>
+        <AppText variant="headline" numberOfLines={stacked ? 2 : 1}>
           {displayName(screen)}
         </AppText>
         <AppText variant="caption" tone="ink3" numberOfLines={1}>
           {instanceLabel(screen.baseUrl)}
         </AppText>
+        {stacked && !editing && (
+          <View style={{ alignItems: "flex-start", paddingTop: 6 }}>
+            <Summary summary={summary} align="flex-start" />
+          </View>
+        )}
       </View>
       {editing ? (
         <View style={{ flexDirection: "row", gap: 8 }}>
@@ -72,7 +79,7 @@ export function ScreenCard({ screen, summary, editing, first, last, onPress, onM
         </View>
       ) : (
         <>
-          <Summary summary={summary} />
+          {!stacked && <Summary summary={summary} />}
           <ChevronRightIcon size={18} color={colors.ink3} />
         </>
       )}
@@ -80,12 +87,14 @@ export function ScreenCard({ screen, summary, editing, first, last, onPress, onM
   );
 }
 
-function Summary({ summary }: { summary: ScreenSummary }) {
+type Align = "flex-start" | "flex-end";
+
+function Summary({ summary, align = "flex-end" }: { summary: ScreenSummary; align?: Align }) {
   switch (summary.kind) {
     case "loading":
       return null;
     case "ok":
-      return <Numbers state={summary.state} />;
+      return <Numbers state={summary.state} align={align} />;
     case "locked":
       return (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -111,7 +120,7 @@ function Summary({ summary }: { summary: ScreenSummary }) {
 }
 
 /** MRR (or ARR) in the screen's own format, and its change in 30 days. */
-function Numbers({ state }: { state: DisplayState }) {
+function Numbers({ state, align }: { state: DisplayState; align: Align }) {
   if (state.status !== "ready") {
     const label = { empty: "No Stripe account", importing: "Importing…", error: "Failing" }[state.status];
     return (
@@ -126,7 +135,7 @@ function Numbers({ state }: { state: DisplayState }) {
   const ratio = percentChange(mrr, mrr30DaysAgo);
   const growing = ratio === null || ratio >= 0;
   return (
-    <View style={{ alignItems: "flex-end", gap: 2 }}>
+    <View style={{ alignItems: align, gap: 2, flexShrink: 0 }}>
       <AppText variant="headline" tabular numberOfLines={1}>
         {formatAmount(recurring.fromMrr(mrr), state.currency, locale)}
         <AppText variant="caption" tone="ink3">{` ${recurring.label}`}</AppText>

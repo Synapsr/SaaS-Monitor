@@ -23,22 +23,31 @@ export default function Home() {
     <>
       <Stack.Screen
         options={{
-          headerLargeTitleEnabled: !empty,
           title: empty ? "" : "Screens",
           headerLeft: () => (
-            <IconButton icon={SettingsIcon} label="Settings" onPress={() => router.push("/settings")} />
+            <IconButton
+              icon={SettingsIcon}
+              label="Settings"
+              background="transparent"
+              onPress={() => router.push("/settings")}
+            />
           ),
           headerRight: () =>
             empty ? null : (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                 {screens.length > 1 && (
                   <Pressable accessibilityRole="button" hitSlop={10} onPress={() => setEditing((value) => !value)}>
-                    <AppText variant="headline" tone="accentInk">
+                    <AppText variant="headline" tone="accentInk" maxFontSizeMultiplier={1.3}>
                       {editing ? "Done" : "Edit"}
                     </AppText>
                   </Pressable>
                 )}
-                <IconButton icon={PlusIcon} label="Add a screen" onPress={() => router.push("/add")} />
+                <IconButton
+                  icon={PlusIcon}
+                  label="Add a screen"
+                  background="transparent"
+                  onPress={() => router.push("/add")}
+                />
               </View>
             ),
         }}

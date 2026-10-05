@@ -113,8 +113,8 @@ function Display({ state, online, layout, leading, trailing, onRefresh, footer }
         <View
           style={{
             flex: 1,
-            gap: 12 * scale,
-            paddingTop: Math.max(insets.top, 14 * scale),
+            gap: 10 * scale,
+            paddingTop: Math.max(insets.top, 12 * scale),
             paddingBottom: Math.max(insets.bottom, 14 * scale),
             paddingLeft: Math.max(insets.left, 20 * scale),
             paddingRight: Math.max(insets.right, 20 * scale),
@@ -197,7 +197,7 @@ function Dashboard({ state, view, moment }: { state: DisplayState; view: ScreenV
       currency={currency}
       account={view.account?.name ?? null}
       highlight={mrrHighlight(moment)}
-      maxSize={layout === "wall" ? 60 : 64}
+      maxSize={layout === "wall" ? 50 : 64}
     />
   );
   const goal = (
@@ -233,10 +233,10 @@ function Dashboard({ state, view, moment }: { state: DisplayState; view: ScreenV
   if (layout === "wall") {
     return (
       <View style={{ flex: 1, flexDirection: "row", gap: 16 * scale }}>
-        <View style={{ flex: 1, minWidth: 0, gap: 12 * scale }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 8 * scale }}>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 24 * scale }}>
             <View style={{ flex: 1, minWidth: 0 }}>{hero}</View>
-            <View style={{ width: "38%", paddingBottom: 4 * scale }}>{goal}</View>
+            <View style={{ width: "42%", paddingBottom: 4 * scale }}>{goal}</View>
           </View>
           {chart}
           {tiles}
