@@ -88,7 +88,9 @@ private fun MaterialScope.ready(content: TileContent.Ready, onClick: Clickable):
         verticalAlignment = VERTICAL_ALIGN_CENTER,
       )
     },
-    labelForBottomSlot = { text(presentation.goalTargetText.layoutString) },
+    labelForBottomSlot = {
+      text("${presentation.goalTitle} ${presentation.goalTargetText}".layoutString)
+    },
     bottomSlot = { text(presentation.goalPercentText.layoutString) },
     onClick = onClick,
   )

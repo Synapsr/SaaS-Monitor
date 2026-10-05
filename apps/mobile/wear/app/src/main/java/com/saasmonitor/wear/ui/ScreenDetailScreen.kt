@@ -1,8 +1,6 @@
 package com.saasmonitor.wear.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -108,8 +106,15 @@ private fun TransformingLazyColumnScope.screenNumbers(
   presentation: ScreenPresentation,
   spec: TransformationSpec,
 ) {
-  item { Hero(presentation, Modifier.fillMaxWidth().transformedHeight(this, spec)) }
-  item { Goal(presentation, Modifier.fillMaxWidth().transformedHeight(this, spec)) }
+  // The hero is text on the background: it scrolls without morphing, like a list header would.
+  item { Hero(presentation, Modifier.fillMaxWidth()) }
+  item {
+    Goal(
+      presentation,
+      Modifier.fillMaxWidth().transformedHeight(this, spec),
+      SurfaceTransformation(spec),
+    )
+  }
   item {
     TitleCard(
       title = { Text(presentation.text.revenueToday) },
@@ -167,26 +172,27 @@ private fun Hero(presentation: ScreenPresentation, modifier: Modifier) {
 }
 
 @Composable
-private fun Goal(presentation: ScreenPresentation, modifier: Modifier) {
-  Column(modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
-    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+private fun Goal(
+  presentation: ScreenPresentation,
+  modifier: Modifier,
+  transformation: SurfaceTransformation,
+) {
+  TitleCard(
+    title = { Text("${presentation.goalTitle} ${presentation.goalTargetText}", maxLines = 2) },
+    time = { Text(presentation.goalPercentText) },
+    modifier = modifier,
+    transformation = transformation,
+  ) {
+    Column {
+      Spacer(Modifier.height(4.dp))
+      LinearProgressIndicator(progress = { presentation.goal.progress })
+      Spacer(Modifier.height(4.dp))
       Text(
-        "${presentation.goalTitle} ${presentation.goalTargetText}",
-        style = MaterialTheme.typography.labelSmall,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.weight(1f),
+        listOfNotNull(presentation.goalRemainingText, presentation.goalEtaText).joinToString(" · "),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
-      Text(presentation.goalPercentText, style = MaterialTheme.typography.labelSmall)
     }
-    Spacer(Modifier.height(6.dp))
-    LinearProgressIndicator(progress = { presentation.goal.progress })
-    Spacer(Modifier.height(4.dp))
-    Text(
-      listOfNotNull(presentation.goalRemainingText, presentation.goalEtaText).joinToString(" · "),
-      style = MaterialTheme.typography.bodyExtraSmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
   }
 }
 
