@@ -21,7 +21,6 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
  */
 @Composable
 fun WearApp(ambient: Boolean = false, viewModel: ScreensViewModel = viewModel()) {
-  val items by viewModel.items.collectAsStateWithLifecycle()
   val moment by viewModel.moment.collectAsStateWithLifecycle()
   val lifecycle = LocalLifecycleOwner.current.lifecycle
   // Resumed and interactive only: polling stops in ambient mode, when the screen goes off or
@@ -31,20 +30,23 @@ fun WearApp(ambient: Boolean = false, viewModel: ScreensViewModel = viewModel())
     else lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.poll() }
   }
   Box {
-    WearTheme { Screens(items, viewModel) }
+    WearTheme { Screens(viewModel) }
     MomentOverlay(moment, onDismiss = viewModel::dismissMoment)
   }
 }
 
+/** Each destination reads the screens itself: the navigation graph is built once. */
 @Composable
-private fun Screens(items: List<ScreenItem>?, viewModel: ScreensViewModel) {
+private fun Screens(viewModel: ScreensViewModel) {
   val navController = rememberSwipeDismissableNavController()
   AppScaffold {
     SwipeDismissableNavHost(navController = navController, startDestination = "screens") {
       composable("screens") {
+        val items by viewModel.items.collectAsStateWithLifecycle()
         ScreenListScreen(items, onOpen = { key -> navController.navigate("screen/$key") })
       }
       composable("screen/{key}") { entry ->
+        val items by viewModel.items.collectAsStateWithLifecycle()
         val key = entry.arguments?.getString("key")
         val item = items?.firstOrNull { it.screen.key == key } ?: return@composable
         ScreenDetailScreen(item = item, onFeature = { viewModel.feature(item.screen.key) })
