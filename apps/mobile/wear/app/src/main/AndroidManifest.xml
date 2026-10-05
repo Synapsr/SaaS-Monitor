@@ -8,12 +8,15 @@
   <uses-permission android:name="android.permission.WAKE_LOCK" />
   <uses-feature android:name="android.hardware.type.watch" />
 
+  <!-- Plain HTTP for self-hosted instances on a local network: the phone app only saves such
+    hosts with an http:// link (src/screens/link.ts), as iOS allows. -->
   <application
     android:allowBackup="false"
     android:icon="@mipmap/ic_launcher"
     android:label="@string/app_name"
     android:supportsRtl="true"
-    android:theme="@android:style/Theme.DeviceDefault">
+    android:theme="@android:style/Theme.DeviceDefault"
+    android:usesCleartextTraffic="true">
 
     <uses-library
       android:name="com.google.android.wearable"

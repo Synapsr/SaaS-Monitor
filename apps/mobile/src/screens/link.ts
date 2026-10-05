@@ -41,7 +41,21 @@ export function parseScreenLink(input: string): ScreenLink | null {
   if (token === null || !TOKEN.test(token)) return null;
 
   const prefix = segments.slice(0, index).map((segment) => `/${segment}`).join("");
-  return { baseUrl: `${scheme.toLowerCase()}://${host.toLowerCase()}${prefix}`, token };
+  const name = host.toLowerCase();
+  // Plain HTTP stays on the local network: on the internet, an instance answers over HTTPS.
+  const secure = scheme.toLowerCase() === "https" || !isLocalHost(name);
+  return { baseUrl: `${secure ? "https" : "http"}://${name}${prefix}`, token };
+}
+
+/**
+ * Hosts of a local network, the only ones the app reaches over plain HTTP, as iOS allows (App
+ * Transport Security): addresses, `localhost` and other single-label names, and `.local` names.
+ * Android lets the app reach any host over HTTP: this keeps both platforms alike.
+ */
+function isLocalHost(host: string): boolean {
+  const name = host.replace(/:\d{1,5}$/, "");
+  if (name.startsWith("[") || /^\d{1,3}(\.\d{1,3}){3}$/.test(name)) return true;
+  return !name.includes(".") || name.endsWith(".local");
 }
 
 function decodeSegment(segment: string): string | null {

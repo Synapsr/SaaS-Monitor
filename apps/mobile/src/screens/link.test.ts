@@ -24,6 +24,27 @@ describe("parseScreenLink", () => {
     });
   });
 
+  it("keeps plain HTTP on a local network", () => {
+    for (const origin of [
+      "http://localhost:3000",
+      "http://raspberrypi:3000",
+      "http://monitor.local",
+      "http://10.0.2.2:3300",
+      "http://[fe80::1]:3000",
+    ]) {
+      expect(parseScreenLink(`${origin}/d/${TOKEN}`)?.baseUrl).toBe(origin);
+    }
+  });
+
+  it("reaches an instance on the internet over HTTPS, whatever its link says", () => {
+    expect(parseScreenLink(`http://saas-monitor.com/d/${TOKEN}`)?.baseUrl).toBe(
+      "https://saas-monitor.com",
+    );
+    expect(parseScreenLink(`http://monitor.acme.dev:8080/tools/d/${TOKEN}`)?.baseUrl).toBe(
+      "https://monitor.acme.dev:8080/tools",
+    );
+  });
+
   it("leaves out the query, the fragment and the user info", () => {
     expect(parseScreenLink(`https://me@Saas-Monitor.com/d/${TOKEN}?preview=1#top`)).toEqual({
       baseUrl: "https://saas-monitor.com",

@@ -39,7 +39,9 @@ const config: ExpoConfig = {
     "expo-router",
     "expo-secure-store",
     "expo-localization",
-    "expo-build-properties",
+    // Self-hosted instances may answer over plain HTTP on a local network, as iOS allows: the app
+    // only reaches such hosts over HTTP (`src/screens/link.ts`).
+    ["expo-build-properties", { android: { usesCleartextTraffic: true } }],
     [
       "expo-splash-screen",
       { backgroundColor: "#08090b", image: "./assets/splash-icon.png", imageWidth: 88 },
