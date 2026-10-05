@@ -64,7 +64,7 @@ describe("FCM messages", () => {
         token: "fcm-token",
         notification: { title: "Payment received", body: "$49 · Pro" },
         data: { type: "moment", screen: "0123456789abcdef", event: "payment" },
-        android: { priority: "high", notification: { channel_id: "moments", sound: "default" } },
+        android: { priority: "HIGH", notification: { channel_id: "moments", sound: "default" } },
       },
     });
   });

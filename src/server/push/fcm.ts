@@ -36,7 +36,7 @@ export interface FcmMessage {
     data: Record<string, string>;
     android: {
       /** Delivered at once, rather than when Android sees fit. */
-      priority: "high";
+      priority: "HIGH";
       notification: { channel_id: "moments"; sound: "default" };
     };
   };
@@ -49,7 +49,7 @@ export function fcmMessage(token: string, item: Notice): FcmMessage {
       token,
       notification: { title: item.title, body: item.body },
       data: { type, screen, event },
-      android: { priority: "high", notification: { channel_id: "moments", sound: "default" } },
+      android: { priority: "HIGH", notification: { channel_id: "moments", sound: "default" } },
     },
   };
 }
