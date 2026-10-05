@@ -3,7 +3,7 @@ import type { Device } from "./devices";
 import {
   deliveries,
   MAX_PUSHES_PER_PHONE,
-  momentData,
+  pushData,
   type Notice,
   type ScreenNotices,
 } from "./messages";
@@ -12,6 +12,7 @@ const notice = (key: string, overrides: Partial<Notice> = {}): Notice => ({
   key,
   screen: "0123456789abcdef",
   events: ["payment"],
+  type: "moment",
   title: "Payment received",
   body: key,
   ...overrides,
@@ -50,7 +51,7 @@ describe("deliveries", () => {
       "ExponentPushToken[a]",
       "ExponentPushToken[phone]",
     ]);
-    expect(momentData(sent[0].notice)).toEqual({
+    expect(pushData(sent[0].notice)).toEqual({
       type: "moment",
       screen: "0123456789abcdef",
       event: "payment",

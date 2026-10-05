@@ -33,8 +33,12 @@ export function SharePanel({
     startTest(async () => {
       const result = await sendTestCelebrationAction(screenId);
       if (result.ok) {
+        const { phones } = result;
         toast.success("Test celebration sent", {
-          description: "Open copies of this screen celebrate within a few seconds.",
+          description:
+            phones > 0
+              ? `Open copies of this screen celebrate within a few seconds, and ${phones} ${phones === 1 ? "phone was" : "phones were"} notified.`
+              : "Open copies of this screen celebrate within a few seconds.",
         });
       } else {
         toast.error(result.error);
@@ -73,8 +77,8 @@ export function SharePanel({
           </Button>
         </div>
         <p className="text-sm text-pretty text-muted-foreground">
-          Plays a fake sale, with its sound, voice and confetti, on every open copy of this screen.
-          The easiest way to check the sound on your TV.
+          Plays a fake sale, with its sound, voice and confetti, on every open copy of this screen,
+          and notifies the phones that follow it. The easiest way to check the sound on your TV.
         </p>
       </div>
 

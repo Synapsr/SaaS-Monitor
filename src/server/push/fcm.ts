@@ -3,7 +3,7 @@ import { createPrivateKey } from "node:crypto";
 import { z } from "zod";
 import { MINUTE_MS } from "@/lib/durations";
 import { signJwt } from "./jwt";
-import { momentData, type Notice } from "./messages";
+import { pushData, type Notice } from "./messages";
 import { NATIVE_TIMEOUT_MS, type NativeResult } from "./native";
 import type { ServiceAccount } from "./service-account";
 
@@ -43,7 +43,7 @@ export interface FcmMessage {
 }
 
 export function fcmMessage(token: string, item: Notice): FcmMessage {
-  const { type, screen, event } = momentData(item);
+  const { type, screen, event } = pushData(item);
   return {
     message: {
       token,

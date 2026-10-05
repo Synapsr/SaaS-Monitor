@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { momentData, type MomentData, type Notice } from "./messages";
+import { pushData, type PushData, type Notice } from "./messages";
 
 /*
  * The Expo push service forwards notifications to Apple and Google. It needs no credentials from
@@ -19,7 +19,7 @@ export interface ExpoMessage {
   to: string;
   title: string;
   body: string;
-  data: MomentData;
+  data: PushData;
   sound: "default";
   /** Delivered at once, rather than when Android sees fit. */
   priority: "high";
@@ -34,7 +34,7 @@ export function expoMessage(to: string, item: Notice): ExpoMessage {
     to,
     title: item.title,
     body: item.body,
-    data: momentData(item),
+    data: pushData(item),
     sound: "default",
     priority: "high",
     channelId: "moments",

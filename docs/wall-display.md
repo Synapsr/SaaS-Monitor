@@ -56,7 +56,9 @@ dedicated device, start the browser with `--autoplay-policy=no-user-gesture-requ
 and sound works without any click.
 
 To check everything end to end, open the screen settings in the dashboard and click **Send a
-test celebration**: every open screen plays a sample payment within a few seconds.
+test celebration**: every open screen plays a sample payment within a few seconds, and every
+phone following the screen gets a test notification, even for events it muted (unless it turned
+the screen off).
 
 ## Voice
 

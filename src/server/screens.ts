@@ -12,6 +12,8 @@ import {
   type ScreenSettings,
 } from "@/lib/screens/settings";
 import { forgetScreenDevices } from "@/server/push/devices";
+import { notifyTestCelebration, type TestPushOptions } from "@/server/push/test-celebration";
+import { createRateLimiter } from "@/server/rate-limit";
 import { hashScreenPassword } from "@/server/screen-access";
 
 // Every function takes the workspace id resolved by `requireWorkspace()` and filters on it: a screen
@@ -292,13 +294,38 @@ export async function setScreenPassword(
   });
 }
 
-/** Asks every open display of the screen to play a fake sale, to check sound and confetti. */
-export async function sendTestEvent(workspaceId: string, screenId: string): Promise<ActionResult> {
-  const [{ affectedRows }] = await db()
+/** Enough to check a TV and a few phones, not to flood them. */
+const testCelebrations = createRateLimiter({ limit: 10, windowMs: 10 * 60_000 });
+
+/**
+ * Asks every open display of the screen to play a fake sale, to check sound and confetti, and
+ * notifies the phones following it. Returns how many phones were notified: pushing is best
+ * effort, and never fails the test.
+ */
+export async function sendTestEvent(
+  workspaceId: string,
+  screenId: string,
+  options: TestPushOptions = {},
+): Promise<ActionResult<{ phones: number }>> {
+  const [screen] = await db()
+    .select({ token: screens.publicToken, settings: screens.settings })
+    .from(screens)
+    .where(inWorkspace(workspaceId, screenId));
+  if (!screen) return SCREEN_NOT_FOUND;
+  if (!testCelebrations.consume(screenId)) {
+    return { ok: false, error: "Too many test celebrations at once. Try again in a few minutes." };
+  }
+
+  await db()
     .update(screens)
     .set({ testEventAt: sql`now(6)` })
-    .where(inWorkspace(workspaceId, screenId));
-  return affectedRows ? { ok: true } : SCREEN_NOT_FOUND;
+    .where(eq(screens.id, screenId));
+  const { language } = parseScreenSettings(screen.settings);
+  const phones = await notifyTestCelebration(
+    { id: screenId, token: screen.token, language },
+    options,
+  );
+  return { ok: true, phones };
 }
 
 export async function deleteScreen(workspaceId: string, screenId: string): Promise<ActionResult> {

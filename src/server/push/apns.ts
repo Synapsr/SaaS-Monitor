@@ -4,7 +4,7 @@ import { connect, constants, type ClientHttp2Session } from "node:http2";
 import type { APNS_ENVIRONMENTS } from "@/db/schema";
 import { MINUTE_MS } from "@/lib/durations";
 import { signJwt } from "./jwt";
-import { momentData, type MomentData, type Notice } from "./messages";
+import { pushData, type PushData, type Notice } from "./messages";
 import { NATIVE_TIMEOUT_MS, type NativeResult } from "./native";
 
 /*
@@ -52,9 +52,9 @@ export function apnsJwt(
   );
 }
 
-export interface ApnsPayload extends MomentData {
+export interface ApnsPayload extends PushData {
   /** The app's data where expo-notifications reads it on iOS, as Expo's own pushes carry it. */
-  body: MomentData;
+  body: PushData;
   aps: {
     alert: { title: string; body: string };
     sound: "default";
@@ -73,8 +73,8 @@ export function apnsPayload(item: Notice): ApnsPayload {
       "interruption-level": "time-sensitive",
       "thread-id": item.screen,
     },
-    body: momentData(item),
-    ...momentData(item),
+    body: pushData(item),
+    ...pushData(item),
   };
 }
 

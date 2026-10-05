@@ -26,6 +26,7 @@ const delivery = (overrides: Partial<Device>): Delivery => ({
     key: "payment:1",
     screen: "0123456789abcdef",
     events: ["payment"],
+    type: "moment",
     title: "Payment received",
     body: "$49",
   },

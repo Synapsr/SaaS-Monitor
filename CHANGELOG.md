@@ -21,6 +21,8 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   accepted by the state endpoint as an `X-Screen-Access` header) and
   `PUT`/`DELETE /api/screens/:token/devices` (an installation of the app following a screen, with
   its Expo and native push tokens and its choices).
+- **Send a test celebration** also notifies the phones following the screen, to check
+  notifications end to end; the toast says how many were notified.
 
 - Lost subscriptions say why, in the feed, on their card and in the voice: canceled, won't renew
   (a cancellation at period end, with the date it ends), payment failed (Stripe's retries ran

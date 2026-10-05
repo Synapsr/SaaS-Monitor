@@ -21,17 +21,19 @@ export interface Notice extends PushContent {
   screen: string;
   /** What it is about: one event, or those of the burst it sums up. */
   events: ScreenEvent[];
+  /** A moment of the screen, or the test the founder sent from the dashboard. */
+  type: PushData["type"];
 }
 
 /** What the app reads from a notification, to open the right screen and show the right icon. */
-export interface MomentData {
-  type: "moment";
+export interface PushData {
+  type: "moment" | "test";
   screen: string;
   event: ScreenEvent;
 }
 
-export function momentData({ screen, events }: Notice): MomentData {
-  return { type: "moment", screen, event: events[0] };
+export function pushData({ type, screen, events }: Notice): PushData {
+  return { type, screen, event: events[0] };
 }
 
 /** What a screen tells its phones about what a sync just recorded. */
@@ -64,6 +66,7 @@ export function notice(moment: Moment, screen: string, context: PushContext): No
         : moment.id,
     screen,
     events: momentEvents(moment),
+    type: "moment",
   };
 }
 
