@@ -219,6 +219,7 @@ private fun message(cached: CachedScreen): String? {
   return when {
     cached.problem == ScreenProblem.LOCKED -> text.locked
     cached.problem == ScreenProblem.GONE -> text.gone
+    snapshot == null && cached.problem == ScreenProblem.OFFLINE -> text.offline
     snapshot?.status == ScreenSnapshot.Status.EMPTY -> text.empty
     snapshot?.status == ScreenSnapshot.Status.IMPORTING -> text.importing
     snapshot?.status == ScreenSnapshot.Status.ERROR -> text.failing

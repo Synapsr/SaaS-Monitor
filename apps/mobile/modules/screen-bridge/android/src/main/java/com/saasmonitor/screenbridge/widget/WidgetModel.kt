@@ -52,6 +52,8 @@ internal data class WidgetModel(
           preferences[WidgetState.screenRemoved] == true -> Content.ScreenRemoved
           cached.problem == ScreenProblem.LOCKED -> Content.Message(text.locked, cached.problem)
           cached.problem == ScreenProblem.GONE -> Content.Message(text.gone, cached.problem)
+          snapshot == null && cached.problem == ScreenProblem.OFFLINE ->
+            Content.Message(text.offline, cached.problem)
           snapshot == null -> Content.Loading
           snapshot.status == ScreenSnapshot.Status.EMPTY -> Content.Message(text.empty)
           snapshot.status == ScreenSnapshot.Status.IMPORTING -> Content.Message(text.importing)

@@ -67,6 +67,8 @@ class MrrTileService : TileService() {
     return when {
       cached.problem == ScreenProblem.LOCKED -> TileContent.Message(screen.name, text.locked)
       cached.problem == ScreenProblem.GONE -> TileContent.Message(screen.name, text.gone)
+      snapshot == null && cached.problem == ScreenProblem.OFFLINE ->
+        TileContent.Message(screen.name, text.offline)
       snapshot == null -> TileContent.Message(screen.name, getString(R.string.loading))
       snapshot.status == ScreenSnapshot.Status.EMPTY -> TileContent.Message(screen.name, text.empty)
       snapshot.status == ScreenSnapshot.Status.IMPORTING ->

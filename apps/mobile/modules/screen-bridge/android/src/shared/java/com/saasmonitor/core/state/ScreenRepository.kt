@@ -10,12 +10,14 @@ import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
 
-/** Why a screen can't show fresh numbers, beyond being offline. */
+/** Why a screen can't show fresh numbers. */
 enum class ScreenProblem {
   /** The screen asks for its password: the app must open it again. */
   LOCKED,
   /** The screen's link no longer works. */
   GONE,
+  /** Its instance couldn't be reached at the last try: the numbers, if any, are the last known. */
+  OFFLINE,
 }
 
 /** The last known state of a screen: what widgets and watches show, online or not. */
@@ -93,7 +95,12 @@ class ScreenRepository(
           CachedScreen(result.snapshot, fetchedAt = System.currentTimeMillis(), problem = null)
         FetchResult.Locked -> previous.copy(problem = ScreenProblem.LOCKED)
         FetchResult.Gone -> previous.copy(problem = ScreenProblem.GONE)
-        is FetchResult.Failed -> return Refresh(previous, fetched = null)
+        is FetchResult.Failed -> {
+          val offline = previous.copy(problem = ScreenProblem.OFFLINE)
+          // Written once: a watch polling offline would otherwise write every few seconds.
+          if (previous.problem != ScreenProblem.OFFLINE) write(screen.key, offline)
+          return Refresh(offline, fetched = null)
+        }
       }
     write(screen.key, next)
     return Refresh(next, fetched = (result as? FetchResult.Success)?.snapshot)

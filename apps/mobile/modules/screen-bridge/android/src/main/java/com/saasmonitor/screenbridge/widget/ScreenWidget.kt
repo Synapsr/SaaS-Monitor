@@ -106,13 +106,14 @@ internal abstract class ScreenWidget : GlanceAppWidget() {
     }
   }
 
-  /** What to do about a locked or gone screen: the app's words, in English like the app. */
+  /** What to do about a screen without numbers: the app's words, in English like the app. */
   @Composable
   private fun problemHint(problem: ScreenProblem): String =
     LocalContext.current.getString(
       when (problem) {
         ScreenProblem.LOCKED -> R.string.sm_widget_locked_details
         ScreenProblem.GONE -> R.string.sm_widget_gone_details
+        ScreenProblem.OFFLINE -> R.string.sm_widget_offline_details
       }
     )
 
