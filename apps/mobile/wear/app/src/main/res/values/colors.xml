@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- The logo's tile (`BRAND_COLORS.tile` of the web app). -->
+  <color name="logo_tile">#0A0A0A</color>
+</resources>

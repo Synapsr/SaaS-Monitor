@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The logo's pulse (`src/app/icon.svg` of the web app), centered in the icon's safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="108dp"
+  android:height="108dp"
+  android:viewportWidth="108"
+  android:viewportHeight="108">
+  <group
+    android:pivotX="54"
+    android:pivotY="54"
+    android:scaleX="1.1"
+    android:scaleY="1.1"
+    android:translateX="22"
+    android:translateY="22">
+    <path
+      android:pathData="M12 40 h9 l6 -16 8 24 6 -14 h11"
+      android:fillColor="#00000000"
+      android:strokeColor="#34D399"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round" />
+  </group>
+</vector>
