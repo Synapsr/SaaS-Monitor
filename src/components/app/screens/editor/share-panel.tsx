@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { regenerateScreenLinkAction, sendTestCelebrationAction } from "@/app/app/screens/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CopyField } from "@/components/app/copy-button";
+import { QrCode } from "@/components/app/screens/qr-code";
 import { TvSetupSteps } from "@/components/app/screens/tv-setup";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -75,6 +76,21 @@ export function SharePanel({
           Plays a fake sale, with its sound, voice and confetti, on every open copy of this screen.
           The easiest way to check the sound on your TV.
         </p>
+      </div>
+
+      <div className="flex items-center gap-4 border-t pt-4">
+        <QrCode
+          value={url}
+          label="QR code of the screen link"
+          className="size-24 shrink-0 rounded-md p-1.5 ring-1 ring-foreground/10"
+        />
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium">Open on your phone</p>
+          <p className="text-sm text-pretty text-muted-foreground">
+            Scan this code with the SaaS Monitor app to follow the screen on your phone, with its
+            widgets and notifications.
+          </p>
+        </div>
       </div>
 
       <Collapsible className="border-t pt-4">

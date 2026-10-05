@@ -47,7 +47,7 @@ const COLUMNS: { channel: Channel; label: string; hint: string; icon: LucideIcon
 
 /** One column per channel, narrower on phones so that event names keep some room. */
 const GRID =
-  "grid grid-cols-[minmax(0,1fr)_repeat(5,2.75rem)] sm:grid-cols-[minmax(0,1fr)_repeat(5,4rem)]";
+  "grid grid-cols-[minmax(0,1fr)_repeat(5,2.75rem)] sm:grid-cols-[minmax(0,1fr)_repeat(5,3.5rem)]";
 
 /** What checking a sound plays: most subscriptions start and grow with a payment. */
 const PREVIEW_SOUNDS: Record<ScreenEvent, SoundEvent> = {
