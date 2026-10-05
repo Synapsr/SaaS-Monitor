@@ -62,6 +62,8 @@ const config: ExpoConfig = {
         recordAudioAndroid: false,
       },
     ],
+    // Before `@bacons/apple-targets`, whose targets it edits (see the file).
+    "./targets/with-shared-code",
     "@bacons/apple-targets",
   ],
   experiments: { typedRoutes: true },
