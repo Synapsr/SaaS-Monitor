@@ -64,9 +64,10 @@ struct HeroNumber: View {
   let size: CGFloat
 
   var body: some View {
+    // No tighter tracking than the system's: it would swallow the narrow space French groups
+    // digits with ("176 172 $US").
     Text(figures.valueText)
       .font(.system(size: size, weight: .semibold))
-      .tracking(-size * 0.03)
       .monospacedDigit()
       .lineLimit(1)
       .minimumScaleFactor(0.5)
