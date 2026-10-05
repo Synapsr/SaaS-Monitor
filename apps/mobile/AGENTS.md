@@ -73,8 +73,12 @@ for both Expo and native tokens.
   web display (its words come with the contract).
 - Design like the wall display: calm and dark-first, near-black surfaces, the screen's accent glow,
   large tabular numbers. Respect reduced motion and Dynamic Type.
-- npm (`.npmrc` sets `legacy-peer-deps`). Run `npm run typecheck` and `npm run lint` before
-  calling anything done; build what you touch (`npx expo prebuild`, Xcode or Gradle).
+- npm (`.npmrc` sets `legacy-peer-deps`). Run `npm run typecheck`, `npm run lint` and `npm test`
+  (Jest, `jest-expo`: tests sit next to the code, `*.test.ts`, never in `src/app/`) before calling
+  anything done; build what you touch (`npx expo prebuild`, Xcode or Gradle).
+- `npm run sync-contract [path/to/SaaS-Monitor]` copies the web's display contract into
+  `src/contract/` (`--check` tells when it is stale); commit what it writes. App code imports it
+  as `@/contract/…`, and `@/…` is `src/`.
 - Commits: Conventional Commits (`feat:`, `fix:`…), no AI attribution or `Co-Authored-By`
   trailers.
 
