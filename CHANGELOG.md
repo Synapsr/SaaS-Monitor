@@ -10,13 +10,17 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   scanned from the QR code of **Open on your phone** in the screen settings, and its password if
   it has one, then gets notified of what happens, in the screen's language. **Events** gains a
   **Phone** column: payments, new subscribers, upgrades, reactivations, new customers and
-  milestones notify by default. Each thing is notified once, a burst as a single summary.
-  Notifications go through the Expo push service, with nothing to configure; they are instant
-  with [instant updates](docs/stripe.md#instant-updates). A new link or a new password stops
-  notifying the phones that followed the screen.
+  milestones notify by default, and each phone may turn a screen off or mute some of its events.
+  Each thing is notified once, a burst as a single summary. Self-hosted instances notify through
+  the Expo push service, with nothing to configure; the instance that publishes the apps sends to
+  Apple and Google directly (`APNS_*`, `FCM_SERVICE_ACCOUNT`), Expo standing in for phones it
+  cannot reach. Notifications are instant with
+  [instant updates](docs/stripe.md#instant-updates). A new link or a new password stops notifying
+  the phones that followed the screen.
 - `POST /api/screens/:token/access` (a screen's password for the proof that opens it, also
   accepted by the state endpoint as an `X-Screen-Access` header) and
-  `PUT`/`DELETE /api/screens/:token/devices` (phones following a screen).
+  `PUT`/`DELETE /api/screens/:token/devices` (an installation of the app following a screen, with
+  its Expo and native push tokens and its choices).
 
 - Lost subscriptions say why, in the feed, on their card and in the voice: canceled, won't renew
   (a cancellation at period end, with the date it ends), payment failed (Stripe's retries ran

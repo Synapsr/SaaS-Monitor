@@ -100,7 +100,9 @@ subscriber, +$49 MRR", then "Payment received, $49". Which events notify is the 
 of [Events](#events). Customers are named only if the screen shows names, and a screen of several
 Stripe accounts names the account of each notification. A burst of activity (after an outage,
 say) arrives as one notification summing it up, and each milestone is notified once. A phone
-following several screens of the same account hears of each thing once.
+following several screens of the same account hears of each thing once. In the app, each phone
+can turn a screen's notifications off, or mute some of its events, on top of the screen's
+choices.
 
 Notifications go out when SaaS Monitor syncs the Stripe account, which happens when a Stripe
 webhook arrives, when a screen polls, or when the dashboard is open: there is no background
@@ -109,9 +111,10 @@ worker. For notifications within seconds, turn on
 checked while a screen or the dashboard is open, every few minutes at best (about every 17
 minutes for small accounts), and notifications wait for it.
 
-Notifications reach phones through the Expo push service, which forwards them to Apple and
-Google: their title and text go through these services. Self-hosted instances need no setup or
-credentials, only outbound HTTPS access to `exp.host`. **Regenerate link** or a new password stops
+Notifications reach phones through Apple and Google: their title and text go through these
+services. saas-monitor.com sends to them directly; self-hosted instances go through the Expo push
+service, which forwards them, with no setup or credentials, only outbound HTTPS access to
+`exp.host` (see [Self-hosting](self-hosting.md#notifications)). **Regenerate link** or a new password stops
 notifying every phone that followed the screen, like it locks out its displays; uninstalling the
 app stops them too.
 
