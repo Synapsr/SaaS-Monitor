@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The logo's pulse (`LOGO_PULSE_PATH` of the web app), cropped like `LogoPulse`: tinted with the accent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="24dp"
+  android:height="17dp"
+  android:viewportWidth="48"
+  android:viewportHeight="34">
+  <group
+    android:translateX="-8"
+    android:translateY="-18">
+    <path
+      android:pathData="M12 40 h9 l6 -16 8 24 6 -14 h11"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round" />
+  </group>
+</vector>
