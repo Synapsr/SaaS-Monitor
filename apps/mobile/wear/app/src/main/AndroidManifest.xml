@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.INTERNET" />
+  <!-- A moment is felt as it appears. -->
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <!-- Ambient mode (AmbientLifecycleObserver): the app stops polling while the watch dozes. -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
   <uses-feature android:name="android.hardware.type.watch" />
 
   <application

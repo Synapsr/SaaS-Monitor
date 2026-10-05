@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -35,7 +34,6 @@ import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.saasmonitor.core.SharedScreen
-import com.saasmonitor.core.display.FeedIcon
 import com.saasmonitor.core.display.FeedLine
 import com.saasmonitor.core.display.Language
 import com.saasmonitor.core.display.SampleSnapshots
@@ -44,20 +42,10 @@ import com.saasmonitor.core.state.CachedScreen
 import com.saasmonitor.core.state.ScreenProblem
 import com.saasmonitor.core.state.ScreenSnapshot
 import com.saasmonitor.wear.R
-import kotlinx.coroutines.delay
-
-/** How often an open screen fetches its state: a wall polls every 10 s, a wrist can wait. */
-private const val POLL_MILLIS = 60_000L
 
 /** One screen: its MRR and growth, its goal, today's revenue and the latest activity. */
 @Composable
-fun ScreenDetailScreen(item: ScreenItem, onRefresh: () -> Unit, onFeature: () -> Unit) {
-  LaunchedEffect(item.screen.key) {
-    while (true) {
-      onRefresh()
-      delay(POLL_MILLIS)
-    }
-  }
+fun ScreenDetailScreen(item: ScreenItem, onFeature: () -> Unit) {
   val snapshot = item.cached.snapshot
   val state = rememberTransformingLazyColumnState()
   val spec = rememberTransformationSpec()
@@ -238,30 +226,12 @@ private fun message(cached: CachedScreen): String? {
   }
 }
 
-/** The shared icons (`sm_kind_*`, `sm_churn_*`), as the web display picks them. */
-private val FeedIcon.drawable: Int
-  get() =
-    when (this) {
-      FeedIcon.PAYMENT -> R.drawable.sm_kind_payment
-      FeedIcon.CONNECT -> R.drawable.sm_kind_connect
-      FeedIcon.CUSTOMER -> R.drawable.sm_kind_customer
-      FeedIcon.NEW -> R.drawable.sm_kind_new
-      FeedIcon.EXPANSION -> R.drawable.sm_kind_expansion
-      FeedIcon.REACTIVATION -> R.drawable.sm_kind_reactivation
-      FeedIcon.CONTRACTION -> R.drawable.sm_kind_contraction
-      FeedIcon.CHURN -> R.drawable.sm_kind_churn
-      FeedIcon.WONT_RENEW -> R.drawable.sm_churn_scheduled
-      FeedIcon.UNPAID -> R.drawable.sm_churn_unpaid
-      FeedIcon.PAUSED -> R.drawable.sm_churn_paused
-    }
-
 @Preview(device = WearDevices.LARGE_ROUND, showSystemUi = true)
 @Composable
 private fun ScreenDetailPreview() {
   val screen = SharedScreen("a1", "Acme Analytics", "https://saas-monitor.com", "t", null)
   ScreenDetailScreen(
     item = ScreenItem(screen, CachedScreen(SampleSnapshots.acme(), 0, null), featured = false),
-    onRefresh = {},
     onFeature = {},
   )
 }
@@ -278,7 +248,6 @@ private fun ScreenDetailFrenchArrPreview() {
     )
   ScreenDetailScreen(
     item = ScreenItem(screen, CachedScreen(snapshot, 0, null), featured = true),
-    onRefresh = {},
     onFeature = {},
   )
 }
