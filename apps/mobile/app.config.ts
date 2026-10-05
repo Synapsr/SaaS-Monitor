@@ -44,6 +44,7 @@ const config: ExpoConfig = {
       "expo-splash-screen",
       { backgroundColor: "#08090b", image: "./assets/splash-icon.png", imageWidth: 88 },
     ],
+    // The logo's pulse in the brand emerald: Android and Wear OS draw notification icons as masks.
     [
       "expo-notifications",
       {
@@ -65,6 +66,7 @@ const config: ExpoConfig = {
     // Before `@bacons/apple-targets`, whose targets it edits (see the file).
     "./targets/with-shared-code",
     "@bacons/apple-targets",
+    "./plugins/withAndroidWidgets",
   ],
   experiments: { typedRoutes: true },
 };

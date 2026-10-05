@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widgets' own words, in English like the app. What a screen shows speaks its language. -->
+<resources>
+  <string name="sm_app_name">SaaS Monitor</string>
+  <string name="sm_widget_mrr_name">MRR</string>
+  <string name="sm_widget_mrr_description">A screen’s MRR and its growth over 30 days</string>
+  <string name="sm_widget_overview_name">Screen overview</string>
+  <string name="sm_widget_overview_description">MRR, today’s revenue, the goal and the latest activity</string>
+  <string name="sm_widget_no_screens">Add a screen in SaaS Monitor</string>
+  <string name="sm_widget_no_screens_details">Scan its QR code or paste its link in the app.</string>
+  <string name="sm_widget_screen_removed">This screen is no longer in the app</string>
+  <string name="sm_widget_screen_removed_details">Tap to choose another one.</string>
+  <string name="sm_widget_locked_details">Open it in SaaS Monitor to type its password.</string>
+  <string name="sm_widget_gone_details">Open SaaS Monitor to add it again with its new link.</string>
+  <string name="sm_configure_title">Choose a screen</string>
+  <string name="sm_configure_details">The widget shows its numbers and opens it when you tap it.</string>
+  <string name="sm_configure_colors">Colors</string>
+  <string name="sm_configure_colors_screen">Screen</string>
+  <string name="sm_configure_colors_wallpaper">Wallpaper</string>
+  <string name="sm_configure_empty_title">No screens yet</string>
+  <string name="sm_configure_empty_details">Add a screen in SaaS Monitor first: scan its QR code or paste its link.</string>
+  <string name="sm_configure_open_app">Open SaaS Monitor</string>
+</resources>

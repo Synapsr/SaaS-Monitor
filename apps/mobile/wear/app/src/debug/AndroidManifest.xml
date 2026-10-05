@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds reach a local web dev server over HTTP (the emulator's host is 10.0.2.2), and
+  take screens from adb when no phone is paired (DebugScreensReceiver). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+  <application
+    android:usesCleartextTraffic="true"
+    tools:targetApi="28">
+    <receiver
+      android:name=".DebugScreensReceiver"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="com.saasmonitor.wear.DEBUG_SCREENS" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>
