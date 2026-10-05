@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { parseServiceAccount } from "@/server/push/service-account";
 
 const booleanFlag = (defaultValue: boolean) =>
   z
@@ -39,8 +40,37 @@ const schema = z
       .url()
       .default("https://api.gradium.ai/api")
       .transform((url) => url.replace(/\/+$/, "")),
+    /*
+     * Notifications straight to the store apps, for the instance that publishes them: they only
+     * work with the apps' own keys. Other instances send through Expo, with nothing to set.
+     */
+    APNS_KEY_ID: z.string().optional(),
+    APNS_TEAM_ID: z.string().optional(),
+    /** The `.p8` key, its line breaks as they are or escaped as `\n`. */
+    APNS_PRIVATE_KEY: z
+      .string()
+      .optional()
+      .transform((key) => key?.replace(/\\n/g, "\n")),
+    APNS_BUNDLE_ID: z.string().default("com.saasmonitor.app"),
+    /** The Firebase service account's JSON key, which names its project. */
+    FCM_SERVICE_ACCOUNT: z.string().optional(),
   })
   .superRefine((values, context) => {
+    const apns = [values.APNS_KEY_ID, values.APNS_TEAM_ID, values.APNS_PRIVATE_KEY];
+    if (apns.some(Boolean) && !apns.every(Boolean)) {
+      context.addIssue({
+        code: "custom",
+        path: ["APNS_PRIVATE_KEY"],
+        message: "APNS_KEY_ID, APNS_TEAM_ID and APNS_PRIVATE_KEY go together",
+      });
+    }
+    if (values.FCM_SERVICE_ACCOUNT && !parseServiceAccount(values.FCM_SERVICE_ACCOUNT)) {
+      context.addIssue({
+        code: "custom",
+        path: ["FCM_SERVICE_ACCOUNT"],
+        message: "must be the JSON key of a Google service account",
+      });
+    }
     for (const provider of ["GITHUB", "GOOGLE"] as const) {
       const id = values[`${provider}_CLIENT_ID`];
       const secret = values[`${provider}_CLIENT_SECRET`];

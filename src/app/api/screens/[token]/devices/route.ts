@@ -41,7 +41,7 @@ export async function DELETE(
     return Response.json({ error: "Invalid device." }, { status: 400, headers: NO_STORE });
   }
 
-  if ((await unregisterDevice(token, parsed.data.pushToken)) === "gone") {
+  if ((await unregisterDevice(token, parsed.data.installationId)) === "gone") {
     const [status, error] = FAILURES.gone;
     return Response.json({ error }, { status, headers: NO_STORE });
   }

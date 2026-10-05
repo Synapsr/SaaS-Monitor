@@ -23,27 +23,21 @@ import { toFeedItem } from "@/server/display/state";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
 import { claimLiveActivity, claimMilestones } from "./claims";
 import { screenKey, type PushContext } from "./content";
-import { forgetPushTokens, screenDevices } from "./devices";
-import {
-  EXPO_BATCH_SIZE,
-  expoPushSender,
-  isUnregistered,
-  type PushMessage,
-  type PushSender,
-  type PushTicket,
-} from "./expo";
-import { notice, pushMessages, type ScreenNotices } from "./messages";
+import { forgetTokens, screenDevices, type Device } from "./devices";
+import { deliveries, notice, type ScreenNotices } from "./messages";
+import { defaultTransports, deliver, type PushTransports } from "./transports";
 
 /*
  * Phones following a screen hear of what its accounts' syncs record, like the screen's displays
  * see it: the moments of `planMoments`, in the screen's language, for the events it sends to
  * phones (`settings.events`, channel `push`). There is no worker: syncs run when a display polls,
  * the dashboard is open, or a Stripe webhook arrives. Only webhooks make notifications instant.
+ * Each phone may turn a screen off, or mute some of its events.
  */
 
 export interface PushOptions {
-  /** Sends a batch of messages: Expo's push API, or a fake in tests. */
-  send?: PushSender;
+  /** How notifications reach phones: this instance's, or fakes in tests. */
+  transports?: Partial<PushTransports>;
   /** Current time, for tests. */
   now?: Date;
   /** Exchange rates source, for tests. */
@@ -52,8 +46,8 @@ export interface PushOptions {
 
 /**
  * Notifies the phones following the account's screens of what the sync just recorded, once its
- * transaction is committed. Best effort: failures are logged, never thrown, and a slow Expo
- * answer is given up on (`expoPushSender`).
+ * transaction is committed. Best effort: failures are logged, never thrown, and slow answers
+ * are given up on.
  */
 export async function notifyPhones(accountId: string, options: PushOptions = {}): Promise<void> {
   try {
@@ -70,7 +64,7 @@ export async function notifyPhones(accountId: string, options: PushOptions = {})
 /** Sends the notifications of what the account recorded, and returns how many were sent. */
 async function notify(
   accountId: string,
-  { send = expoPushSender, now = new Date(), rateSource }: PushOptions,
+  { transports, now = new Date(), rateSource }: PushOptions,
 ): Promise<number> {
   // Claimed whether phones follow the account or not: what happened before a phone follows a
   // screen is no news to it.
@@ -84,19 +78,16 @@ async function notify(
   const notices = await Promise.all(
     followed.map((screen) => screenNotices(screen, rows, accountId, { now, rateSource })),
   );
-  const messages = pushMessages(notices);
-  const tickets = await sendInBatches(messages, send);
-  await forgetPushTokens(
-    tickets.filter(({ ticket }) => isUnregistered(ticket)).map(({ message }) => message.to),
-  );
-  return tickets.filter(({ ticket }) => ticket.status === "ok").length;
+  const report = await deliver(deliveries(notices), { ...defaultTransports(), ...transports });
+  await forgetTokens(report);
+  return report.sent;
 }
 
 interface FollowedScreen {
   id: string;
   token: string;
   settings: ScreenSettings;
-  pushTokens: string[];
+  devices: Device[];
 }
 
 /** The screens showing the account that phones follow. */
@@ -110,9 +101,9 @@ async function followedScreens(accountId: string): Promise<FollowedScreen[]> {
     .orderBy(asc(screens.createdAt));
   const devices = await screenDevices(rows.map((row) => row.id));
   return rows.flatMap((row) => {
-    const pushTokens = devices.get(row.id);
-    if (!pushTokens) return [];
-    return [{ ...row, settings: parseScreenSettings(row.settings), pushTokens }];
+    const followers = devices.get(row.id);
+    if (!followers) return [];
+    return [{ ...row, settings: parseScreenSettings(row.settings), devices: followers }];
   });
 }
 
@@ -167,7 +158,7 @@ async function screenNotices(
   }
 
   return {
-    pushTokens: screen.pushTokens,
+    devices: screen.devices,
     moments: planMoments(pushed).map(toNotice),
     summary: pushed.length ? toNotice(summaryMoment(pushed)) : null,
     milestones: milestones.map(toNotice),
@@ -219,28 +210,4 @@ function mrrSpans({
           }))
       : [];
   return { total: span(total, true), views };
-}
-
-/**
- * Sends the messages by batches, each on its own: a batch Expo refuses does not keep the others
- * from going. Returns the tickets of the batches sent, with their message.
- */
-async function sendInBatches(
-  messages: readonly PushMessage[],
-  send: PushSender,
-): Promise<{ message: PushMessage; ticket: PushTicket }[]> {
-  const tickets: { message: PushMessage; ticket: PushTicket }[] = [];
-  for (let start = 0; start < messages.length; start += EXPO_BATCH_SIZE) {
-    const batch = messages.slice(start, start + EXPO_BATCH_SIZE);
-    try {
-      const answers = await send(batch);
-      tickets.push(...batch.map((message, index) => ({ message, ticket: answers[index] })));
-    } catch (error) {
-      console.warn(
-        `[push] ${batch.length} notifications could not be sent:`,
-        error instanceof Error ? error.message : error,
-      );
-    }
-  }
-  return tickets;
 }

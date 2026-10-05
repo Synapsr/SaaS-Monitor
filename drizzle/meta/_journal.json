@@ -50,6 +50,13 @@
       "when": 1791222729874,
       "tag": "0006_push_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1791231876134,
+      "tag": "0007_push_device_installations",
+      "breakpoints": true
     }
   ]
 }

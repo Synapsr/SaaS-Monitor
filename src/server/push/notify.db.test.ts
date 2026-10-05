@@ -17,7 +17,9 @@ import {
   stripeSubscription,
 } from "@/test/stripe-fixtures";
 import { screenKey } from "./content";
-import type { PushMessage, PushSender, PushTicket } from "./expo";
+import type { ApnsNotification, ApnsSender } from "./apns";
+import type { ExpoMessage, ExpoSender, ExpoTicket } from "./expo";
+import type { NativeResult } from "./native";
 import { notifyPhones } from "./notify";
 
 const IMPORTED_AT = new Date("2026-03-15T12:00:00Z");
@@ -25,14 +27,15 @@ const T0 = IMPORTED_AT.getTime() / 1000;
 const at = (seconds: number) => new Date((T0 + seconds) * 1000);
 
 const PHONE = "ExponentPushToken[phone]";
+const IPHONE = "ab".repeat(32);
 
 /** Expo, as tests see it: every batch sent, and the tokens it no longer knows. */
 function fakeExpo({ unregistered = [] as string[], down = false } = {}) {
-  const batches: PushMessage[][] = [];
-  const send: PushSender = async (messages) => {
+  const batches: ExpoMessage[][] = [];
+  const send: ExpoSender = async (messages) => {
     if (down) throw new Error("Expo is down.");
     batches.push([...messages]);
-    return messages.map((message): PushTicket =>
+    return messages.map((message): ExpoTicket =>
       unregistered.includes(message.to)
         ? {
             status: "error",
@@ -45,24 +48,45 @@ function fakeExpo({ unregistered = [] as string[], down = false } = {}) {
   return { send, batches, sent: () => batches.flat() };
 }
 
+/** Apple, as the instance that publishes the app reaches it. */
+function fakeApns(answer: NativeResult = { status: "sent" }) {
+  const sent: ApnsNotification[] = [];
+  const send: ApnsSender = async (notification) => {
+    sent.push(notification);
+    return answer;
+  };
+  return { send, sent };
+}
+
 describe("phone notifications", () => {
   let stripe: FakeStripe;
   let workspaceId: string;
   let accountId: string;
   let expo: ReturnType<typeof fakeExpo>;
+  /** `null`: the instance has no APNs key. */
+  let apns: ReturnType<typeof fakeApns> | null;
 
   const syncAt = (seconds: number) =>
     syncAccount(accountId, {
       createGateway: () => stripe,
       now: () => at(seconds),
-      push: { send: expo.send },
+      push: { transports: { expo: expo.send, apns: apns?.send ?? null, fcm: null } },
     });
 
-  /** A screen of the account, followed by `phones`. */
-  async function followedScreen(phones: string[], settings: ScreenSettingsInput = {}) {
+  type Phone = Partial<typeof pushDevices.$inferInsert>;
+
+  /** A screen of the account, followed by `phones`: Expo tokens, or phones as registered. */
+  async function followedScreen(phones: (string | Phone)[], settings: ScreenSettingsInput = {}) {
     const screen = await createScreen(workspaceId, { accountIds: [accountId], settings });
-    for (const pushToken of phones) {
-      await db().insert(pushDevices).values({ screenId: screen.id, pushToken, platform: "ios" });
+    for (const phone of phones) {
+      await db()
+        .insert(pushDevices)
+        .values({
+          screenId: screen.id,
+          installationId: crypto.randomUUID(),
+          platform: "ios",
+          ...(typeof phone === "string" ? { pushToken: phone } : phone),
+        });
     }
     return screen;
   }
@@ -114,6 +138,7 @@ describe("phone notifications", () => {
     workspaceId = (await createUserWithWorkspace()).workspaceId;
     accountId = (await createStripeAccount(workspaceId, { now: IMPORTED_AT })).id;
     expo = fakeExpo();
+    apns = null;
     stripe = new FakeStripe();
     stripe.putProduct({ id: "prod_pro", name: "Pro" });
     stripe.putSubscription(
@@ -157,7 +182,10 @@ describe("phone notifications", () => {
     pay("one", 4_900, MINUTE_SECONDS);
     await syncAt(2 * MINUTE_SECONDS);
     await syncAt(3 * MINUTE_SECONDS);
-    await notifyPhones(accountId, { send: expo.send, now: at(4 * MINUTE_SECONDS) });
+    await notifyPhones(accountId, {
+      transports: { expo: expo.send, apns: null, fcm: null },
+      now: at(4 * MINUTE_SECONDS),
+    });
 
     expect(expo.sent()).toHaveLength(1);
     const notified = await db().select().from(payments).where(isNotNull(payments.notifiedAt));
@@ -268,5 +296,63 @@ describe("phone notifications", () => {
     await syncAt(4 * MINUTE_SECONDS);
 
     expect(expo.sent().map(({ body }) => body)).toEqual(["$29 · 🇫🇷 France"]);
+  });
+
+  it("reaches iPhones straight through Apple when the instance has its key", async () => {
+    apns = fakeApns();
+    const { token } = await followedScreen([
+      { pushToken: PHONE, deviceToken: IPHONE, apnsEnvironment: "development" },
+    ]);
+    checkout("grace", 2_900, MINUTE_SECONDS);
+
+    await syncAt(2 * MINUTE_SECONDS);
+
+    expect(expo.sent()).toEqual([]);
+    expect(apns.sent).toEqual([
+      {
+        deviceToken: IPHONE,
+        environment: "development",
+        payload: {
+          aps: {
+            alert: { title: "New subscriber", body: "+$29 MRR · Pro · 🇺🇸 United States" },
+            sound: "default",
+            "interruption-level": "time-sensitive",
+            "thread-id": screenKey(token),
+          },
+          type: "moment",
+          screen: screenKey(token),
+          event: "subscription",
+        },
+      },
+      expect.objectContaining({ payload: expect.objectContaining({ event: "payment" }) }),
+    ]);
+  });
+
+  it("forgets a native token Apple no longer takes, and keeps the phone on Expo", async () => {
+    apns = fakeApns({ status: "unregistered" });
+    const { id } = await followedScreen([{ pushToken: PHONE, deviceToken: IPHONE }]);
+    pay("one", 4_900, MINUTE_SECONDS);
+
+    await syncAt(2 * MINUTE_SECONDS);
+
+    expect(expo.sent().map(({ to }) => to)).toEqual([PHONE]);
+    const devices = await db()
+      .select({ pushToken: pushDevices.pushToken, deviceToken: pushDevices.deviceToken })
+      .from(pushDevices)
+      .where(eq(pushDevices.screenId, id));
+    expect(devices).toEqual([{ pushToken: PHONE, deviceToken: null }]);
+  });
+
+  it("leaves the phones that turned the screen off, or muted the event, in peace", async () => {
+    await followedScreen([
+      { pushToken: "ExponentPushToken[off]", enabled: false },
+      { pushToken: "ExponentPushToken[muted]", mutedEvents: ["payment"] },
+      { pushToken: PHONE, mutedEvents: ["customer"] },
+    ]);
+    pay("one", 4_900, MINUTE_SECONDS);
+
+    await syncAt(2 * MINUTE_SECONDS);
+
+    expect(expo.sent().map(({ to }) => to)).toEqual([PHONE]);
   });
 });

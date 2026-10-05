@@ -2,10 +2,11 @@ import "server-only";
 import { momentEvents, type ScreenEvent } from "@/lib/display/events";
 import type { Moment } from "@/lib/display/moments";
 import { pushContent, type PushContent, type PushContext } from "./content";
-import type { PushMessage } from "./expo";
+import type { Device } from "./devices";
 
 /*
- * Turns what each screen has to say into messages for the phones following them. A phone may
+ * Turns what each screen has to say into notifications for the phones following them, as each
+ * phone chose: none when it turned the screen off, none of the events it muted. A phone may
  * follow several screens showing the same account: it hears of each thing once.
  */
 
@@ -18,18 +19,36 @@ export interface Notice extends PushContent {
   key: string;
   /** `screenKey` of the screen it comes from. */
   screen: string;
+  /** What it is about: one event, or those of the burst it sums up. */
+  events: ScreenEvent[];
+}
+
+/** What the app reads from a notification, to open the right screen and show the right icon. */
+export interface MomentData {
+  type: "moment";
+  screen: string;
   event: ScreenEvent;
+}
+
+export function momentData({ screen, events }: Notice): MomentData {
+  return { type: "moment", screen, event: events[0] };
 }
 
 /** What a screen tells its phones about what a sync just recorded. */
 export interface ScreenNotices {
-  pushTokens: readonly string[];
+  devices: readonly Device[];
   /** One notice per moment, in the order things happened. */
   moments: Notice[];
   /** All of them at once, for a phone that would get too many; `null` when there is nothing. */
   summary: Notice | null;
   /** Milestones crossed: each worth a notification of its own, whatever else happened. */
   milestones: Notice[];
+}
+
+/** A notification for one phone. */
+export interface Delivery {
+  device: Device;
+  notice: Notice;
 }
 
 /** The notice of a moment on a screen. */
@@ -44,27 +63,43 @@ export function notice(moment: Moment, screen: string, context: PushContext): No
         ? `${content.title}\n${content.body}`
         : moment.id,
     screen,
-    event: momentEvents(moment)[0],
+    events: momentEvents(moment),
   };
 }
 
-/** Every phone's notifications, as Expo push messages. */
-export function pushMessages(screens: readonly ScreenNotices[]): PushMessage[] {
-  const phones = new Map<string, { moments: Notice[]; summary: Notice | null; others: Notice[] }>();
+/**
+ * The phone a device is, whichever screen it follows: its native token, else its Expo token. A
+ * reinstalled app keeps the phone's tokens.
+ */
+function phoneKey(device: Device): string | null {
+  return device.deviceToken ?? device.pushToken;
+}
+
+/** Every phone's notifications. */
+export function deliveries(screens: readonly ScreenNotices[]): Delivery[] {
+  const phones = new Map<
+    string,
+    { device: Device; moments: Notice[]; summary: Notice | null; milestones: Notice[] }
+  >();
   for (const screen of screens) {
-    for (const pushToken of screen.pushTokens) {
-      const phone = phones.get(pushToken) ?? { moments: [], summary: screen.summary, others: [] };
-      phone.moments.push(...screen.moments);
-      phone.others.push(...screen.milestones);
-      phone.summary ??= screen.summary;
-      phones.set(pushToken, phone);
+    for (const device of screen.devices) {
+      const key = phoneKey(device);
+      if (!device.enabled || key === null) continue;
+      // A notice reaches a phone that wants one of its events: a burst may be partly muted.
+      const heard = ({ events }: Notice) =>
+        events.some((event) => !device.mutedEvents.includes(event));
+      const phone = phones.get(key) ?? { device, moments: [], summary: null, milestones: [] };
+      phone.moments.push(...screen.moments.filter(heard));
+      phone.milestones.push(...screen.milestones.filter(heard));
+      if (!phone.summary && screen.summary && heard(screen.summary)) phone.summary = screen.summary;
+      phones.set(key, phone);
     }
   }
 
-  return [...phones].flatMap(([pushToken, phone]) => {
+  return [...phones.values()].flatMap(({ device, ...phone }) => {
     const moments = uniqueByKey(phone.moments);
     const said = moments.length > MAX_PUSHES_PER_PHONE && phone.summary ? [phone.summary] : moments;
-    return uniqueByKey([...said, ...phone.others]).map((item) => message(pushToken, item));
+    return uniqueByKey([...said, ...phone.milestones]).map((item) => ({ device, notice: item }));
   });
 }
 
@@ -73,17 +108,4 @@ function uniqueByKey(notices: readonly Notice[]): Notice[] {
   const unique = new Map<string, Notice>();
   for (const item of notices) if (!unique.has(item.key)) unique.set(item.key, item);
   return [...unique.values()];
-}
-
-function message(to: string, { title, body, screen, event }: Notice): PushMessage {
-  return {
-    to,
-    title,
-    body,
-    data: { type: "moment", screen, event },
-    sound: "default",
-    priority: "high",
-    channelId: "moments",
-    interruptionLevel: "time-sensitive",
-  };
 }

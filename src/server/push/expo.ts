@@ -1,11 +1,11 @@
 import "server-only";
 import { z } from "zod";
-import type { ScreenEvent } from "@/lib/display/events";
+import { momentData, type MomentData, type Notice } from "./messages";
 
 /*
- * Notifications reach phones through the Expo push service, which forwards them to Apple and
- * Google. It needs no credentials from the instance: any instance, hosted or self-hosted, sends to
- * the phones of the SaaS Monitor app. See https://docs.expo.dev/push-notifications/sending-notifications/
+ * The Expo push service forwards notifications to Apple and Google. It needs no credentials from
+ * the instance: any instance, hosted or self-hosted, reaches the phones of the SaaS Monitor app
+ * this way. See https://docs.expo.dev/push-notifications/sending-notifications/
  */
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -14,16 +14,8 @@ export const EXPO_BATCH_SIZE = 100;
 /** Pushes are best effort: a slow Expo never holds a sync for long. */
 const EXPO_TIMEOUT_MS = 10_000;
 
-/** What the app reads from a notification, to open the right screen and show the right icon. */
-export interface MomentData {
-  type: "moment";
-  /** The first 16 hex characters of the SHA-256 of the screen's token (`screenKey`). */
-  screen: string;
-  event: ScreenEvent;
-}
-
 /** A message of Expo's push API. */
-export interface PushMessage {
+export interface ExpoMessage {
   to: string;
   title: string;
   body: string;
@@ -37,6 +29,19 @@ export interface PushMessage {
   interruptionLevel: "time-sensitive";
 }
 
+export function expoMessage(to: string, item: Notice): ExpoMessage {
+  return {
+    to,
+    title: item.title,
+    body: item.body,
+    data: momentData(item),
+    sound: "default",
+    priority: "high",
+    channelId: "moments",
+    interruptionLevel: "time-sensitive",
+  };
+}
+
 const ticketSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("ok"), id: z.string() }),
   z.object({
@@ -47,14 +52,14 @@ const ticketSchema = z.discriminatedUnion("status", [
 ]);
 
 /** Expo's answer for one message: `DeviceNotRegistered` means the app is gone from the phone. */
-export type PushTicket = z.infer<typeof ticketSchema>;
+export type ExpoTicket = z.infer<typeof ticketSchema>;
 
 const responseSchema = z.object({ data: z.array(ticketSchema) });
 
 /** Sends up to `EXPO_BATCH_SIZE` messages, and returns their tickets in the same order. */
-export type PushSender = (messages: readonly PushMessage[]) => Promise<PushTicket[]>;
+export type ExpoSender = (messages: readonly ExpoMessage[]) => Promise<ExpoTicket[]>;
 
-export const expoPushSender: PushSender = async (messages) => {
+export const expoSender: ExpoSender = async (messages) => {
   const response = await fetch(EXPO_PUSH_URL, {
     method: "POST",
     headers: {
@@ -76,6 +81,6 @@ export const expoPushSender: PushSender = async (messages) => {
 };
 
 /** Whether a ticket says the phone no longer has the app: its token is worth forgetting. */
-export function isUnregistered(ticket: PushTicket): boolean {
+export function isUnregistered(ticket: ExpoTicket): boolean {
   return ticket.status === "error" && ticket.details?.error === "DeviceNotRegistered";
 }
