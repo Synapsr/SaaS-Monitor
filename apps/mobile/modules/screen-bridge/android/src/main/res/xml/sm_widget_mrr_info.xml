@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The small widget, 2×2. Refreshes come from WorkManager, not from updatePeriodMillis. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/sm_widget_mrr_description"
+  android:initialLayout="@layout/glance_default_loading_layout"
+  android:previewLayout="@layout/sm_widget_mrr_preview"
+  android:minWidth="110dp"
+  android:minHeight="110dp"
+  android:minResizeWidth="110dp"
+  android:minResizeHeight="110dp"
+  android:maxResizeWidth="250dp"
+  android:maxResizeHeight="250dp"
+  android:targetCellWidth="2"
+  android:targetCellHeight="2"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="0"
+  android:widgetCategory="home_screen"
+  android:configure="com.saasmonitor.screenbridge.widget.ConfigureWidgetActivity"
+  android:widgetFeatures="reconfigurable|configuration_optional" />

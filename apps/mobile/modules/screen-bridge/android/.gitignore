@@ -1,0 +1,4 @@
+# Gradle outputs of the module, built through the app.
+build/
+.gradle/
+.kotlin/

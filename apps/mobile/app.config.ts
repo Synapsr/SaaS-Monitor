@@ -41,6 +41,7 @@ const config: ExpoConfig = {
       { cameraPermission: "Scan the QR code of a screen to add it to SaaS Monitor." },
     ],
     "@bacons/apple-targets",
+    "./plugins/withAndroidWidgets",
   ],
   experiments: { typedRoutes: true },
 };

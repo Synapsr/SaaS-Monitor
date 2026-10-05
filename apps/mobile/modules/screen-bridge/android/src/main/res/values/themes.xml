@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- The widget configuration screen: Compose draws it, the window only follows day and night. -->
+  <style name="SmWidgetConfigureTheme" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
