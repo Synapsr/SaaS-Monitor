@@ -5,7 +5,7 @@ import { MilestoneCelebration } from "@/components/display/milestone-celebration
 import { MomentCard, type MomentCardContent } from "@/components/display/moment-card";
 import { useDisplayLocale } from "@/hooks/use-display-locale";
 import { customerLabel } from "@/lib/display/customer";
-import { itemContext, itemCountry } from "@/lib/display/feed";
+import { churnDetails, itemContext, itemCountry } from "@/lib/display/feed";
 import { formatAmount, formatPayment } from "@/lib/display/format";
 import type { DisplayLocale } from "@/lib/display/i18n";
 import { recurringMetric } from "@/lib/display/metric";
@@ -16,8 +16,7 @@ import {
   type Moment,
 } from "@/lib/display/moments";
 import { screenView } from "@/lib/display/rotation";
-import { formatDate } from "@/lib/display/time";
-import type { DisplayState, FeedItem } from "@/lib/display/types";
+import type { DisplayState } from "@/lib/display/types";
 import { formatMoney } from "@/lib/money";
 
 interface MomentOverlayProps {
@@ -46,27 +45,6 @@ export function MomentOverlay({ moment, state }: MomentOverlayProps) {
       </AnimatePresence>
     </div>
   );
-}
-
-/**
- * What a card adds about a lost subscription: when one set not to renew ends, or that Stripe's
- * retries of an unpaid one ran out.
- */
-function churnFootnote(
-  item: FeedItem,
-  timeZone: string,
-  { locale, text }: DisplayLocale,
-): string | null {
-  switch (item.churn?.reason) {
-    case "scheduled":
-      return item.churn.endsAt
-        ? text.moments.endsOn(formatDate(new Date(item.churn.endsAt), timeZone, locale))
-        : null;
-    case "unpaid":
-      return text.moments.unpaidDetails;
-    default:
-      return null;
-  }
 }
 
 /** The account a moment comes from, named only when the screen shows several. */
@@ -130,11 +108,7 @@ function describe(
         metric: recurring.label,
         account,
         details: itemContext(movement, context),
-        footnote: churnFootnote(movement, state.screen.settings.timeZone, {
-          language,
-          locale,
-          text,
-        }),
+        footnote: churnDetails(movement, state.screen.settings.timeZone, { locale, text }),
         tone: isMrrIncrease(movement) ? "celebration" : "calm",
       };
     }

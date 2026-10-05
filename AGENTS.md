@@ -35,6 +35,10 @@ Node 24 (`.nvmrc`), pnpm 10.
     invitation links.
   - `/d/[token]`: a public wall display, polling `/api/screens/[token]/state`. `/d/demo` is a
     screen fed by a simulation (landing page, trying the product without Stripe).
+  - `/api/screens/[token]/access` and `/devices`: the SaaS Monitor app, which opens screens with
+    their link (and the proof of their password, `X-Screen-Access`) and registers phones. After
+    each sync, `src/server/push` notifies them of what the sync recorded: through Apple and
+    Google with the instance's credentials (`APNS_*`, `FCM_SERVICE_ACCOUNT`), else through Expo.
   - `/api/webhooks/stripe/[accountId]`: Stripe webhooks, which only trigger a sync.
   - `/api/health`: liveness probe for containers (checks the database).
 - `src/components/ui` — shadcn/ui primitives (Radix). Feature components live next to them in

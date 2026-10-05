@@ -151,10 +151,22 @@ function planAccountMoments(items: readonly FeedItem[]): MomentGroup[] {
     }
   });
   if (groups.length < BURST_SIZE) return groups;
+  return [
+    {
+      at: Math.max(...items.map((item) => Date.parse(item.occurredAt))),
+      moments: [summaryMoment(items)],
+    },
+  ];
+}
 
+/** One moment summing up a burst of an account's items (oldest first), e.g. after a reconnection. */
+export function summaryMoment(items: readonly FeedItem[]): Moment {
+  const payments = items.filter((item) => item.kind === "payment");
+  const customers = items.filter((item) => item.kind === "customer");
+  const movements = items.filter((item) => item.kind !== "payment" && item.kind !== "customer");
   const sum = (list: FeedItem[]) => list.reduce((total, item) => total + ownRevenue(item), 0);
   const last = items[items.length - 1];
-  const summary: Moment = {
+  return {
     id: `summary:${last.id}`,
     kind: "summary",
     accountId: last.accountId,
@@ -165,9 +177,6 @@ function planAccountMoments(items: readonly FeedItem[]): MomentGroup[] {
     revenue: sum(payments),
     mrrChange: sum(movements),
   };
-  return [
-    { at: Math.max(...items.map((item) => Date.parse(item.occurredAt))), moments: [summary] },
-  ];
 }
 
 /**
@@ -266,7 +275,17 @@ export function trackMoments(
 
   let celebrated = tracker.celebrated;
   if (comparable && showSameMetricAndGoal(previous, state) && eventPlays("milestone", settings)) {
-    for (const moment of crossedMilestones(previous, state)) {
+    const views = settings.rotation.enabled ? state.views : [];
+    const spans = {
+      total: { before: previous.metrics.mrr, after: state.metrics.mrr },
+      views: views.map((view) => ({
+        accountId: view.accountId,
+        before:
+          previous.views.find(({ accountId }) => accountId === view.accountId)?.metrics.mrr ?? null,
+        after: view.metrics.mrr,
+      })),
+    };
+    for (const moment of crossedMilestones(spans, settings, state.currency)) {
       if (celebrated.has(moment.id)) continue;
       celebrated = new Set(celebrated).add(moment.id);
       moments.push(moment);
@@ -281,50 +300,46 @@ export function trackMoments(
   return { tracker: { previous: state, seen, testEventId, celebrated, held }, moments };
 }
 
+/** How a screen's MRR moved, in minor units of its currency: `null` when it was not known before. */
+export interface MrrSpan {
+  before: number | null;
+  after: number;
+}
+
 /**
- * The milestones crossed between two states: of the total, with the screen's goal, and of each
- * account on a screen showing them one by one, which have no goal of their own.
+ * The milestones crossed while MRR moved: of the total, with the screen's goal, and of each
+ * account on a screen showing them one by one (`views`, empty otherwise), which have no goal of
+ * their own. A screen showing only its accounts leaves the total out.
  */
-function crossedMilestones(previous: DisplayState, state: DisplayState): Moment[] {
-  const { metric, goal, rotation } = state.screen.settings;
+export function crossedMilestones(
+  { total, views }: { total: MrrSpan; views: readonly (MrrSpan & { accountId: string })[] },
+  { metric, goal, rotation }: Pick<ScreenSettings, "metric" | "goal" | "rotation">,
+  currency: string,
+): Moment[] {
   const { fromMrr } = recurringMetric(metric);
-  const { currency } = state;
-  const byAccount = rotation.enabled ? state.views : [];
+  const crossed = ({ before, after }: MrrSpan, target: number | null) =>
+    before === null ? null : crossedMilestone(fromMrr(before), fromMrr(after), target, currency);
   const moments: Moment[] = [];
 
-  if (byAccount.length < 2 || rotation.includeTotal) {
-    const total = crossedMilestone(
-      fromMrr(previous.metrics.mrr),
-      fromMrr(state.metrics.mrr),
-      goal,
-      currency,
-    );
-    if (total !== null) {
-      moments.push({
-        id: `milestone:${metric}:${total}`,
-        kind: "milestone",
-        amount: total,
-        metric,
-        isGoal: goal !== null && total === toMinorUnits(goal, currency),
-        accountId: null,
-      });
-    }
+  const ofTotal = views.length < 2 || rotation.includeTotal ? crossed(total, goal) : null;
+  if (ofTotal !== null) {
+    moments.push({
+      id: `milestone:${metric}:${ofTotal}`,
+      kind: "milestone",
+      amount: ofTotal,
+      metric,
+      isGoal: goal !== null && ofTotal === toMinorUnits(goal, currency),
+      accountId: null,
+    });
   }
 
-  for (const view of byAccount) {
-    const before = previous.views.find(({ accountId }) => accountId === view.accountId);
-    if (!before) continue;
-    const crossed = crossedMilestone(
-      fromMrr(before.metrics.mrr),
-      fromMrr(view.metrics.mrr),
-      null,
-      currency,
-    );
-    if (crossed === null) continue;
+  for (const view of views) {
+    const ofAccount = crossed(view, null);
+    if (ofAccount === null) continue;
     moments.push({
-      id: `milestone:${metric}:${view.accountId}:${crossed}`,
+      id: `milestone:${metric}:${view.accountId}:${ofAccount}`,
       kind: "milestone",
-      amount: crossed,
+      amount: ofAccount,
       metric,
       isGoal: false,
       accountId: view.accountId,

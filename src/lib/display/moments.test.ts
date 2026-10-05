@@ -266,8 +266,8 @@ describe("moment tracking", () => {
     const state = withSettings(displayState(), {
       events: {
         ...events,
-        connectPayment: { feed: true, moment: false, sound: false, voice: false },
-        customer: { feed: false, moment: false, sound: true, voice: false },
+        connectPayment: { ...events.connectPayment, moment: false, sound: false, voice: false },
+        customer: { ...events.customer, feed: false, moment: false, sound: true, voice: false },
       },
     });
     const connect = feedItem({ connect: { applicationFee: null } });

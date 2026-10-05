@@ -78,7 +78,9 @@ export async function setScreenPasswordAction(
   return result;
 }
 
-export async function sendTestCelebrationAction(screenId: string): Promise<ActionResult> {
+export async function sendTestCelebrationAction(
+  screenId: string,
+): Promise<ActionResult<{ phones: number }>> {
   const { workspace } = await requireWorkspace();
   const parsed = screenIdSchema.safeParse(screenId);
   if (!parsed.success) return invalidInput(parsed.error);

@@ -418,7 +418,7 @@ function latestPayments(accountId: string, limit: number, condition?: SQL) {
 }
 
 /** An account's latest customers, newest first. */
-function latestCustomers(accountId: string, limit: number) {
+function latestCustomers(accountId: string, limit: number, condition?: SQL) {
   return db()
     .select({
       id: customers.id,
@@ -431,7 +431,7 @@ function latestCustomers(accountId: string, limit: number) {
       country: customers.country,
     })
     .from(customers)
-    .where(eq(customers.accountId, accountId))
+    .where(and(eq(customers.accountId, accountId), condition))
     .orderBy(desc(customers.occurredAt), desc(customers.id))
     .limit(limit);
 }
@@ -471,7 +471,45 @@ export async function latestActivity(
     newest(conditions.payments, latestPayments),
     newest(conditions.customers, latestCustomers),
   ]);
+  const rows = await describeActivity(accountIds, movementRows, paymentRows, customerRows);
+  return rows.slice(0, limit);
+}
 
+/** Ids of an account's movements, payments and new customers. */
+export interface ActivityIds {
+  movements: readonly string[];
+  payments: readonly string[];
+  customers: readonly string[];
+}
+
+/**
+ * An account's movements, payments and new customers with these ids, newest first, described like
+ * the feed's: what a sync just recorded. Fully refunded payments are left out, like in the feed.
+ */
+export async function activityByIds(accountId: string, ids: ActivityIds): Promise<ActivityRow[]> {
+  const ofIds = <Row>(
+    list: readonly string[],
+    column: AnyColumn,
+    latest: (accountId: string, limit: number, condition?: SQL) => Promise<Row[]>,
+  ) =>
+    list.length ? latest(accountId, list.length, inArray(column, [...list])) : Promise.resolve([]);
+  const [movementRows, paymentRows, customerRows] = await Promise.all([
+    ofIds(ids.movements, mrrMovements.id, latestMovements),
+    ofIds(ids.payments, payments.id, latestPayments),
+    ofIds(ids.customers, customers.id, latestCustomers),
+  ]);
+  return describeActivity([accountId], movementRows, paymentRows, customerRows);
+}
+
+/**
+ * Completes rows of the feed with what their customers' subscriptions say of them, newest first.
+ */
+async function describeActivity(
+  accountIds: string[],
+  movementRows: Awaited<ReturnType<typeof latestMovements>>,
+  paymentRows: Awaited<ReturnType<typeof latestPayments>>,
+  customerRows: Awaited<ReturnType<typeof latestCustomers>>,
+): Promise<ActivityRow[]> {
   const profiles = await customerProfiles(
     accountIds,
     [...paymentRows, ...movementRows].flatMap((row) => (row.customerId ? [row.customerId] : [])),
@@ -523,7 +561,7 @@ export async function latestActivity(
       applicationFee: null,
     })),
   ];
-  return rows.sort(newestFirst).slice(0, limit);
+  return rows.sort(newestFirst);
 }
 
 /**

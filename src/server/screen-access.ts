@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { hashPassword, verifyPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
 import { members, screens } from "@/db/schema";
 import { env } from "@/env";
@@ -19,15 +20,22 @@ import { clientAddress, createRateLimiter } from "@/server/rate-limit";
 /*
  * A screen's link is its key. A password may lock it further: a device that types it keeps a
  * cookie proving it, bound to the password, so that a new password locks every device out
- * again. Signed-in members of the screen's workspace never need it: the editor's preview and
- * the "Open screen" button just work.
+ * again. The SaaS Monitor app keeps the same proof, and sends it in a header. Signed-in members of
+ * the screen's workspace never need it: the editor's preview and the "Open screen" button just
+ * work.
  */
+
+/** Where the app sends the proof of a screen's password: the value of the browsers' cookie. */
+export const SCREEN_ACCESS_HEADER = "x-screen-access";
 
 /** How long a device remembers a password: the longest browsers keep a cookie. */
 const ACCESS_DAYS = 400;
 
 /** Screen passwords are typed with a remote: short ones are fine, guessing them is not. */
 const unlockAttempts = createRateLimiter({ limit: 10, windowMs: 15 * 60_000 });
+
+/** A password typed in the app (`POST /api/screens/:token/access`). */
+export const accessRequestSchema = z.object({ password: z.string().min(1).max(128) });
 
 /** What guards a screen, and how its lock looks: in its language, theme and color. */
 export interface ScreenLock {
@@ -86,13 +94,17 @@ function isProof(value: string | null, expected: string): boolean {
 }
 
 /**
- * Whether a request may see a screen: it has no password, the request carries the proof of it,
- * or it comes from a member of the screen's workspace.
+ * Whether a request may see a screen: it has no password, the request carries the proof of it (a
+ * browser's cookie, or the app's header), or it comes from a member of the screen's workspace.
  */
 export async function canViewScreen(lock: ScreenLock, headers: Headers): Promise<boolean> {
   if (lock.passwordHash === null) return true;
-  const proof = readCookie(headers.get("cookie"), accessCookieName(lock.screenId));
-  if (isProof(proof, accessProof(lock.screenId, lock.passwordHash))) return true;
+  const expected = accessProof(lock.screenId, lock.passwordHash);
+  const proofs = [
+    headers.get(SCREEN_ACCESS_HEADER),
+    readCookie(headers.get("cookie"), accessCookieName(lock.screenId)),
+  ];
+  if (proofs.some((proof) => isProof(proof, expected))) return true;
 
   const session = await auth().api.getSession({ headers });
   if (!session) return false;
@@ -106,6 +118,7 @@ export async function canViewScreen(lock: ScreenLock, headers: Headers): Promise
 
 export interface AccessCookie {
   name: string;
+  /** The proof of the password, which the app sends as `X-Screen-Access` instead. */
   value: string;
   options: {
     httpOnly: true;

@@ -29,22 +29,23 @@ Without Node.js, create the `.env` by hand: `cp .env.example .env`, then fill `A
 
 All settings are environment variables, documented in [`.env.example`](../.env.example).
 
-| Variable                                   | Required | Description                                                                                          |
-| ------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------- |
-| `APP_URL`                                  | yes      | Public URL of the app, e.g. `https://monitor.example.com`. Used for sign-in, screen links, webhooks. |
-| `AUTH_SECRET`                              | yes      | Signs sessions (≥ 32 characters).                                                                    |
-| `ENCRYPTION_KEY`                           | yes      | 64 hex characters, encrypts Stripe keys at rest.                                                     |
-| `DATABASE_URL`                             | yes      | MySQL URL (`mysql://…`). Set by `compose.yaml`; needed when you run the app yourself.                |
-| `MYSQL_PASSWORD`                           | compose  | Password of the bundled database's user.                                                             |
-| `MYSQL_ROOT_PASSWORD`                      | compose  | Password of its root user, for administration and backups.                                           |
-| `APP_PORT`                                 | no       | Host port published by `compose.yaml` (default `3000`).                                              |
-| `DISABLE_SIGNUPS`                          | no       | `true` to close registrations; invited people can still join.                                        |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | no       | Enables "Continue with GitHub".                                                                      |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables "Continue with Google".                                                                      |
-| `MIGRATE_ON_START`                         | no       | Apply migrations at startup (default `true`).                                                        |
-| `FX_RATES_URL`                             | no       | Exchange-rate API used to combine currencies (default: Frankfurter, ECB rates).                      |
-| `GRADIUM_API_KEY`                          | no       | Lets screens say [their own phrases](wall-display.md#voice), synthesized by Gradium.                 |
-| `GRADIUM_API_URL`                          | no       | Gradium's API (default `https://api.gradium.ai/api`; `eu.` or `us.` hosts keep data in a region).    |
+| Variable                                   | Required | Description                                                                                              |
+| ------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                  | yes      | Public URL of the app, e.g. `https://monitor.example.com`. Used for sign-in, screen links, webhooks.     |
+| `AUTH_SECRET`                              | yes      | Signs sessions (≥ 32 characters).                                                                        |
+| `ENCRYPTION_KEY`                           | yes      | 64 hex characters, encrypts Stripe keys at rest.                                                         |
+| `DATABASE_URL`                             | yes      | MySQL URL (`mysql://…`). Set by `compose.yaml`; needed when you run the app yourself.                    |
+| `MYSQL_PASSWORD`                           | compose  | Password of the bundled database's user.                                                                 |
+| `MYSQL_ROOT_PASSWORD`                      | compose  | Password of its root user, for administration and backups.                                               |
+| `APP_PORT`                                 | no       | Host port published by `compose.yaml` (default `3000`).                                                  |
+| `DISABLE_SIGNUPS`                          | no       | `true` to close registrations; invited people can still join.                                            |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | no       | Enables "Continue with GitHub".                                                                          |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables "Continue with Google".                                                                          |
+| `MIGRATE_ON_START`                         | no       | Apply migrations at startup (default `true`).                                                            |
+| `FX_RATES_URL`                             | no       | Exchange-rate API used to combine currencies (default: Frankfurter, ECB rates).                          |
+| `GRADIUM_API_KEY`                          | no       | Lets screens say [their own phrases](wall-display.md#voice), synthesized by Gradium.                     |
+| `GRADIUM_API_URL`                          | no       | Gradium's API (default `https://api.gradium.ai/api`; `eu.` or `us.` hosts keep data in a region).        |
+| `APNS_*`, `FCM_SERVICE_ACCOUNT`            | no       | Leave empty: only for the instance that publishes the mobile apps (see [Notifications](#notifications)). |
 
 After your team has signed up, set `DISABLE_SIGNUPS=true` and restart: nobody else can create an
 account on your instance, while invitations keep working.
@@ -57,6 +58,16 @@ account on your instance, while invitations keep working.
 - `BUILD_ID` (optional), which identifies the build: open screens reload themselves when it
   changes. Leave it empty to get a new one with every build; the published images use their
   version number.
+
+## Notifications
+
+Phones following a screen with the SaaS Monitor app are notified through the Expo push service,
+which forwards notifications to Apple and Google: nothing to configure, only outbound HTTPS
+access to `exp.host`. See [On your phone](wall-display.md#on-your-phone).
+
+`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_BUNDLE_ID` and `FCM_SERVICE_ACCOUNT` let
+an instance send to Apple and Google directly. They only work with the store apps' own keys, held
+by the instance that publishes the apps: leave them empty on yours.
 
 ## Public URL and HTTPS
 

@@ -1,5 +1,6 @@
 import "server-only";
 import { decryptSecret } from "@/server/crypto";
+import { notifyPhones, type PushOptions } from "@/server/push/notify";
 import {
   describeAccessError,
   redactSecrets,
@@ -30,6 +31,8 @@ export interface SyncOptions {
   now?: () => Date;
   /** How long a scan may take new pages before saving its cursor. */
   scanBudgetMs?: number;
+  /** How phones are notified of what the sync records; tests pass a fake sender. */
+  push?: Omit<PushOptions, "now">;
 }
 
 /** Keeps each run well within the time limits of serverless platforms. */
@@ -116,6 +119,8 @@ export async function syncAccount(
     console.info(
       `[sync] account=${accountId} mode=${mode} changes=${result.changes} requests=${result.requests} duration=${result.durationMs}ms`,
     );
+    // Once what the sync wrote is committed, and without failing it.
+    if (changes > 0) await notifyPhones(accountId, { ...options.push, now });
     return result;
   } catch (error) {
     const failure = describeFailure(account, error, now);

@@ -183,7 +183,11 @@ function displayWarnings(
   ];
 }
 
-function toFeedItem(
+/**
+ * An activity row as a screen shows it: in its currency, and naming customers only as its
+ * settings allow. `null` when its amount cannot be converted.
+ */
+export function toFeedItem(
   row: ActivityRow,
   converter: CurrencyConverter,
   settings: ScreenSettings,
