@@ -40,7 +40,9 @@ android {
 dependencies {
   def glanceVersion = "1.2.0"
 
-  implementation "androidx.glance:glance-appwidget:$glanceVersion"
+  // `api`: the app's manifest registers the widget receivers (`plugins/withAndroidWidgets.ts`), and
+  // its release lint must see that they are BroadcastReceivers, through Glance's classes.
+  api "androidx.glance:glance-appwidget:$glanceVersion"
   implementation "androidx.glance:glance-preview:$glanceVersion"
   implementation "androidx.work:work-runtime-ktx:2.11.2"
   implementation "com.google.android.gms:play-services-wearable:19.0.0"
