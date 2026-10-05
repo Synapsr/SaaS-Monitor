@@ -13,6 +13,21 @@ struct ScreenSettings: Codable, Sendable {
   var accent = "emerald"
   var theme = Theme.dark
   var language = Language.en
+  /// Where each event shows: only whether it shows as a moment matters here.
+  var events: [String: EventChannels] = [:]
+  /// How long a moment stays on screen, in seconds.
+  var momentSeconds = 10
+
+  struct EventChannels: Codable, Sendable {
+    var moment = true
+
+    init() {}
+
+    init(from decoder: any Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      moment = try container.decodeIfPresent(Bool.self, forKey: .moment) ?? true
+    }
+  }
 
   enum Metric: String, Codable, Sendable, FallbackDecodable {
     case mrr, arr
@@ -36,5 +51,7 @@ struct ScreenSettings: Codable, Sendable {
     accent = try container.decodeIfPresent(String.self, forKey: .accent) ?? defaults.accent
     theme = try container.decodeIfPresent(Theme.self, forKey: .theme) ?? defaults.theme
     language = try container.decodeIfPresent(Language.self, forKey: .language) ?? defaults.language
+    events = try container.decodeIfPresent([String: EventChannels].self, forKey: .events) ?? [:]
+    momentSeconds = try container.decodeIfPresent(Int.self, forKey: .momentSeconds) ?? defaults.momentSeconds
   }
 }

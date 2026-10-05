@@ -8,7 +8,7 @@ struct KindIcon: View {
   var size: CGFloat = 24
 
   var body: some View {
-    Image(systemName: symbol)
+    Image(systemName: Self.symbol(for: item))
       .font(.system(size: size * 0.46, weight: .semibold))
       .foregroundStyle(item.kind.isGoodNews ? style.glowInk : style.ink2)
       .frame(width: size, height: size)
@@ -16,7 +16,8 @@ struct KindIcon: View {
       .accessibilityHidden(true)
   }
 
-  private var symbol: String {
+  /// The SF Symbol standing for the wall's Lucide icon of an item.
+  static func symbol(for item: FeedItem) -> String {
     if item.connect != nil { return "arrow.up.forward" }
     switch item.churn?.reason {
     case .scheduled: return "calendar.badge.minus"

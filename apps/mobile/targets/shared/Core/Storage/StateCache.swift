@@ -55,8 +55,10 @@ private extension DisplayState {
       screen: screen,
       currency: currency,
       status: status,
+      accounts: accounts,
       metrics: metrics,
-      feed: Array(feed.prefix(length))
+      feed: Array(feed.prefix(length)),
+      testEvent: testEvent
     )
   }
 }

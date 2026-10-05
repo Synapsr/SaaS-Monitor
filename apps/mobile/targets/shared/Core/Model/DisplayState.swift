@@ -9,13 +9,26 @@ struct DisplayState: Codable, Sendable {
   /// ISO 4217 code, lowercase.
   let currency: String
   let status: Status
+  /// The Stripe accounts of the screen: a moment names its account when there are several.
+  let accounts: [Account]
   let metrics: DisplayMetrics
   /// Most recent activity first.
   let feed: [FeedItem]
+  /// Present after "Send a test celebration" was clicked in the screen's settings.
+  let testEvent: TestEvent?
 
   struct Screen: Codable, Sendable {
     let name: String
     let settings: ScreenSettings
+  }
+
+  struct Account: Codable, Sendable {
+    let id: String
+    let name: String
+  }
+
+  struct TestEvent: Codable, Sendable {
+    let id: String
   }
 
   enum Status: String, Codable, Sendable, FallbackDecodable {
@@ -37,6 +50,10 @@ struct DisplayMetrics: Codable, Sendable {
   let mrr30DaysAgo: Int
   /// Customers with at least one paying subscription.
   let activeCustomers: Int
+  /// Average revenue per paying customer: the amount of a test celebration.
+  let arpu: Int
+  /// Stripe customers created today (screen time zone), paying or not.
+  let customersCreatedToday: Int
   let revenue: Revenue
 
   struct Revenue: Codable, Sendable {
@@ -52,6 +69,10 @@ struct FeedItem: Codable, Identifiable, Sendable {
   /// Payment amount, monthly MRR change (negative for contraction and churn), or 0 for a customer.
   let amount: Int
   let occurredAt: Date
+  /// Detected by the live sync rather than imported from history: may be celebrated.
+  let live: Bool
+  /// The same for every item of a customer, and opaque.
+  let customerKey: String?
   /// Only filled when the screen shows customer names.
   let customerName: String?
   /// For a customer without a name, when the screen allows it: masked or in full.
@@ -61,8 +82,12 @@ struct FeedItem: Codable, Identifiable, Sendable {
   let planName: String?
   /// A payment collected for one of the account's Stripe Connect accounts.
   let connect: Connect?
+  /// For a payment: whether its customer had a subscription bringing MRR. A first payment may
+  /// start one a few seconds later.
+  let customerSubscribed: Bool?
   /// Why a `churn` happened, when known.
   let churn: Churn?
+  let accountId: String
   let accountName: String
 
   enum Kind: String, Codable, Sendable, FallbackDecodable {
@@ -81,6 +106,8 @@ struct FeedItem: Codable, Identifiable, Sendable {
 
   struct Churn: Codable, Sendable {
     let reason: Reason
+    /// When a subscription set not to renew stops.
+    let endsAt: Date?
 
     enum Reason: String, Codable, Sendable, FallbackDecodable {
       case canceled, scheduled, unpaid, paused

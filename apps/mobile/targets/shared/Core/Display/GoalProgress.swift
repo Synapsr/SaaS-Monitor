@@ -42,3 +42,29 @@ struct GoalProgress: Sendable {
     }
   }
 }
+
+extension GoalProgress {
+  /// The milestone (minor units) crossed when the value moved from `before` to `after`: the
+  /// highest ladder step or goal in `(before, after]`, or `nil` when none was crossed.
+  static func crossedMilestone(from before: Int, to after: Int, goal: Int?, currency: String) -> Int? {
+    guard after > before else { return nil }
+    let from = Money.majorUnits(before, currency: currency)
+    let to = Money.majorUnits(after, currency: currency)
+    var candidates = milestones(after: from, upTo: to)
+    if let goal, Decimal(goal) > from, Decimal(goal) <= to { candidates.append(Decimal(goal)) }
+    return candidates.max().map { Money.minorUnits($0, currency: currency) }
+  }
+
+  /// Ladder milestones in `(from, to]`, ascending.
+  private static func milestones(after from: Decimal, upTo to: Decimal) -> [Decimal] {
+    var milestones: [Decimal] = []
+    var magnitude = firstMilestone
+    while magnitude <= to {
+      for step in ladderSteps where step * magnitude > from && step * magnitude <= to {
+        milestones.append(step * magnitude)
+      }
+      magnitude *= 10
+    }
+    return milestones
+  }
+}

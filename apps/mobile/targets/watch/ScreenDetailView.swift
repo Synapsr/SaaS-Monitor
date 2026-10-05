@@ -1,14 +1,15 @@
 import SwiftUI
 
 /// A screen on the wrist: its recurring revenue, growth, today's revenue, goal and latest
-/// activity. Fetched from its instance while the app is in front, every minute.
+/// activity, fetched from its instance while the app is in front, and its moments as they happen.
 struct ScreenDetailView: View {
   @Environment(\.scenePhase) private var scenePhase
   let screen: SharedScreen
   @State private var snapshot: ScreenSnapshot?
+  @State private var moments = MomentPresenter()
 
-  /// Lighter than the wall's 10 seconds: a watch has a battery to save.
-  private static let refreshInterval: Duration = .seconds(60)
+  /// As often as the wall: moments come as they happen. Only while the app is in front.
+  private static let refreshInterval: Duration = .seconds(10)
 
   var body: some View {
     ScrollView {
@@ -32,13 +33,21 @@ struct ScreenDetailView: View {
     .navigationTitle(screen.name)
     .containerBackground(accentGradient, for: .navigation)
     .task(id: scenePhase) { await refresh() }
+    .fullScreenCover(isPresented: showsMoment) { MomentStage(presenter: moments) }
+  }
+
+  private var showsMoment: Binding<Bool> {
+    Binding(get: { moments.current != nil }, set: { if !$0 { moments.clear() } })
   }
 
   private func refresh() async {
     let loader = ScreenLoader()
     if snapshot == nil { snapshot = loader.cached(screen) }
     while scenePhase == .active, !Task.isCancelled {
-      snapshot = await loader.load(screen)
+      let loaded = await loader.load(screen)
+      snapshot = loaded
+      // Only states just fetched: the last one known may be hours old.
+      if loaded.problem == nil, let state = loaded.state { moments.track(state) }
       try? await Task.sleep(for: Self.refreshInterval)
     }
   }

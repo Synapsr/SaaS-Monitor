@@ -25,12 +25,16 @@ extension DisplayState {
         kind: kind,
         amount: amount,
         occurredAt: now.addingTimeInterval(-minutesAgo * 60),
+        live: true,
+        customerKey: customer.map { "sample:\($0)" },
         customerName: customer,
         customerEmail: nil,
         country: country,
         planName: plan,
         connect: nil,
-        churn: kind == .churn ? FeedItem.Churn(reason: .canceled) : nil,
+        customerSubscribed: kind == .payment ? true : nil,
+        churn: kind == .churn ? FeedItem.Churn(reason: .canceled, endsAt: nil) : nil,
+        accountId: "sample",
         accountName: name
       )
     }
@@ -39,10 +43,13 @@ extension DisplayState {
       screen: Screen(name: name, settings: settings),
       currency: currency,
       status: status,
+      accounts: [Account(id: "sample", name: name)],
       metrics: DisplayMetrics(
         mrr: 12_480_00,
         mrr30DaysAgo: 11_460_00,
         activeCustomers: 214,
+        arpu: 58_32,
+        customersCreatedToday: 3,
         revenue: .init(today: 1_245_00, yesterday: 980_00, monthToDate: 6_120_00)
       ),
       feed: [
@@ -50,7 +57,8 @@ extension DisplayState {
         item("2", .new, 99_00, minutesAgo: 38, customer: "Lumen Labs", country: "FR", plan: "Team"),
         item("3", .customer, 0, minutesAgo: 95, customer: nil, country: "DE", plan: nil),
         item("4", .churn, -29_00, minutesAgo: 260, customer: "Wade Warren", country: "GB", plan: "Starter"),
-      ]
+      ],
+      testEvent: nil
     )
   }
 }
