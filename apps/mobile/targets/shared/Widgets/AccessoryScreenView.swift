@@ -13,7 +13,7 @@ struct AccessoryScreenView: View {
   var body: some View {
     switch entry.content {
     case .figures(let figures): numbers(figures)
-    case .message(let message, let figures): self.message(message, name: figures?.name)
+    case .message(let message, let figures): self.message(message, name: figures?.name ?? entry.screen?.name)
     }
   }
 

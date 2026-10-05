@@ -26,7 +26,7 @@ struct SystemScreenView: View {
         SmallScreenView(entry: entry, figures: figures, style: style)
       }
     case .message(let message, let figures):
-      WidgetMessageView(name: figures?.name, message: message, hasScreen: entry.screen != nil, style: style)
+      WidgetMessageView(name: figures?.name ?? entry.screen?.name, message: message, hasScreen: entry.screen != nil, style: style)
     }
   }
 
