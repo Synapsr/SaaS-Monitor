@@ -3,6 +3,7 @@
 import {
   ListIcon,
   RectangleHorizontalIcon,
+  SmartphoneIcon,
   SpeechIcon,
   Volume2Icon,
   type LucideIcon,
@@ -36,7 +37,17 @@ const COLUMNS: { channel: Channel; label: string; hint: string; icon: LucideIcon
   },
   { channel: "sound", label: "Sound", hint: "Its sound, from the sound pack", icon: Volume2Icon },
   { channel: "voice", label: "Voice", hint: "Said out loud by the voice", icon: SpeechIcon },
+  {
+    channel: "push",
+    label: "Phone",
+    hint: "A notification on the phones that follow this screen with the SaaS Monitor app",
+    icon: SmartphoneIcon,
+  },
 ];
+
+/** One column per channel, narrower on phones so that event names keep some room. */
+const GRID =
+  "grid grid-cols-[minmax(0,1fr)_repeat(5,2.75rem)] sm:grid-cols-[minmax(0,1fr)_repeat(5,4rem)]";
 
 /** What checking a sound plays: most subscriptions start and grow with a payment. */
 const PREVIEW_SOUNDS: Record<ScreenEvent, SoundEvent> = {
@@ -59,9 +70,10 @@ export interface EventPreviews {
 }
 
 /**
- * Each event of the screen and where it goes: listed in the feed, shown as a card, heard, said.
- * Every box is its own choice: a payment may ring without a card, a Connect payment stay off the
- * feed. Sound and voice only play once turned on in their own sections.
+ * Each event of the screen and where it goes: listed in the feed, shown as a card, heard, said,
+ * and sent to the phones following the screen. Every box is its own choice: a payment may ring
+ * without a card, a Connect payment stay off the feed. Sound and voice only play once turned on in
+ * their own sections.
  */
 export function EventSettings({
   events,
@@ -101,10 +113,7 @@ export function EventSettings({
   return (
     <div className="flex flex-col gap-3">
       <div role="table" aria-label="Events" className="flex flex-col rounded-lg ring-1 ring-border">
-        <div
-          role="row"
-          className="grid grid-cols-[minmax(0,1fr)_repeat(4,3.25rem)] items-end border-b px-3 py-2 sm:grid-cols-[minmax(0,1fr)_repeat(4,4rem)]"
-        >
+        <div role="row" className={cn(GRID, "items-end border-b px-3 py-2")}>
           {/* Takes the label column's place: only screen readers read it. */}
           <span role="columnheader">
             <span className="sr-only">Event</span>
@@ -139,7 +148,7 @@ export function EventSettings({
             <div
               key={event}
               role="row"
-              className="grid grid-cols-[minmax(0,1fr)_repeat(4,3.25rem)] items-center px-3 py-2.5 not-last:border-b sm:grid-cols-[minmax(0,1fr)_repeat(4,4rem)]"
+              className={cn(GRID, "items-center px-3 py-2.5 not-last:border-b")}
             >
               <div role="rowheader" className="flex min-w-0 items-start gap-2.5">
                 <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

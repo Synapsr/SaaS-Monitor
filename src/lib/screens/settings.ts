@@ -65,27 +65,31 @@ export function isTimeZone(value: string): boolean {
   }
 }
 
-/** Where an event shows and plays by default: everywhere, but losses are not said out loud. */
-function eventSchema({ voice = true }: { voice?: boolean } = {}) {
+/**
+ * Where an event shows and plays by default: everywhere, but losses are not said out loud, and
+ * phones only hear of good news, and of the money that is the account's own.
+ */
+function eventSchema({ voice = true, push = true }: { voice?: boolean; push?: boolean } = {}) {
   return z
     .object({
       feed: z.boolean().default(true),
       moment: z.boolean().default(true),
       sound: z.boolean().default(true),
       voice: z.boolean().default(voice),
+      push: z.boolean().default(push),
     })
     .prefault({});
 }
 
 const eventsShape = {
   payment: eventSchema(),
-  connectPayment: eventSchema(),
+  connectPayment: eventSchema({ push: false }),
   subscription: eventSchema(),
   upgrade: eventSchema(),
   reactivation: eventSchema(),
-  downgrade: eventSchema({ voice: false }),
-  cancellation: eventSchema({ voice: false }),
-  unpaid: eventSchema({ voice: false }),
+  downgrade: eventSchema({ voice: false, push: false }),
+  cancellation: eventSchema({ voice: false, push: false }),
+  unpaid: eventSchema({ voice: false, push: false }),
   customer: eventSchema(),
   milestone: eventSchema(),
 } satisfies Record<ScreenEvent, z.ZodType>;
@@ -144,7 +148,10 @@ export const screenSettingsSchema = z.object({
         .default({}),
     })
     .prefault({}),
-  /** Where each event shows, and whether it plays its sound and its voice (`CHANNELS`). */
+  /**
+   * Where each event shows, whether it plays its sound and its voice, and whether it notifies the
+   * phones following the screen (`CHANNELS`).
+   */
   events: z.object(eventsShape).prefault({}),
   /** Confetti on new revenue and a full-screen moment when a milestone is crossed. */
   celebrations: z.boolean().default(true),
@@ -205,7 +212,7 @@ export function parseScreenSettings(stored: unknown): ScreenSettings {
 /**
  * Screens saved before `events` chose their sounds by group (`sound.onPayment`, `onMrrUp`,
  * `onMrrDown`, `onCustomer`) and their voice by event (`voice.announce`): their choices carry
- * over. Everything they showed, they keep showing.
+ * over. Everything they showed, they keep showing; phones get the defaults.
  */
 function withLegacyEvents(stored: unknown): unknown {
   if (typeof stored !== "object" || stored === null || "events" in stored) return stored;

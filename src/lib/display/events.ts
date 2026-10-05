@@ -30,9 +30,10 @@ export const FEED_EVENTS = SCREEN_EVENTS.filter(
 
 /**
  * Where an event shows: in the activity `feed`, as a `moment` (a card, or the whole screen for a
- * milestone), with its `sound` and its `voice`. Each is switched on its own.
+ * milestone), with its `sound` and its `voice`, and as a `push` notification on the phones
+ * following the screen with the SaaS Monitor app. Each is switched on its own.
  */
-export const CHANNELS = ["feed", "moment", "sound", "voice"] as const;
+export const CHANNELS = ["feed", "moment", "sound", "voice", "push"] as const;
 
 export type Channel = (typeof CHANNELS)[number];
 

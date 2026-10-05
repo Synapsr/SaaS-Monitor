@@ -86,7 +86,7 @@ describe("theme, language and rotation", () => {
       theme: "dark",
       language: "en",
       rotation: { enabled: false, seconds: 15, includeTotal: true },
-      events: { customer: { feed: true, moment: true, sound: true, voice: true } },
+      events: { customer: { feed: true, moment: true, sound: true, voice: true, push: true } },
       momentSeconds: 10,
     });
   });
@@ -187,13 +187,27 @@ describe("events", () => {
       moment: true,
       sound: true,
       voice: true,
+      push: false,
     });
     expect(defaultScreenSettings.events.unpaid).toEqual({
       feed: true,
       moment: true,
       sound: true,
       voice: false,
+      push: false,
     });
+  });
+
+  it("notify phones of good news and of the account's own money, by default", () => {
+    const notified = Object.entries(defaultScreenSettings.events).filter(([, { push }]) => push);
+    expect(notified.map(([event]) => event)).toEqual([
+      "payment",
+      "subscription",
+      "upgrade",
+      "reactivation",
+      "customer",
+      "milestone",
+    ]);
   });
 
   it("carry over the sounds and voice screens chose before events existed", () => {
@@ -207,6 +221,8 @@ describe("events", () => {
     expect(events.unpaid).toMatchObject({ sound: false, voice: false });
     expect(events.customer).toMatchObject({ sound: true, voice: false });
     expect(events.milestone).toMatchObject({ sound: true, voice: true });
+    expect(events.payment.push).toBe(true);
+    expect(events.cancellation.push).toBe(false);
   });
 
   it("keep what screens choose, once they have events", () => {
@@ -214,5 +230,18 @@ describe("events", () => {
     const { events } = parseScreenSettings(stored);
     expect(events.connectPayment).toMatchObject({ feed: false, sound: true });
     expect(events.payment.sound).toBe(true);
+  });
+
+  it("give screens saved before phones the default phone notifications", () => {
+    const stored = { events: { payment: { feed: true, moment: false, sound: true, voice: true } } };
+    const { events } = parseScreenSettings(stored);
+    expect(events.payment).toEqual({
+      feed: true,
+      moment: false,
+      sound: true,
+      voice: true,
+      push: true,
+    });
+    expect(events.downgrade.push).toBe(false);
   });
 });
