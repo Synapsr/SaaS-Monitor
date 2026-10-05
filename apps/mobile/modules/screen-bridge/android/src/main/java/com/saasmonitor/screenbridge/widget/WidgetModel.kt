@@ -28,7 +28,7 @@ internal data class WidgetModel(
     data object Loading : Content
 
     /** The screen can't show numbers: locked, gone, empty, importing or failing. */
-    data class Message(val text: String) : Content
+    data class Message(val text: String, val problem: ScreenProblem? = null) : Content
 
     data class Ready(
       val presentation: ScreenPresentation,
@@ -50,8 +50,8 @@ internal data class WidgetModel(
         when {
           preferences[WidgetState.noScreens] == true -> Content.NoScreens
           preferences[WidgetState.screenRemoved] == true -> Content.ScreenRemoved
-          cached.problem == ScreenProblem.LOCKED -> Content.Message(text.locked)
-          cached.problem == ScreenProblem.GONE -> Content.Message(text.gone)
+          cached.problem == ScreenProblem.LOCKED -> Content.Message(text.locked, cached.problem)
+          cached.problem == ScreenProblem.GONE -> Content.Message(text.gone, cached.problem)
           snapshot == null -> Content.Loading
           snapshot.status == ScreenSnapshot.Status.EMPTY -> Content.Message(text.empty)
           snapshot.status == ScreenSnapshot.Status.IMPORTING -> Content.Message(text.importing)

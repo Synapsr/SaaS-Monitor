@@ -170,7 +170,8 @@ internal fun GoalProgressBar(
         text = "${presentation.goalTitle} ${presentation.goalTargetText}",
         modifier = GlanceModifier.defaultWeight(),
         style = TextStyle(color = colors.ink2, fontSize = 12.sp),
-        maxLines = 1,
+        // "Nächster Meilenstein 5 Mio. $ MRR" needs two lines in a narrow column.
+        maxLines = 2,
       )
       Text(
         text = presentation.goalPercentText,

@@ -10,6 +10,8 @@
   <string name="sm_widget_no_screens_details">Scan its QR code or paste its link in the app.</string>
   <string name="sm_widget_screen_removed">This screen is no longer in the app</string>
   <string name="sm_widget_screen_removed_details">Tap to choose another one.</string>
+  <string name="sm_widget_locked_details">Open it in SaaS Monitor to type its password.</string>
+  <string name="sm_widget_gone_details">Open SaaS Monitor to add it again with its new link.</string>
   <string name="sm_configure_title">Choose a screen</string>
   <string name="sm_configure_details">The widget shows its numbers and opens it when you tap it.</string>
   <string name="sm_configure_colors">Colors</string>

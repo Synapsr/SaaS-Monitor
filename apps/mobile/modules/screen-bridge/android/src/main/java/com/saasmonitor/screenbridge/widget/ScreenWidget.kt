@@ -22,6 +22,7 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.height
 import com.saasmonitor.core.display.SampleSnapshots
 import com.saasmonitor.core.display.ScreenPresentation
+import com.saasmonitor.core.state.ScreenProblem
 import com.saasmonitor.screenbridge.R
 
 /**
@@ -75,7 +76,8 @@ internal abstract class ScreenWidget : GlanceAppWidget() {
       when (val content = model.content) {
         is WidgetModel.Content.Ready ->
           Ready(content.presentation, colors, content.updatedAgo, model.screenName)
-        is WidgetModel.Content.Message -> Message(model.screenName, content.text, null, colors)
+        is WidgetModel.Content.Message ->
+          Message(model.screenName, content.text, content.problem?.let { problemHint(it) }, colors)
         WidgetModel.Content.Loading -> Message(model.screenName, "—", null, colors)
         WidgetModel.Content.NoScreens ->
           Message(
@@ -103,6 +105,16 @@ internal abstract class ScreenWidget : GlanceAppWidget() {
       WidgetMessage(title, details, colors)
     }
   }
+
+  /** What to do about a locked or gone screen: the app's words, in English like the app. */
+  @Composable
+  private fun problemHint(problem: ScreenProblem): String =
+    LocalContext.current.getString(
+      when (problem) {
+        ScreenProblem.LOCKED -> R.string.sm_widget_locked_details
+        ScreenProblem.GONE -> R.string.sm_widget_gone_details
+      }
+    )
 
   /** The screen's numbers, laid out for this widget's size (`LocalSize`). */
   @Composable
