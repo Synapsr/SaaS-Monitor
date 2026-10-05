@@ -12,13 +12,18 @@ const config: ExpoConfig = {
   version: "1.0.0",
   orientation: "default",
   icon: "./assets/icon.png",
-  userInterfaceStyle: "automatic",
+  // The app is dark like the wall display; a screen may still show its light theme.
+  userInterfaceStyle: "dark",
   ios: {
     bundleIdentifier: BUNDLE_ID,
     supportsTablet: true,
     // Signing of the app and its targets; set APPLE_TEAM_ID to build for a device.
     appleTeamId: process.env.APPLE_TEAM_ID,
-    entitlements: { "com.apple.security.application-groups": [APP_GROUP] },
+    entitlements: {
+      "com.apple.security.application-groups": [APP_GROUP],
+      // Moments are sent `time-sensitive`: they break through Focus, and Siri may announce them.
+      "com.apple.developer.usernotifications.time-sensitive": true,
+    },
   },
   android: {
     package: BUNDLE_ID,
@@ -35,10 +40,27 @@ const config: ExpoConfig = {
     "expo-secure-store",
     "expo-localization",
     "expo-build-properties",
-    "expo-notifications",
+    [
+      "expo-splash-screen",
+      { backgroundColor: "#08090b", image: "./assets/splash-icon.png", imageWidth: 88 },
+    ],
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/notification-icon.png",
+        color: "#34d399",
+        // Moments arrive on this channel (see AGENTS.md); the app creates it at launch.
+        defaultChannel: "moments",
+      },
+    ],
     [
       "expo-camera",
-      { cameraPermission: "Scan the QR code of a screen to add it to SaaS Monitor." },
+      {
+        cameraPermission: "Scan the QR code of a screen to add it to SaaS Monitor.",
+        // The camera only reads QR codes: no microphone.
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      },
     ],
     "@bacons/apple-targets",
   ],

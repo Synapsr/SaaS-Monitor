@@ -42,18 +42,29 @@ Every client (app, widgets, watches) talks to the instance of the screen, `{base
   Displays poll it every 10 seconds; widgets as often as their platform lets them.
 - `POST {baseUrl}/api/screens/{token}/access` with `{ "password": string }` → `200 { "proof" }`,
   `401 { "error": "wrong-password" }`, `429 { "error": "too-many-attempts" }`, `404`.
-- `PUT {baseUrl}/api/screens/{token}/devices` with
-  `{ "pushToken": "ExponentPushToken[…]", "platform": "ios" | "android", "locale"?: string }`
-  (and `X-Screen-Access` if needed) → `200 { "ok": true }`: the device gets the screen's
-  notifications. Idempotent: the app calls it on every launch.
-- `DELETE {baseUrl}/api/screens/{token}/devices` with `{ "pushToken" }` → `204`.
+- `PUT {baseUrl}/api/screens/{token}/devices` with `{ installationId, platform: "ios" | "android",
+  pushToken?: "ExponentPushToken[…]", deviceToken?: string, apnsEnvironment?: "development" |
+  "production", locale?: string, enabled?: boolean, mutedEvents?: ScreenEvent[] }` (and
+  `X-Screen-Access` if needed) → `200 { "ok": true }`. `installationId` is a UUID the app generates
+  once and keeps (secure store); `deviceToken` the native token (APNs on iOS, FCM on Android, from
+  `getDevicePushTokenAsync()`), with its `apnsEnvironment` on iOS; at least one of `pushToken` and
+  `deviceToken`. `enabled` is the screen's "Notifications on this device" (off for every screen
+  while notifications are paused on the device), `mutedEvents` the events this device doesn't
+  want. Idempotent: the app sends it on every launch, when screens or choices change, and when a
+  token rolls.
+- `DELETE {baseUrl}/api/screens/{token}/devices` with `{ installationId }` → `204`.
 
-Notifications come through the Expo push service, which needs no credentials from the instance:
-`title` and `body` in the screen's language, `data: { "type": "moment", "screen": key, "event" }`,
-where `key` is the first 16 hex characters of the SHA-256 of the screen's token and `event` one of
-the web app's screen events (`payment`, `connectPayment`, `subscription`…). iOS notifications are
-`time-sensitive`; Android ones use the channel `moments`. Which events notify is the screen's
-choice: its Events settings, column "Phone".
+Notifications come from APNs or FCM directly, or through the Expo push service (which needs no
+credentials from the instance), handled alike: `title` and `body` in the screen's language,
+`data: { "type": "moment", "screen": key, "event" }`, where `key` is the first 16 hex characters
+of the SHA-256 of the screen's token and `event` one of the web app's screen events (`payment`,
+`connectPayment`, `subscription`…). iOS notifications are `time-sensitive`; Android ones use the
+channel `moments`. Which events notify is the screen's choice: its Events settings, column
+"Phone" (`settings.events[event].push`); each device may mute more.
+
+Push needs configuration the app degrades without: an EAS project id for Expo tokens, the APNs
+entitlement (`aps-environment`) on iOS, and a Firebase project (`google-services.json`) on Android
+for both Expo and native tokens.
 
 ## Conventions
 
@@ -62,8 +73,12 @@ choice: its Events settings, column "Phone".
   web display (its words come with the contract).
 - Design like the wall display: calm and dark-first, near-black surfaces, the screen's accent glow,
   large tabular numbers. Respect reduced motion and Dynamic Type.
-- npm (`.npmrc` sets `legacy-peer-deps`). Run `npm run typecheck` and `npm run lint` before
-  calling anything done; build what you touch (`npx expo prebuild`, Xcode or Gradle).
+- npm (`.npmrc` sets `legacy-peer-deps`). Run `npm run typecheck`, `npm run lint` and `npm test`
+  (Jest, `jest-expo`: tests sit next to the code, `*.test.ts`, never in `src/app/`) before calling
+  anything done; build what you touch (`npx expo prebuild`, Xcode or Gradle).
+- `npm run sync-contract [path/to/SaaS-Monitor]` copies the web's display contract into
+  `src/contract/` (`--check` tells when it is stale); commit what it writes. App code imports it
+  as `@/contract/…`, and `@/…` is `src/`.
 - Commits: Conventional Commits (`feat:`, `fix:`…), no AI attribution or `Co-Authored-By`
   trailers.
 
