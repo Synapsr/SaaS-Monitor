@@ -1,11 +1,10 @@
 import { customerLabel } from "@/contract/display/customer";
-import { itemContext, itemCountry } from "@/contract/display/feed";
+import { churnDetails, itemContext, itemCountry } from "@/contract/display/feed";
 import { formatAmount, formatPayment } from "@/contract/display/format";
 import type { DisplayLocale } from "@/contract/display/i18n";
 import { recurringMetric, type RecurringMetric } from "@/contract/display/metric";
 import { isMrrIncrease, momentAccount, testPaymentAmount, type Moment } from "@/contract/display/moments";
 import { screenView } from "@/contract/display/rotation";
-import { formatDate } from "@/contract/display/time";
 import type { DisplayState, FeedItem } from "@/contract/display/types";
 import { formatMoney } from "@/contract/money";
 
@@ -35,23 +34,6 @@ export function momentAccountName(moment: Moment, state: DisplayState): string |
   if (state.accounts.length < 2) return null;
   const id = momentAccount(moment);
   return state.accounts.find((account) => account.id === id)?.name ?? null;
-}
-
-/**
- * What a card adds about a lost subscription: when one set not to renew ends, or that Stripe's
- * retries of an unpaid one ran out.
- */
-function churnFootnote(item: FeedItem, timeZone: string, { locale, text }: DisplayLocale) {
-  switch (item.churn?.reason) {
-    case "scheduled":
-      return item.churn.endsAt
-        ? text.moments.endsOn(formatDate(new Date(item.churn.endsAt), timeZone, locale))
-        : null;
-    case "unpaid":
-      return text.moments.unpaidDetails;
-    default:
-      return null;
-  }
 }
 
 export function describeMoment(
@@ -108,7 +90,7 @@ export function describeMoment(
         headline: change(movement.amount),
         metric: recurring.label,
         details: itemContext(movement, context),
-        footnote: churnFootnote(movement, state.screen.settings.timeZone, displayLocale),
+        footnote: churnDetails(movement, state.screen.settings.timeZone, displayLocale),
         tone: isMrrIncrease(movement) ? "celebration" : "calm",
       };
     }

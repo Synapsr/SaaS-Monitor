@@ -25,6 +25,7 @@ describe("readDisplayState", () => {
       moment: true,
       sound: true,
       voice: true,
+      push: true,
     });
     expect(state?.feed[0]).toMatchObject({ connect: null, churn: null, customerEmail: null });
   });

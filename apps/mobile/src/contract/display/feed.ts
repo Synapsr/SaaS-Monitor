@@ -2,8 +2,9 @@
 
 import { customerLabel } from "@/contract/display/customer";
 import { countryFlag, countryName, formatAmount, formatPayment } from "@/contract/display/format";
-import type { DisplayText } from "@/contract/display/i18n";
+import type { DisplayLocale, DisplayText } from "@/contract/display/i18n";
 import type { RecurringMetric } from "@/contract/display/metric";
+import { formatDate } from "@/contract/display/time";
 import type { DisplayWarning, FeedItem, FeedItemKind } from "@/contract/display/types";
 import type { Language } from "@/contract/screens/settings";
 
@@ -75,6 +76,27 @@ export function itemContext(
     itemCountry(item, options.language),
     options.showAccount ? item.accountName : null,
   ].filter((part): part is string => Boolean(part));
+}
+
+/**
+ * What a moment adds about a lost subscription: when one set not to renew ends, or that Stripe's
+ * retries of an unpaid one ran out.
+ */
+export function churnDetails(
+  item: FeedItem,
+  timeZone: string,
+  { locale, text }: Pick<DisplayLocale, "locale" | "text">,
+): string | null {
+  switch (item.churn?.reason) {
+    case "scheduled":
+      return item.churn.endsAt
+        ? text.moments.endsOn(formatDate(new Date(item.churn.endsAt), timeZone, locale))
+        : null;
+    case "unpaid":
+      return text.moments.unpaidDetails;
+    default:
+      return null;
+  }
 }
 
 /** A warning of the screen, in a sentence. */
