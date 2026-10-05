@@ -1,11 +1,14 @@
+/** What the server notifies phones of: a screen's moment, or the test sent from its dashboard. */
+const SCREEN_NOTIFICATIONS: readonly unknown[] = ["moment", "test"];
+
 /**
- * The screen a notification is about: `data: { type: "moment", screen: key, event }`, as the
- * server sends moments (AGENTS.md). `null` for anything else.
+ * The screen a notification is about: `data: { type: "moment" | "test", screen: key, event }`, as
+ * the server sends them (AGENTS.md). `null` for anything else.
  */
 export function notificationScreen(data: unknown): string | null {
   if (typeof data !== "object" || data === null) return null;
   const { type, screen } = data as { type?: unknown; screen?: unknown };
-  if (type !== "moment" || typeof screen !== "string") return null;
+  if (!SCREEN_NOTIFICATIONS.includes(type) || typeof screen !== "string") return null;
   return /^[0-9a-f]{16}$/.test(screen) ? screen : null;
 }
 

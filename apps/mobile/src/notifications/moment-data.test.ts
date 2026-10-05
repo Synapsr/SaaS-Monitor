@@ -7,6 +7,12 @@ describe("notificationScreen", () => {
     ).toBe("0123456789abcdef");
   });
 
+  it("reads the screen of a test sent from the dashboard", () => {
+    expect(
+      notificationScreen({ type: "test", screen: "0123456789abcdef", event: "payment" }),
+    ).toBe("0123456789abcdef");
+  });
+
   it("ignores anything else", () => {
     for (const data of [
       null,
