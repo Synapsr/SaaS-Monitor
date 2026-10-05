@@ -109,7 +109,8 @@ function HeroNumber({
         maxFontSizeMultiplier={1}
         style={{ lineHeight: size * 1.08 }}
       >
-        {parts.number}
+        {/* French groups digits with a narrow space, which the number's tight tracking would hide. */}
+        {parts.number.replace(/\u202f/g, "\u00a0")}
       </DisplayText>
       {parts.after !== "" && <Symbol size={size}>{` ${parts.after}`}</Symbol>}
     </Animated.View>
