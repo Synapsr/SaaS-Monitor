@@ -54,6 +54,16 @@ export class MomentQueue {
     }
   }
 
+  /**
+   * Ends the moment on screen now, e.g. when it is tapped: the next one follows after the usual
+   * breath, so several waiting moments can be gone through quickly.
+   */
+  skip(): void {
+    if (this.current === null) return;
+    clearTimeout(this.timer);
+    this.finish();
+  }
+
   private advance = () => {
     this.timer = undefined;
     this.current = this.pending.shift() ?? null;

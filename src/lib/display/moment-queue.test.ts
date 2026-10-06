@@ -32,6 +32,23 @@ describe("moment queue", () => {
     expect(queue.isIdle()).toBe(true);
   });
 
+  it("skips the moment on screen, then plays the next one after the pause", () => {
+    const queue = new MomentQueue(() => 10_000);
+    queue.subscribe(() => {});
+    queue.enqueue([test("a"), test("b")]);
+
+    queue.skip();
+    expect(queue.getCurrent()).toBeNull();
+    vi.advanceTimersByTime(700);
+    expect(queue.getCurrent()?.id).toBe("b");
+
+    queue.skip();
+    expect(queue.isIdle()).toBe(true);
+    queue.skip();
+    vi.advanceTimersByTime(10_000);
+    expect(queue.isIdle()).toBe(true);
+  });
+
   it("notifies subscribers of every change", () => {
     const queue = new MomentQueue(() => 1_000);
     const listener = vi.fn();
