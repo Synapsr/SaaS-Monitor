@@ -12,8 +12,7 @@ struct StaleStamp: View {
   var body: some View {
     Label(format.fetchTime(fetchedAt, now: now), systemImage: offline ? "icloud.slash" : "clock")
       .labelStyle(.titleAndIcon)
-      .font(.caption2)
-      .monospacedDigit()
+      .font(.system(.caption2, design: .monospaced))
       .imageScale(.small)
       .foregroundStyle(style.ink3)
       .lineLimit(1)
