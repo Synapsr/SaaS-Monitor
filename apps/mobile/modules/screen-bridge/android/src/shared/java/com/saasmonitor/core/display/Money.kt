@@ -4,6 +4,7 @@ import android.icu.number.Notation
 import android.icu.number.NumberFormatter
 import android.icu.number.Precision
 import android.icu.number.Scale
+import android.icu.text.ConstrainedFieldPosition
 import android.icu.text.NumberFormat
 import android.icu.util.Currency
 import android.icu.util.MeasureUnit
@@ -65,20 +66,43 @@ object Money {
     compact: Boolean = false,
     cents: Boolean = false,
     signed: Boolean = false,
-  ): String {
+  ): String = formatted(amount, currency, locale, compact, cents, signed).text
+
+  /**
+   * [format], telling where the currency symbol is ("$" of "$12,480", " €" of "12 480 €") so that
+   * it can be drawn smaller than the digits. ICU says it, whatever the side.
+   */
+  private fun formatted(
+    amount: Long,
+    currency: String,
+    locale: Locale,
+    compact: Boolean,
+    cents: Boolean,
+    signed: Boolean,
+  ): MoneyText {
     val major = toMajorUnits(amount, currency)
     val digits = if (cents) minorUnitDigits(currency) else 0
     val icuCurrency = Currency.getInstance(currency.uppercase(Locale.ROOT))
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      return NumberFormatter.withLocale(locale)
-        .unit(icuCurrency)
-        .notation(if (compact) Notation.compactShort() else Notation.simple())
-        .precision(if (compact) Precision.minMaxFraction(0, 1) else Precision.fixedFraction(digits))
-        .sign(
-          if (signed) NumberFormatter.SignDisplay.EXCEPT_ZERO else NumberFormatter.SignDisplay.AUTO
-        )
-        .format(major)
-        .toString()
+      val number =
+        NumberFormatter.withLocale(locale)
+          .unit(icuCurrency)
+          .notation(if (compact) Notation.compactShort() else Notation.simple())
+          .precision(
+            if (compact) Precision.minMaxFraction(0, 1) else Precision.fixedFraction(digits)
+          )
+          .sign(
+            if (signed) NumberFormatter.SignDisplay.EXCEPT_ZERO
+            else NumberFormatter.SignDisplay.AUTO
+          )
+          .format(major)
+      val text = number.toString()
+      val position =
+        ConstrainedFieldPosition().apply { constrainField(NumberFormat.Field.CURRENCY) }
+      val symbol =
+        if (number.nextPosition(position)) symbolWithSpace(text, position.start, position.limit)
+        else null
+      return MoneyText(text, symbol)
     }
     // Before Android 11, ICU has no compact currencies: amounts are written in full.
     val format =
@@ -88,7 +112,16 @@ object Money {
         maximumFractionDigits = digits
       }
     val text = format.format(major)
-    return if (signed && major > 0) "+$text" else text
+    return MoneyText(if (signed && major > 0) "+$text" else text, symbol = null)
+  }
+
+  /** The symbol and the space between it and the digits: "12 480" then " €", "$" then "12,480". */
+  private fun symbolWithSpace(text: String, start: Int, end: Int): IntRange {
+    var from = start
+    var to = end
+    while (from > 0 && Character.isSpaceChar(text[from - 1])) from--
+    while (to < text.length && Character.isSpaceChar(text[to])) to++
+    return from until to
   }
 
   /** `formatAmount`: exact up to a million, compact beyond (`$1.2M`), so it stays glanceable. */
@@ -111,7 +144,28 @@ object Money {
   /** "$12.5K": complications and other tight spots. */
   fun compact(amount: Long, currency: String, locale: Locale): String =
     format(amount, currency, locale, compact = true)
+
+  /** [amount], with where its symbol is. */
+  fun amountText(amount: Long, currency: String, locale: Locale): MoneyText =
+    formatted(
+      amount,
+      currency,
+      locale,
+      compact = abs(toMajorUnits(amount, currency)) >= 1_000_000,
+      cents = false,
+      signed = false,
+    )
+
+  /** [compact], with where its symbol is. */
+  fun compactText(amount: Long, currency: String, locale: Locale): MoneyText =
+    formatted(amount, currency, locale, compact = true, cents = false, signed = false)
 }
+
+/**
+ * An amount as [Money] writes it, and where its currency symbol sits ([symbol], with the space
+ * that parts it from the digits), or `null` when ICU can't tell.
+ */
+data class MoneyText(val text: String, val symbol: IntRange?)
 
 /** `formatPercent`: "+9.9%", "−3%", "+120%", one decimal only when it carries information. */
 fun formatPercent(ratio: Double, locale: Locale, signed: Boolean = false): String {

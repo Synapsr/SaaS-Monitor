@@ -35,6 +35,8 @@ class ScreenPresentation(val snapshot: ScreenSnapshot, val now: Long = System.cu
   val compactValueText: String = Money.compact(value, currency, language.locale)
 
   val growing: Boolean = value >= thirtyDaysAgo
+  /** Not a cent of change in 30 days: neither up nor down. */
+  val flat: Boolean = value == thirtyDaysAgo
   /** "+$1,120". */
   val growthAmountText: String =
     Money.amount(value - thirtyDaysAgo, currency, language.locale, signed = true)
@@ -64,6 +66,42 @@ class ScreenPresentation(val snapshot: ScreenSnapshot, val now: Long = System.cu
 
   val feed: List<FeedLine> = snapshot.feed.map(::line)
 
+  // Watch and widget extras, computed on first use: most surfaces never read them.
+
+  /** [valueText], and where its currency symbol is, to draw it smaller than the digits. */
+  val valueMoney: MoneyText by lazy { Money.amountText(value, currency, language.locale) }
+  /** [compactValueText], and where its currency symbol is. */
+  val compactValueMoney: MoneyText by lazy { Money.compactText(value, currency, language.locale) }
+
+  /** "30d": how far back the growth looks, on a badge. */
+  val growthPeriodText: String = text.thirtyDaysShort
+
+  /** Recurring revenue along the screen's chart, in its metric, oldest first. */
+  val sparkline: List<Long> by lazy { snapshot.mrrSeries.map(metric::fromMrr) }
+
+  /** "$1,240 yesterday": cash, never multiplied. */
+  val revenueYesterdayText: String by lazy {
+    text.yesterdayAmount(Money.amount(snapshot.revenueYesterday, currency, language.locale))
+  }
+  /** Cash received this month so far. */
+  val monthToDateText: String by lazy {
+    Money.amount(snapshot.revenueMonthToDate, currency, language.locale)
+  }
+  /** This month so far against the same days of the previous one; `null` without any then. */
+  val monthChange: Double? by lazy {
+    percentChange(snapshot.revenueMonthToDate, snapshot.revenuePreviousMonthToDate)
+  }
+  /** "+8.3%". */
+  val monthChangeText: String? by lazy {
+    monthChange?.let { formatPercent(it, language.locale, signed = true) }
+  }
+  /** "vs September" after [monthChangeText], or "vs $0 in September" without one. */
+  val versusPreviousMonthText: String by lazy {
+    val month = formatPreviousMonth(now, settings.timeZone, language)
+    if (monthChange == null) text.versusAmount(Money.amount(0, currency, language.locale), month)
+    else text.versus(month)
+  }
+
   /** "5 min ago", for anything that happened at [at]. */
   fun timeAgo(at: Long): String = formatFeedTime(at, now, settings.timeZone, language)
 
@@ -87,6 +125,8 @@ class ScreenPresentation(val snapshot: ScreenSnapshot, val now: Long = System.cu
       details = details.joinToString(" · "),
       kindLabel = kind,
       time = timeAgo(entry.occurredAt),
+      who =
+        listOfNotNull(entry.customer.takeIf { amount != null }, entry.planName).joinToString(" · "),
     )
   }
 
@@ -131,6 +171,8 @@ data class FeedLine(
   val details: String,
   val kindLabel: String,
   val time: String,
+  /** [details] without the kind: "Jane Cooper · Pro", for layouts that say the kind apart. */
+  val who: String = "",
 )
 
 /**
