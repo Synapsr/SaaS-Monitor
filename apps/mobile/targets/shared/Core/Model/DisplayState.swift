@@ -12,6 +12,8 @@ struct DisplayState: Codable, Sendable {
   /// The Stripe accounts of the screen: a moment names its account when there are several.
   let accounts: [Account]
   let metrics: DisplayMetrics
+  /// `nil` in states cached before widgets drew the curve.
+  let series: Series?
   /// Most recent activity first.
   let feed: [FeedItem]
   /// Present after "Send a test celebration" was clicked in the screen's settings.
@@ -29,6 +31,18 @@ struct DisplayState: Codable, Sendable {
 
   struct TestEvent: Codable, Sendable {
     let id: String
+  }
+
+  struct Series: Codable, Sendable {
+    /// MRR at the end of the days of the screen's chart range, oldest first, the last one being
+    /// today's.
+    let mrr: [SeriesPoint]
+  }
+
+  struct SeriesPoint: Codable, Sendable {
+    /// Calendar day in the screen's time zone, `YYYY-MM-DD`.
+    let date: String
+    let value: Int
   }
 
   enum Status: String, Codable, Sendable, FallbackDecodable {
@@ -60,6 +74,8 @@ struct DisplayMetrics: Codable, Sendable {
     let today: Int
     let yesterday: Int
     let monthToDate: Int
+    /// Same number of days at the start of the previous month; `nil` in states cached before.
+    let previousMonthToDate: Int?
   }
 }
 

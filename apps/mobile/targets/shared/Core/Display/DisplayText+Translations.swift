@@ -4,11 +4,20 @@ import Foundation
 
 extension DisplayText {
   static let fr = DisplayText(
+    live: "En direct",
     inThirtyDays: "en 30 jours",
+    thirtyDays: "30j",
     goal: "Objectif",
     nextMilestone: "Prochain palier",
     toGo: { "encore \($0)" },
+    atThisPace: { "à ce rythme\u{00A0}: \($0)" },
+    today: "aujourd’hui",
+    tomorrow: "demain",
     revenueToday: "Revenu du jour",
+    yesterdayAmount: { "\($0) hier" },
+    thisMonth: "Ce mois-ci",
+    versus: { "vs \($0)" },
+    versusAmount: { "vs \($0) en \($1)" },
     latestActivity: "Activité récente",
     noActivity: "Aucune activité pour l’instant",
     kinds: Kinds(
@@ -37,11 +46,20 @@ extension DisplayText {
   )
 
   static let de = DisplayText(
+    live: "Live",
     inThirtyDays: "in 30 Tagen",
+    thirtyDays: "30\u{00A0}T.",
     goal: "Ziel",
     nextMilestone: "Nächster Meilenstein",
     toGo: { "noch \($0)" },
+    atThisPace: { "bei diesem Tempo: \($0)" },
+    today: "heute",
+    tomorrow: "morgen",
     revenueToday: "Umsatz heute",
+    yesterdayAmount: { "\($0) gestern" },
+    thisMonth: "Diesen Monat",
+    versus: { "vs. \($0)" },
+    versusAmount: { "vs. \($0) im \($1)" },
     latestActivity: "Letzte Aktivität",
     noActivity: "Noch keine Aktivität",
     kinds: Kinds(
@@ -74,11 +92,20 @@ extension DisplayText {
   )
 
   static let es = DisplayText(
+    live: "En directo",
     inThirtyDays: "en 30 días",
+    thirtyDays: "30d",
     goal: "Objetivo",
     nextMilestone: "Próximo hito",
     toGo: { "faltan \($0)" },
+    atThisPace: { "a este ritmo: \($0)" },
+    today: "hoy",
+    tomorrow: "mañana",
     revenueToday: "Ingresos de hoy",
+    yesterdayAmount: { "\($0) ayer" },
+    thisMonth: "Este mes",
+    versus: { "vs. \($0)" },
+    versusAmount: { "vs. \($0) en \($1)" },
     latestActivity: "Actividad reciente",
     noActivity: "Todavía no hay actividad",
     kinds: Kinds(
@@ -107,11 +134,20 @@ extension DisplayText {
   )
 
   static let it = DisplayText(
+    live: "In diretta",
     inThirtyDays: "in 30 giorni",
+    thirtyDays: "30gg",
     goal: "Obiettivo",
     nextMilestone: "Prossimo traguardo",
     toGo: { "mancano \($0)" },
+    atThisPace: { "a questo ritmo: \($0)" },
+    today: "oggi",
+    tomorrow: "domani",
     revenueToday: "Ricavi di oggi",
+    yesterdayAmount: { "\($0) ieri" },
+    thisMonth: "Questo mese",
+    versus: { "vs \($0)" },
+    versusAmount: { "vs \($0) a \($1)" },
     latestActivity: "Attività recenti",
     noActivity: "Ancora nessuna attività",
     kinds: Kinds(
@@ -144,11 +180,20 @@ extension DisplayText {
   )
 
   static let pt = DisplayText(
+    live: "Ao vivo",
     inThirtyDays: "em 30 dias",
+    thirtyDays: "30d",
     goal: "Meta",
     nextMilestone: "Próximo marco",
     toGo: { "faltam \($0)" },
+    atThisPace: { "neste ritmo: \($0)" },
+    today: "hoje",
+    tomorrow: "amanhã",
     revenueToday: "Receita de hoje",
+    yesterdayAmount: { "\($0) ontem" },
+    thisMonth: "Este mês",
+    versus: { "vs. \($0)" },
+    versusAmount: { "vs. \($0) em \($1)" },
     latestActivity: "Atividade recente",
     noActivity: "Nenhuma atividade ainda",
     kinds: Kinds(
@@ -181,11 +226,20 @@ extension DisplayText {
   )
 
   static let nl = DisplayText(
+    live: "Live",
     inThirtyDays: "in 30 dagen",
+    thirtyDays: "30d",
     goal: "Doel",
     nextMilestone: "Volgende mijlpaal",
     toGo: { "nog \($0)" },
+    atThisPace: { "in dit tempo: \($0)" },
+    today: "vandaag",
+    tomorrow: "morgen",
     revenueToday: "Omzet vandaag",
+    yesterdayAmount: { "\($0) gisteren" },
+    thisMonth: "Deze maand",
+    versus: { "vs. \($0)" },
+    versusAmount: { "vs. \($0) in \($1)" },
     latestActivity: "Recente activiteit",
     noActivity: "Nog geen activiteit",
     kinds: Kinds(
