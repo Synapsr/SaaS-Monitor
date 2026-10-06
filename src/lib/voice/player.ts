@@ -1,16 +1,10 @@
+import { MAX_SPEECH_LATENESS_MS, speechSlot } from "@/lib/display/audio-timing";
 import { getAudioGraph } from "@/lib/sounds/graph";
 
 /**
  * Plays what voices say through the shared audio graph, one phrase at a time. Safe to import on
  * the server: nothing touches `window` until something is said.
  */
-
-/** A phrase waits its turn behind the one being said, but not longer than this. */
-const MAX_WAIT_S = 4;
-/** Nor does it start this late: by then the moment it announces has left the screen. */
-const MAX_LATENESS_MS = 9_000;
-/** A breath between two phrases. */
-const GAP_S = 0.25;
 
 /** Recorded clips, decoded once: a screen says the same few phrases all day. */
 const clips = new Map<string, Promise<AudioBuffer>>();
@@ -67,16 +61,20 @@ export function speak(speech: Promise<AudioBuffer>, { volume, delayMs }: SpeakOp
   speech
     .then(async (buffer) => {
       const graph = getAudioGraph();
-      if (!graph || volume <= 0 || Date.now() - requestedAt > MAX_LATENESS_MS) return;
+      if (!graph || volume <= 0 || Date.now() - requestedAt > MAX_SPEECH_LATENESS_MS) return;
       const { context } = graph;
       // Inside a click (the settings' play buttons), resuming works right away.
       if (context.state !== "running") await context.resume();
 
-      const now = context.currentTime;
-      const due = now + Math.max(0, delayMs - (Date.now() - requestedAt)) / 1000;
-      const start = Math.max(due, busyUntil);
-      if (start - due > MAX_WAIT_S) return;
-      busyUntil = start + buffer.duration + GAP_S;
+      const slot = speechSlot({
+        now: context.currentTime,
+        elapsedMs: Date.now() - requestedAt,
+        delayMs,
+        busyUntil,
+        duration: buffer.duration,
+      });
+      if (!slot) return;
+      busyUntil = slot.busyUntil;
 
       const source = context.createBufferSource();
       source.buffer = buffer;
@@ -85,7 +83,7 @@ export function speak(speech: Promise<AudioBuffer>, { volume, delayMs }: SpeakOp
       gain.gain.value = volume ** 2;
       source.connect(gain).connect(graph.input);
       source.onended = () => gain.disconnect();
-      source.start(start);
+      source.start(slot.start);
     })
     .catch(() => {
       // Nothing to say after all: the moment still has its sound and card.

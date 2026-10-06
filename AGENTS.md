@@ -98,6 +98,8 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   notifications play them as files rendered from the same recipes,
   `public/sounds/<pack>/<event>.wav`: after changing a sound or a pack, run
   `pnpm tsx scripts/generate-sounds.ts` (with Google Chrome installed) and commit what changed.
+  What a moment plays, and when (its sound, then its voice), is `momentAudio`
+  (`src/lib/display/moment-audio.ts`), for walls, the app and notifications alike.
 - **Screen colors are tokens** (`wall-palette.css`, `d/display.css`), redefined by the light theme:
   never hard-code a white or black on a screen. Accents come from `accentPalette`, which keeps
   custom colors readable on both themes.

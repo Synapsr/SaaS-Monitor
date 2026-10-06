@@ -1,3 +1,4 @@
+import { MAX_SOUND_DELAY_MS } from "@/lib/display/audio-timing";
 import type { SoundPack } from "@/lib/screens/settings";
 import { getAudioGraph, type AudioGraph } from "@/lib/sounds/graph";
 import { SOUND_RECIPES, type SoundRecipe } from "@/lib/sounds/packs";
@@ -22,8 +23,6 @@ export interface PlaySoundOptions {
   volume: number;
 }
 
-/** A sound that could not start within this delay is dropped: a late "ka-ching" would lie. */
-const MAX_START_DELAY_MS = 1_000;
 /** Long enough for the longest sound and its reverb tail. */
 const SOUND_LIFETIME_MS = 6_000;
 
@@ -38,7 +37,7 @@ export function playSound(event: SoundEvent, options: PlaySoundOptions): void {
     const { context } = graph;
     const requestedAt = Date.now();
     const start = () => {
-      if (Date.now() - requestedAt > MAX_START_DELAY_MS) return;
+      if (Date.now() - requestedAt > MAX_SOUND_DELAY_MS) return;
       const disconnect = scheduleSound(graph, recipe, volume, context.currentTime + 0.03);
       setTimeout(disconnect, SOUND_LIFETIME_MS);
     };
@@ -96,7 +95,7 @@ export async function unlockAudio(): Promise<boolean> {
     if (context.state !== "running") {
       await Promise.race([
         context.resume(),
-        new Promise((resolve) => setTimeout(resolve, MAX_START_DELAY_MS)),
+        new Promise((resolve) => setTimeout(resolve, MAX_SOUND_DELAY_MS)),
       ]);
     }
   } catch {

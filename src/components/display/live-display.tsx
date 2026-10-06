@@ -4,6 +4,7 @@ import { Display } from "@/components/display/display";
 import { ScreenGone } from "@/components/display/screen-gone";
 import { ScreenLock } from "@/components/display/screen-lock";
 import { usePolledState } from "@/hooks/use-polled-state";
+import { announcementUrl } from "@/lib/display/moment-audio";
 import type { DisplayState } from "@/lib/display/types";
 
 interface LiveDisplayProps {
@@ -26,7 +27,7 @@ export function LiveDisplay({ token, initialState, preview }: LiveDisplayProps) 
       online={connection === "online"}
       preview={preview}
       followServerVersion
-      announcementEndpoint={`/api/screens/${encodeURIComponent(token)}/announcement`}
+      announcementEndpoint={announcementUrl(token)}
     />
   );
 }

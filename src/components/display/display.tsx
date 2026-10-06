@@ -68,7 +68,7 @@ export function Display({
   const { moment: playing, idle: quiet } = useMoments(state, (started) => {
     const sound = preview ? null : momentSound(started, settings);
     if (sound) playSound(sound, { pack: settings.sound.pack, volume: settings.sound.volume });
-    if (!preview) announceMoment(started, state, { endpoint: announcementEndpoint, sound });
+    if (!preview) announceMoment(started, state, { endpoint: announcementEndpoint });
     const celebration = momentCelebration(started);
     if (celebration && settings.celebrations && momentPlays(started, settings, "moment")) {
       fireConfetti(celebration, palette.confetti);
