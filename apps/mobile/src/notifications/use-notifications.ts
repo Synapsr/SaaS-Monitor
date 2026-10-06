@@ -5,6 +5,7 @@ import { AppState } from "react-native";
 import { registerScreens, retryUnregistrations } from "@/notifications/devices";
 import { notificationRequestScreen } from "@/notifications/moment-data";
 import { installationId, pauseStore, useNotificationsPaused } from "@/notifications/preferences";
+import { isNewDeviceToken } from "@/notifications/push-token";
 import { notificationsStore, useNotificationsStatus } from "@/notifications/status";
 import { reloadWidgets } from "@/screens/bridge";
 import { screensStore, useScreens } from "@/screens/store";
@@ -32,7 +33,9 @@ export function useNotifications(): void {
       if (state === "active") void notificationsStore.refresh();
     });
     // A rolled token makes the old one fail: every screen hears of the new one at once.
-    const rolled = Notifications.addPushTokenListener(() => void notificationsStore.refresh());
+    const rolled = Notifications.addPushTokenListener(({ data }) => {
+      if (isNewDeviceToken(notificationsStore.getSnapshot(), data)) void notificationsStore.refresh();
+    });
     return () => {
       appState.remove();
       rolled.remove();
