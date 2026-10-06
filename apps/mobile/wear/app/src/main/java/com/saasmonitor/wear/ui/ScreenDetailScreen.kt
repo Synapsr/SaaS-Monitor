@@ -379,9 +379,8 @@ private fun TodayCard(
       color = Ink.tertiary,
       maxLines = 1,
     )
-    Box(
-      Modifier.padding(vertical = 9.dp).fillMaxWidth().height(Dp.Hairline).background(Ink.hairline)
-    )
+    // Dp.Hairline is one pixel for borders only: as a size it is nothing.
+    Box(Modifier.padding(vertical = 9.dp).fillMaxWidth().height(1.dp).background(Ink.hairline))
     TelemetryLabel(presentation.text.thisMonth, locale)
     Text(presentation.monthToDateText, style = amountStyle(), color = Ink.primary, maxLines = 1)
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -414,14 +413,14 @@ private fun SectionLabel(text: String, presentation: ScreenPresentation, modifie
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.Center,
   ) {
-    Box(Modifier.width(14.dp).height(Dp.Hairline).background(Ink.tertiary))
+    Box(Modifier.width(14.dp).height(1.dp).background(Ink.tertiary.copy(alpha = 0.5f)))
     TelemetryLabel(
       text,
       presentation.language.locale,
       Modifier.padding(horizontal = 6.dp),
       textAlign = TextAlign.Center,
     )
-    Box(Modifier.width(14.dp).height(Dp.Hairline).background(Ink.tertiary))
+    Box(Modifier.width(14.dp).height(1.dp).background(Ink.tertiary.copy(alpha = 0.5f)))
   }
 }
 
