@@ -42,14 +42,16 @@ struct MomentCardView: View {
         .foregroundStyle(card.isCelebration ? style.glowInk : style.ink2)
         .lineLimit(2)
         .multilineTextAlignment(.center)
-        .padding(.top, 6)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 5)
       headline
         .layoutPriority(1)
       if !card.details.isEmpty {
         Text(card.details.joined(separator: " · "))
           .font(.caption2)
           .foregroundStyle(style.ink2)
-          .lineLimit(2)
+          // A footnote takes the second line.
+          .lineLimit(card.footnote == nil ? 2 : 1)
           .multilineTextAlignment(.center)
       }
       if let footnote = card.footnote {
@@ -57,12 +59,12 @@ struct MomentCardView: View {
           .font(.caption2.weight(.medium))
           .monospacedDigit()
           .foregroundStyle(card.isCelebration ? style.glowInk : style.ink2)
-          .lineLimit(2)
-          .multilineTextAlignment(.center)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
           .padding(.horizontal, 9)
           .padding(.vertical, 3)
           .background(card.isCelebration ? style.glowWash : style.fill, in: .capsule)
-          .padding(.top, 5)
+          .padding(.top, 4)
       }
       Spacer(minLength: 4)
     }
@@ -96,13 +98,13 @@ struct MomentCardView: View {
           .font(.system(size: 18, weight: .semibold))
           .foregroundStyle(style.glowInk)
       }
-      .frame(width: 54, height: 54)
+      .frame(width: 50, height: 50)
       .shadow(color: style.glow.opacity(0.6), radius: 10)
     } else {
       Image(systemName: card.symbol)
-        .font(.system(size: 18, weight: .semibold))
+        .font(.system(size: 16, weight: .semibold))
         .foregroundStyle(card.isCelebration ? style.glowInk : style.ink2)
-        .frame(width: 42, height: 42)
+        .frame(width: 38, height: 38)
         .background(card.isCelebration ? style.glow.opacity(0.22) : style.fill, in: .circle)
         .overlay {
           Circle().strokeBorder(card.isCelebration ? style.glow.opacity(0.6) : style.ink.opacity(0.12), lineWidth: 1)
@@ -126,7 +128,7 @@ struct MomentCardView: View {
           text: card.headline,
           value: 0,
           style: style,
-          size: 36,
+          size: 34,
           ink: card.isCelebration ? style.ink : style.ink2
         )
       }
