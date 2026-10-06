@@ -10,6 +10,11 @@ declare class ScreenBridgeModule extends NativeModule {
   setScreens(screens: SharedScreen[]): Promise<void>;
   /** Asks widgets and complications to fetch their screens again, e.g. after a notification. */
   reloadWidgets(): Promise<void>;
+  /**
+   * Whether notifications play their moment's sound and voice, which the notification service
+   * extension reads from the App Group. iOS only.
+   */
+  setNotificationAudio(enabled: boolean): Promise<void>;
 }
 
 export default requireNativeModule<ScreenBridgeModule>("ScreenBridge");

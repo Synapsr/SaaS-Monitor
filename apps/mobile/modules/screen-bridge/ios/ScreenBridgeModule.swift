@@ -20,5 +20,9 @@ public class ScreenBridgeModule: Module {
       WidgetCenter.shared.reloadAllTimelines()
       WatchLink.shared.refreshComplications()
     }
+
+    AsyncFunction("setNotificationAudio") { (enabled: Bool) in
+      SharedScreens.setNotificationAudio(enabled)
+    }
   }
 }

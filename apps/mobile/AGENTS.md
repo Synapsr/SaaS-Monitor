@@ -25,17 +25,19 @@ one (https://saas-monitor.com) or a self-hosted one; the same store apps serve t
 - `src/app/` — routes (Expo Router). Other app code lives in `src/`: `src/audio/` plays the
   moments of the screen on display with its sound and voice, when the device asks for it
   (Settings, "Play sounds and voices"), like notification sounds: the ring/silent switch silences
-  them, and they mix with other audio.
+  them, and they mix with other audio. Android plays them in the app only.
 - `src/contract/` — the web app's display contract (`DisplayState`…), copied from `../SaaS-Monitor`
   by `scripts/sync-contract.mjs`: never edited by hand.
 - `modules/screen-bridge/` — local Expo module handing the app's screens to widgets and watches.
-  Its TypeScript API (`setScreens`, `reloadWidgets`, `SharedScreen`) is the contract between the
-  app and the native code: its Swift side (`ios/`) and Kotlin side (`android/`) implement it.
+  Its TypeScript API (`setScreens`, `reloadWidgets`, `setNotificationAudio`, `SharedScreen`) is
+  the contract between the app and the native code: its Swift side (`ios/`) and Kotlin side
+  (`android/`) implement it.
 - `targets/` — Apple targets (`@bacons/apple-targets`): `widget/` (WidgetKit: home and lock
   screen, StandBy, CarPlay), `watch/` (watchOS app), `watch-widget/` (complications and Smart
-  Stack). `shared/` holds the Swift they share (`Core`: models, networking, display; `Widgets`),
-  linked into them by `with-shared-code.js`. They get the screens through the App Group
-  `group.com.saasmonitor.app`.
+  Stack), `notification-service/` (gives a moment's notification the screen's sound and voice,
+  when the device asks for it: "Also when the phone is locked"). `shared/` holds the Swift the
+  widgets and the watch share (`Core`: models, networking, display; `Widgets`), linked into them
+  by `with-shared-code.js`. They get the screens through the App Group `group.com.saasmonitor.app`.
 - `wear/` — the Wear OS app (Kotlin, Compose for Wear OS, Tiles, complications), its own Gradle
   project with the same application id, `com.saasmonitor.app`.
 - `plugins/` — config plugins for anything native the app needs beyond Expo's
@@ -72,10 +74,13 @@ Every client (app, widgets, watches) talks to the instance of the screen, `{base
 
 Notifications come from APNs or FCM directly, or through the Expo push service (which needs no
 credentials from the instance), handled alike: `title` and `body` in the screen's language,
-`data: { "type": "moment" | "test", "screen": key, "event" }` (`test`: "Send a test celebration"
-on the dashboard), where `key` is the first 16 hex characters of the SHA-256 of the screen's token
-and `event` one of the web app's screen events (`payment`, `connectPayment`, `subscription`…). iOS notifications are `time-sensitive`; Android ones use the
-channel `moments`. Which events notify is the screen's choice: its Events settings, column
+`data: { "type": "moment" | "test", "screen": key, "event", "audio"? }` (`test`: "Send a test
+celebration" on the dashboard), where `key` is the first 16 hex characters of the SHA-256 of the
+screen's token, `event` one of the web app's screen events (`payment`, `connectPayment`,
+`subscription`…) and `audio` what the moment plays on the screen's displays (`MomentAudio`; a JSON
+string on FCM), when it plays something. iOS notifications are `time-sensitive`, and
+`mutable-content` with `audio` (in `body` on APNs, like Expo's); Android ones use the channel
+`moments`. Which events notify is the screen's choice: its Events settings, column
 "Phone" (`settings.events[event].push`); each device may mute more.
 
 Push needs configuration the app degrades without: an EAS project id for Expo tokens, the APNs

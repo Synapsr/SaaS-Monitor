@@ -4,4 +4,5 @@ import type { SharedScreen } from "./ScreenBridge.types";
 export default {
   async setScreens(_screens: SharedScreen[]): Promise<void> {},
   async reloadWidgets(): Promise<void> {},
+  async setNotificationAudio(_enabled: boolean): Promise<void> {},
 };

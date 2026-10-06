@@ -20,7 +20,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     void screensStore.load();
-    // Read before any screen opens, to play its moments from the first one.
+    // Read at launch: the notification service extension follows it too, through the App Group.
     void audioPreferencesStore.load();
   }, []);
 
