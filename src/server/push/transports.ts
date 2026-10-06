@@ -1,6 +1,6 @@
 import "server-only";
 import { env } from "@/env";
-import { apnsPayload, createApnsSender, type ApnsSender } from "./apns";
+import { apnsPayload, createApnsSender, type ApnsCredentials, type ApnsSender } from "./apns";
 import {
   EXPO_BATCH_SIZE,
   expoMessage,
@@ -44,7 +44,7 @@ export function defaultTransports(): PushTransports {
     expo: expoSender,
     apns:
       APNS_KEY_ID && APNS_TEAM_ID && APNS_PRIVATE_KEY
-        ? createApnsSender({
+        ? apnsSender({
             keyId: APNS_KEY_ID,
             teamId: APNS_TEAM_ID,
             privateKey: APNS_PRIVATE_KEY,
@@ -54,6 +54,22 @@ export function defaultTransports(): PushTransports {
     fcm: account ? createFcmSender(account) : null,
   };
   return configured;
+}
+
+/**
+ * Apple, with the instance's key. A key that can't be read turns off Apple alone: phones still get
+ * what Expo can send them, and the log says what to fix.
+ */
+function apnsSender(credentials: ApnsCredentials): ApnsSender | null {
+  try {
+    return createApnsSender(credentials);
+  } catch (error) {
+    console.error(
+      "[push] APNS_PRIVATE_KEY is not a readable .p8 key, nothing is sent to Apple directly:",
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
 }
 
 export interface DeliveryReport {

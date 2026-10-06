@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { readP8 } from "@/server/push/p8";
 import { parseServiceAccount } from "@/server/push/service-account";
 
 const booleanFlag = (defaultValue: boolean) =>
@@ -46,11 +47,14 @@ const schema = z
      */
     APNS_KEY_ID: z.string().optional(),
     APNS_TEAM_ID: z.string().optional(),
-    /** The `.p8` key, its line breaks as they are or escaped as `\n`. */
+    /**
+     * The `.p8` key, its line breaks as they are, escaped as `\n`, or folded by a hosting panel:
+     * rebuilt by `readP8`. A key that still can't be read only turns off sending to Apple.
+     */
     APNS_PRIVATE_KEY: z
       .string()
       .optional()
-      .transform((key) => key?.replace(/\\n/g, "\n")),
+      .transform((key) => (key ? (readP8(key) ?? key) : key)),
     APNS_BUNDLE_ID: z.string().default("com.saasmonitor.app"),
     /** The Firebase service account's JSON key, which names its project. */
     FCM_SERVICE_ACCOUNT: z.string().optional(),
