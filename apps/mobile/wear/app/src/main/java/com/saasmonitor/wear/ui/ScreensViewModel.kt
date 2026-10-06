@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saasmonitor.core.SharedScreen
+import com.saasmonitor.core.display.Language
 import com.saasmonitor.core.moments.Moment
 import com.saasmonitor.core.moments.MomentCard
 import com.saasmonitor.core.moments.MomentTracker
@@ -32,6 +33,8 @@ data class WatchMoment(
   val id: String,
   val screenName: String,
   val accent: String,
+  /** The screen's language: its labels are uppercased with its rules. */
+  val language: Language,
   val card: MomentCard,
   val isMilestone: Boolean,
 )
@@ -117,6 +120,7 @@ class ScreensViewModel(application: Application) : AndroidViewModel(application)
         id = "${screen.key}:${it.id}",
         screenName = screen.name,
         accent = state.settings.accent,
+        language = state.settings.language,
         card = MomentCard.of(it, state),
         isMilestone = it is Moment.Milestone,
       )
