@@ -5,17 +5,24 @@ struct MomentCard: Identifiable, Sendable {
   let id: String
   let symbol: String
   let title: String
-  /// An amount, or the name of a new customer.
-  let headline: String
+  /// An amount, its currency symbol marked for the hero to set it smaller, or the name of a new
+  /// customer.
+  let headline: AttributedString
   let headlineIsName: Bool
   /// For a change of recurring revenue rather than money received: "+$99 MRR".
   let metricLabel: String?
+  /// The screen it happened on.
+  let screenName: String
+  /// The screen's language's, for its labels.
+  let locale: Locale
   /// The account it comes from, on a screen showing several.
   let account: String?
   let details: [String]
   let footnote: String?
   /// Losses are honest, never alarming: no glow, no color.
   let isCelebration: Bool
+  /// A goal or a milestone crossed: its ring fills up.
+  let isMilestone: Bool
   let style: ScreenStyle
 
   init(_ moment: Moment, state: DisplayState) {
@@ -24,25 +31,29 @@ struct MomentCard: Identifiable, Sendable {
     let text = format.language.momentText
     let metric = figures.metric
     let change = { (mrr: Int) in format.amount(metric.fromMrr(mrr), signed: true) }
+    let changeParts = { (mrr: Int) in format.attributedAmount(metric.fromMrr(mrr), signed: true) }
 
     id = moment.id
     style = figures.style.onDark
+    screenName = state.screen.name
+    locale = format.locale
+    isMilestone = { if case .milestone = moment { true } else { false } }()
     account = state.accounts.count < 2 ? nil : state.accounts.first { $0.id == moment.accountId }?.name
     headlineIsName = { if case .customer = moment { true } else { false } }()
 
     switch moment {
     case .payment(let item):
-      symbol = KindIcon.symbol(for: item)
+      symbol = item.symbol
       title = item.connect == nil ? text.payment : text.connectPayment
-      headline = format.payment(item.amount)
+      headline = format.attributedPayment(item.amount)
       metricLabel = nil
       details = Self.context(of: item, format: format)
       footnote = item.connect?.applicationFee.map { text.connectFee(format.payment($0)) }
       isCelebration = true
     case .movement(let item):
-      symbol = KindIcon.symbol(for: item)
+      symbol = item.symbol
       title = Self.title(of: item, text: text)
-      headline = change(item.amount)
+      headline = changeParts(item.amount)
       metricLabel = metric.label
       details = Self.context(of: item, format: format)
       footnote = Self.churnFootnote(of: item, format: format, text: text)
@@ -50,9 +61,9 @@ struct MomentCard: Identifiable, Sendable {
     case .customer(let item):
       let name = item.customerLabel
       let country = Self.country(of: item, format: format)
-      symbol = KindIcon.symbol(for: item)
+      symbol = item.symbol
       title = text.customer
-      headline = name ?? country ?? text.someoneNew
+      headline = AttributedString(name ?? country ?? text.someoneNew)
       metricLabel = nil
       details = name != nil ? [country].compactMap(\.self) : []
       let today = state.metrics.customersCreatedToday
@@ -62,7 +73,7 @@ struct MomentCard: Identifiable, Sendable {
       let received = summary.revenue > 0
       symbol = "dollarsign"
       title = text.catchingUp
-      headline = received ? format.payment(summary.revenue) : change(summary.mrrChange)
+      headline = received ? format.attributedPayment(summary.revenue) : changeParts(summary.mrrChange)
       metricLabel = received ? nil : metric.label
       details = [
         summary.payments > 0 ? text.payments(summary.payments) : nil,
@@ -74,7 +85,7 @@ struct MomentCard: Identifiable, Sendable {
     case .test:
       symbol = "party.popper"
       title = text.test
-      headline = format.payment(Self.testPaymentAmount(state))
+      headline = format.attributedPayment(Self.testPaymentAmount(state))
       metricLabel = nil
       details = [text.testDetails]
       footnote = nil
@@ -82,7 +93,7 @@ struct MomentCard: Identifiable, Sendable {
     case .milestone(let amount, let milestoneMetric, let isGoal):
       symbol = "party.popper"
       title = isGoal ? text.goalReached : text.milestoneReached
-      headline = format.amount(amount, compact: true)
+      headline = format.attributedAmount(amount, compact: true)
       metricLabel = milestoneMetric.label
       details = []
       footnote = nil
