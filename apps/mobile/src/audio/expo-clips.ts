@@ -1,5 +1,5 @@
 import { fetch } from "expo/fetch";
-import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
+import { createAudioPlayer, preload, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 import { Directory, File, Paths } from "expo-file-system";
 import { cacheName, type ClipSource } from "@/audio/clips";
 import type { Clip, ClipLoader } from "@/audio/moment-player";
@@ -85,6 +85,14 @@ async function announcementFile(source: Extract<ClipSource, { kind: "announcemen
   }
 }
 
+/**
+ * Readies a player of the file for the next time it plays: a player takes a moment to load, which
+ * a sound can't wait, and each player plays once.
+ */
+function ready(file: File): void {
+  preload({ uri: file.uri }).catch(() => {});
+}
+
 /** Resolves once the player knows its clip, or rejects. */
 function loaded(player: AudioPlayer): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -107,12 +115,18 @@ export const expoClips: ClipLoader = {
   async load(source) {
     await setAudioMode();
     const file = source.kind === "file" ? await cachedFile(source.url) : await announcementFile(source);
+    // Takes the player readied for the file, if any.
     const player = createAudioPlayer({ uri: file.uri });
+    if (source.kind === "file") ready(file);
     let released = false;
     const release = () => {
       if (released) return;
       released = true;
+      // `remove` only forgets the player, which plays on until it is deallocated: it stops first,
+      // and goes at once.
+      player.pause();
       player.remove();
+      player.release();
       // The screen's own words are said once.
       if (source.kind === "announcement" && file.exists) file.delete();
     };
@@ -134,7 +148,7 @@ export const expoClips: ClipLoader = {
   },
 };
 
-/** Downloads sounds before their first moment, which they would otherwise be late for. */
+/** Downloads sounds, and readies their players, before their first moment: it can't wait. */
 export function prefetch(urls: readonly string[]): void {
-  for (const url of urls) cachedFile(url).catch(() => {});
+  for (const url of urls) cachedFile(url).then(ready, () => {});
 }
