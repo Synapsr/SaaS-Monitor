@@ -13,7 +13,7 @@ struct ScreenTimelineProvider: AppIntentTimelineProvider {
   }
 
   func snapshot(for configuration: SelectScreenIntent, in context: Context) async -> ScreenEntry {
-    guard let screen = ScreenStore.screen(key: configuration.screen?.id) else {
+    guard let screen = ScreenStore.screen(key: configuration.screen) else {
       return context.isPreview ? .sample() : .noScreen(at: .now)
     }
     // The gallery wants an answer at once: the last numbers known will do.
@@ -25,7 +25,7 @@ struct ScreenTimelineProvider: AppIntentTimelineProvider {
 
   func timeline(for configuration: SelectScreenIntent, in context: Context) async -> Timeline<ScreenEntry> {
     let now = Date.now
-    guard let screen = ScreenStore.screen(key: configuration.screen?.id) else {
+    guard let screen = ScreenStore.screen(key: configuration.screen) else {
       // `setScreens` reloads every widget: nothing to do until then.
       return Timeline(entries: [.noScreen(at: now)], policy: .never)
     }
@@ -47,7 +47,7 @@ struct ScreenTimelineProvider: AppIntentTimelineProvider {
   /// A watch face has no configuration screen: it lists one complication per screen.
   func recommendations() -> [AppIntentRecommendation<SelectScreenIntent>] {
     ScreenStore.screens().map {
-      AppIntentRecommendation(intent: SelectScreenIntent(screen: ScreenEntity($0)), description: $0.name)
+      AppIntentRecommendation(intent: SelectScreenIntent(screen: $0), description: $0.name)
     }
   }
   #endif

@@ -7,42 +7,29 @@ struct SelectScreenIntent: WidgetConfigurationIntent {
   static let title: LocalizedStringResource = "Screen"
   static let description = IntentDescription("Choose the screen to show.")
 
-  @Parameter(title: "Screen")
-  var screen: ScreenEntity?
+  /// The screen's key: its token may change, its key never does. A key, not an `AppEntity`: App
+  /// Intents rebuilds a configured entity by asking `linkd`, which turns away extensions signed
+  /// without a team (every simulator build). The entity then came back `nil`, and every widget
+  /// showed the first screen whatever its configuration.
+  @Parameter(title: "Screen", optionsProvider: ScreenOptions())
+  var screen: String?
 
   init() {}
 
-  init(screen: ScreenEntity) {
-    self.screen = screen
+  init(screen: SharedScreen) {
+    self.screen = screen.key
   }
 }
 
-struct ScreenEntity: AppEntity {
-  static let typeDisplayRepresentation: TypeDisplayRepresentation = "Screen"
-  static let defaultQuery = ScreenQuery()
-
-  /// The screen's key: its token may change, its key never does.
-  let id: String
-  let name: String
-
-  var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(name)") }
-
-  init(_ screen: SharedScreen) {
-    id = screen.key
-    name = screen.name
-  }
-}
-
-struct ScreenQuery: EntityQuery {
-  func entities(for identifiers: [ScreenEntity.ID]) async throws -> [ScreenEntity] {
-    ScreenStore.screens().filter { identifiers.contains($0.key) }.map(ScreenEntity.init)
+/// The app's screens, offered by name.
+struct ScreenOptions: DynamicOptionsProvider {
+  func results() async throws -> ItemCollection<String> {
+    ItemCollection(sections: [
+      ItemSection(items: ScreenStore.screens().map { IntentItem($0.key, title: "\($0.name)") }),
+    ])
   }
 
-  func suggestedEntities() async throws -> [ScreenEntity] {
-    ScreenStore.screens().map(ScreenEntity.init)
-  }
-
-  func defaultResult() async -> ScreenEntity? {
-    ScreenStore.screens().first.map(ScreenEntity.init)
+  func defaultResult() async -> String? {
+    ScreenStore.screens().first?.key
   }
 }
