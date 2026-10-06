@@ -70,6 +70,19 @@ describe("FCM messages", () => {
     });
   });
 
+  it("carry the moment's sound and voice as JSON, FCM data being strings", () => {
+    const audio: NonNullable<Notice["audio"]> = {
+      sound: { pack: "chime", event: "customer", volume: 0.5 },
+      voice: null,
+    };
+    expect(fcmMessage("fcm-token", { ...item, audio }).message.data).toEqual({
+      type: "moment",
+      screen: "0123456789abcdef",
+      event: "payment",
+      audio: JSON.stringify(audio),
+    });
+  });
+
   it("forget tokens Google says are unregistered, and only those", () => {
     const error = (status: string, errorCode?: string) => ({
       error: { status, details: errorCode ? [{ errorCode }] : [] },

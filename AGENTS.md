@@ -39,6 +39,7 @@ Node 24 (`.nvmrc`), pnpm 10.
     their link (and the proof of their password, `X-Screen-Access`) and registers phones. After
     each sync, `src/server/push` notifies them of what the sync recorded: through Apple and
     Google with the instance's credentials (`APNS_*`, `FCM_SERVICE_ACCOUNT`), else through Expo.
+    Notifications carry what the moment plays (`audio`), for phones that play it as walls do.
   - `/api/webhooks/stripe/[accountId]`: Stripe webhooks, which only trigger a sync.
   - `/api/health`: liveness probe for containers (checks the database).
 - `src/components/ui` — shadcn/ui primitives (Radix). Feature components live next to them in
@@ -94,6 +95,12 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   recorded phrases (`RECORDED_PHRASES`) ship as clips in `public/voices`: after changing one, run
   `pnpm tsx scripts/generate-voices.ts` with `GRADIUM_API_KEY` set. A screen's own phrases are
   synthesized by its server from the moment's items, never from text a display sends.
+- **Sounds** (`src/lib/sounds`) are synthesized live with Web Audio on walls. The app and its
+  notifications play them as files rendered from the same recipes,
+  `public/sounds/<pack>/<event>.wav`: after changing a sound or a pack, run
+  `pnpm tsx scripts/generate-sounds.ts` (with Google Chrome installed) and commit what changed.
+  What a moment plays, and when (its sound, then its voice), is `momentAudio`
+  (`src/lib/display/moment-audio.ts`), for walls, the app and notifications alike.
 - **Screen colors are tokens** (`wall-palette.css`, `d/display.css`), redefined by the light theme:
   never hard-code a white or black on a screen. Accents come from `accentPalette`, which keeps
   custom colors readable on both themes.

@@ -43,12 +43,12 @@ export interface FcmMessage {
 }
 
 export function fcmMessage(token: string, item: Notice): FcmMessage {
-  const { type, screen, event } = pushData(item);
+  const { type, screen, event, audio } = pushData(item);
   return {
     message: {
       token,
       notification: { title: item.title, body: item.body },
-      data: { type, screen, event },
+      data: { type, screen, event, ...(audio && { audio: JSON.stringify(audio) }) },
       android: { priority: "HIGH", notification: { channel_id: "moments", sound: "default" } },
     },
   };

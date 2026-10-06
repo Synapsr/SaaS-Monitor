@@ -58,6 +58,20 @@ describe("deliveries", () => {
     });
   });
 
+  it("carry what the moment plays only when it plays something", () => {
+    const audio: NonNullable<Notice["audio"]> = {
+      sound: { pack: "arcade", event: "milestone", volume: 1 },
+      voice: null,
+    };
+    expect(pushData(notice("milestone", { events: ["milestone"], audio }))).toEqual({
+      type: "moment",
+      screen: "0123456789abcdef",
+      event: "milestone",
+      audio,
+    });
+    expect(pushData(notice("payment:1"))).not.toHaveProperty("audio");
+  });
+
   it("tell a phone following two screens of the same account once", () => {
     const sent = deliveries([
       screen({ moments: [notice("payment:1"), notice("movement:1")] }),

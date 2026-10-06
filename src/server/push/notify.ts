@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { screenAccounts, screens } from "@/db/schema";
 import { itemEvent } from "@/lib/display/events";
 import { displayLocale } from "@/lib/display/i18n";
+import { momentAudio } from "@/lib/display/moment-audio";
 import {
   crossedMilestones,
   planMoments,
@@ -21,6 +22,7 @@ import {
 } from "@/server/display/queries";
 import { toFeedItem } from "@/server/display/state";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
+import { speaksOwnPhrases } from "@/server/voice/own-phrases";
 import { claimLiveActivity, claimMilestones } from "./claims";
 import { screenKey, type PushContext } from "./content";
 import { forgetTokens, screenDevices, type Device } from "./devices";
@@ -144,7 +146,10 @@ async function screenNotices(
     // Like the screen's moments, notifications name their account when it shows several.
     accountNames: accounts.length > 1 ? accountNames : null,
   };
-  const toNotice = (moment: Moment) => notice(moment, key, context);
+  // Phones that play moments as the screen's displays do hear the same sound and voice.
+  const personalizedVoice = speaksOwnPhrases(settings);
+  const toNotice = (moment: Moment) =>
+    notice(moment, key, context, momentAudio(moment, settings, personalizedVoice));
 
   let milestones: Moment[] = [];
   if (notifiesMilestones) {

@@ -320,9 +320,18 @@ export async function sendTestEvent(
     .update(screens)
     .set({ testEventAt: sql`now(6)` })
     .where(eq(screens.id, screenId));
-  const { language } = parseScreenSettings(screen.settings);
+  // Names the test, as displays see it (`DisplayState.testEvent`): phones play the same.
+  const [{ testEventAt }] = await db()
+    .select({ testEventAt: screens.testEventAt })
+    .from(screens)
+    .where(eq(screens.id, screenId));
   const phones = await notifyTestCelebration(
-    { id: screenId, token: screen.token, language },
+    {
+      id: screenId,
+      token: screen.token,
+      settings: parseScreenSettings(screen.settings),
+      testEventId: (testEventAt ?? new Date()).toISOString(),
+    },
     options,
   );
   return { ok: true, phones };

@@ -1,6 +1,7 @@
+import { MAX_SOUND_DELAY_MS } from "@/lib/display/audio-timing";
 import type { SoundPack } from "@/lib/screens/settings";
-import { getAudioGraph } from "@/lib/sounds/graph";
-import { SOUND_RECIPES } from "@/lib/sounds/packs";
+import { getAudioGraph, type AudioGraph } from "@/lib/sounds/graph";
+import { SOUND_RECIPES, type SoundRecipe } from "@/lib/sounds/packs";
 
 /**
  * Sounds of the wall display, synthesized with the Web Audio API: no audio files, no licensing.
@@ -22,8 +23,6 @@ export interface PlaySoundOptions {
   volume: number;
 }
 
-/** A sound that could not start within this delay is dropped: a late "ka-ching" would lie. */
-const MAX_START_DELAY_MS = 1_000;
 /** Long enough for the longest sound and its reverb tail. */
 const SOUND_LIFETIME_MS = 6_000;
 
@@ -38,19 +37,9 @@ export function playSound(event: SoundEvent, options: PlaySoundOptions): void {
     const { context } = graph;
     const requestedAt = Date.now();
     const start = () => {
-      if (Date.now() - requestedAt > MAX_START_DELAY_MS) return;
-      // Squared: the slider then feels even to the ear, which hears loudness logarithmically.
-      const output = context.createGain();
-      output.gain.value = volume ** 2;
-      output.connect(graph.input);
-      const reverb = context.createGain();
-      reverb.gain.value = volume ** 2;
-      reverb.connect(graph.reverb);
-      recipe({ context, output, reverb }, context.currentTime + 0.03);
-      setTimeout(() => {
-        output.disconnect();
-        reverb.disconnect();
-      }, SOUND_LIFETIME_MS);
+      if (Date.now() - requestedAt > MAX_SOUND_DELAY_MS) return;
+      const disconnect = scheduleSound(graph, recipe, volume, context.currentTime + 0.03);
+      setTimeout(disconnect, SOUND_LIFETIME_MS);
     };
 
     if (context.state === "running") {
@@ -67,6 +56,31 @@ export function playSound(event: SoundEvent, options: PlaySoundOptions): void {
   }
 }
 
+/**
+ * Schedules `recipe` at `at` into the graph's master chain, at `volume` (0 to 1), through gains of
+ * its own: the returned function disconnects them once the sound rang out. Offline contexts
+ * render the same way (`scripts/generate-sounds.ts`).
+ */
+export function scheduleSound(
+  { context, input, reverb }: Pick<AudioGraph, "input" | "reverb"> & { context: BaseAudioContext },
+  recipe: SoundRecipe,
+  volume: number,
+  at: number,
+): () => void {
+  // Squared: the slider then feels even to the ear, which hears loudness logarithmically.
+  const output = context.createGain();
+  output.gain.value = volume ** 2;
+  output.connect(input);
+  const send = context.createGain();
+  send.gain.value = volume ** 2;
+  send.connect(reverb);
+  recipe({ context, output, reverb: send }, at);
+  return () => {
+    output.disconnect();
+    send.disconnect();
+  };
+}
+
 /** Call from a user gesture handler (click, key press) to allow audio. */
 export async function unlockAudio(): Promise<boolean> {
   const graph = getAudioGraph();
@@ -81,7 +95,7 @@ export async function unlockAudio(): Promise<boolean> {
     if (context.state !== "running") {
       await Promise.race([
         context.resume(),
-        new Promise((resolve) => setTimeout(resolve, MAX_START_DELAY_MS)),
+        new Promise((resolve) => setTimeout(resolve, MAX_SOUND_DELAY_MS)),
       ]);
     }
   } catch {

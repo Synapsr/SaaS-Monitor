@@ -23,6 +23,11 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   its Expo and native push tokens and its choices).
 - **Send a test celebration** also notifies the phones following the screen, to check
   notifications end to end; the toast says how many were notified.
+- The SaaS Monitor app plays moments as the screen's displays do, its sound then its voice, in
+  the screen open on the phone and, on iPhone, as the sound of its notifications, even locked
+  (**Play sounds and voices** in the app's settings). Notifications carry what each moment plays,
+  and the sounds of every pack ship as files (`public/sounds`), rendered from the display's own
+  by `scripts/generate-sounds.ts`.
 
 - Lost subscriptions say why, in the feed, on their card and in the voice: canceled, won't renew
   (a cancellation at period end, with the date it ends), payment failed (Stripe's retries ran

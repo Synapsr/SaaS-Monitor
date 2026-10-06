@@ -27,18 +27,22 @@ export interface ExpoMessage {
   channelId: "moments";
   /** News of the business break through Focus modes, on iOS. */
   interruptionLevel: "time-sensitive";
+  /** The app's extension may play the moment's sound and voice (`data.audio`), on iOS. */
+  mutableContent?: true;
 }
 
 export function expoMessage(to: string, item: Notice): ExpoMessage {
+  const data = pushData(item);
   return {
     to,
     title: item.title,
     body: item.body,
-    data: pushData(item),
+    data,
     sound: "default",
     priority: "high",
     channelId: "moments",
     interruptionLevel: "time-sensitive",
+    ...(data.audio && { mutableContent: true }),
   };
 }
 

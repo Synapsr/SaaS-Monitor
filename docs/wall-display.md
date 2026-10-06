@@ -106,6 +106,12 @@ following several screens of the same account hears of each thing once. In the a
 can turn a screen's notifications off, or mute some of its events, on top of the screen's
 choices.
 
+In the app's settings, **Play sounds and voices** has an open screen play each moment as its
+displays do: the screen's sound, then its voice, at the screen's volumes (the phone's silent switch
+keeps it quiet). On iPhone, **Also when the phone is locked** plays them as the sound of the
+screen's notifications: the phone downloads them from the screen's instance as each notification
+arrives, and falls back on the usual sound when it can't.
+
 Notifications go out when SaaS Monitor syncs the Stripe account, which happens when a Stripe
 webhook arrives, when a screen polls, or when the dashboard is open: there is no background
 worker. For notifications within seconds, turn on
@@ -114,8 +120,9 @@ checked while a screen or the dashboard is open, every few minutes at best (abou
 minutes for small accounts), and notifications wait for it.
 
 Notifications reach phones through Apple and Google: their title and text go through these
-services. saas-monitor.com sends to them directly; self-hosted instances go through the Expo push
-service, which forwards them, with no setup or credentials, only outbound HTTPS access to
+services, with the sound and voice the moment plays. saas-monitor.com sends to them directly;
+self-hosted instances go through the Expo push service, which forwards them, with no setup or
+credentials, only outbound HTTPS access to
 `exp.host` (see [Self-hosting](self-hosting.md#notifications)). **Regenerate link** or a new password stops
 notifying every phone that followed the screen, like it locks out its displays; uninstalling the
 app stops them too.

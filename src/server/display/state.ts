@@ -9,7 +9,7 @@ import type { DisplayState, DisplayWarning, FeedItem } from "@/lib/display/types
 import { MINUTE_MS } from "@/lib/durations";
 import { parseScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { createCurrencyConverter, type CurrencyConverter, type RateSource } from "@/server/fx";
-import { canSynthesize } from "@/server/voice/gradium";
+import { speaksOwnPhrases } from "@/server/voice/own-phrases";
 import { displayStatus, earliestDay, metricsOf, type AccountFigures } from "./metrics";
 import {
   customersCreatedSince,
@@ -126,7 +126,7 @@ export async function getDisplayStateByToken(
       return item ? [item] : [];
     }),
     testEvent: recentTestEvent(screen.testEventAt, now),
-    personalizedVoice: settings.voice.enabled && settings.voice.personalized && canSynthesize(),
+    personalizedVoice: speaksOwnPhrases(settings),
     warnings: displayWarnings(converter.unavailable, accounts),
   };
 }
