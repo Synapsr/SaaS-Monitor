@@ -15,17 +15,16 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
@@ -38,17 +37,26 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.CurvedLayout
+import androidx.wear.compose.foundation.CurvedModifier
+import androidx.wear.compose.foundation.CurvedTextStyle
+import androidx.wear.compose.foundation.basicCurvedText
+import androidx.wear.compose.foundation.sizeIn
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.tooling.preview.devices.WearDevices
@@ -60,6 +68,8 @@ import com.saasmonitor.core.moments.Moment
 import com.saasmonitor.core.moments.MomentCard
 import com.saasmonitor.core.state.Theme
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
@@ -118,79 +128,141 @@ private fun Moment(moment: WatchMoment, onDismiss: (String) -> Unit) {
     // A milestone fills the ring to the full and lights it.
     if (moment.isMilestone)
       GoalRing(1f, accent, Modifier.fillMaxSize(), gapDegrees = 0f, ticks = false)
-    Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
+    // The screen's name along the top of the bezel: the middle keeps its height for the news.
+    CurvedLayout(Modifier.fillMaxSize().padding(14.dp), anchor = 270f) {
+      basicCurvedText(
+        listOfNotNull(moment.screenName, card.account)
+          .joinToString(" · ")
+          .uppercase(moment.language.locale),
+        style = CurvedTextStyle(telemetryStyle(10.sp).copy(color = Ink.tertiary)),
+        modifier = CurvedModifier.sizeIn(maxSweepDegrees = 120f),
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
+    // Between the curved name and the bottom of the bezel, where the circle is wide enough.
+    Box(
+      Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 31.dp, bottom = 26.dp),
+      contentAlignment = Alignment.Center,
     ) {
-      TelemetryLabel(
-        listOfNotNull(moment.screenName, card.account).joinToString(" · "),
-        moment.language.locale,
-        textAlign = TextAlign.Center,
-      )
-      Spacer(Modifier.height(10.dp))
-      EventBadge(
-        card.icon,
-        good = card.celebration,
-        accent = accent,
-        size = 40.dp,
-        contentDescription = null,
-        glowing = true,
-      )
-      Spacer(Modifier.height(7.dp))
-      Text(
-        card.eyebrow,
-        style = MaterialTheme.typography.titleSmall,
-        color = if (celebrate) Color(accent.ink) else Ink.secondary,
-        textAlign = TextAlign.Center,
-        maxLines = 2,
-      )
-      Headline(card, celebrate)
-      if (card.details.isNotEmpty()) {
-        // The circle narrows below the middle: the lines under the amount keep to its center.
-        Text(
-          card.details,
-          style = MaterialTheme.typography.bodySmall,
-          color = Ink.secondary,
-          textAlign = TextAlign.Center,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-          modifier = Modifier.padding(horizontal = 12.dp),
-        )
-      }
-      card.footnote?.let { footnote ->
-        Spacer(Modifier.height(7.dp))
-        Text(
-          footnote,
-          style = MaterialTheme.typography.labelSmall,
-          color = if (celebrate) Color(accent.ink) else Ink.secondary,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-          modifier =
-            Modifier.background(
-                if (celebrate) Color(accent.glow).copy(alpha = 0.15f)
-                else Ink.primary.copy(alpha = 0.08f),
-                CircleShape,
-              )
-              .padding(horizontal = 10.dp, vertical = 4.dp),
-        )
+      FitInWindow {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          EventBadge(
+            card.icon,
+            good = card.celebration,
+            accent = accent,
+            size = 30.dp,
+            contentDescription = null,
+            glowing = true,
+          )
+          Spacer(Modifier.height(4.dp))
+          Text(
+            card.eyebrow,
+            style = MaterialTheme.typography.titleSmall,
+            color = if (celebrate) Color(accent.ink) else Ink.secondary,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+          )
+          Headline(card, celebrate)
+          if (card.details.isNotEmpty()) {
+            // Up to three lines, a step smaller rather than cut: a moment reads in full.
+            val style = MaterialTheme.typography.bodySmall
+            BasicText(
+              card.details,
+              style = style.copy(color = Ink.secondary, textAlign = TextAlign.Center),
+              maxLines = 3,
+              autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = style.fontSize),
+              modifier = Modifier.padding(horizontal = 2.dp),
+            )
+          }
+          card.footnote?.let { footnote ->
+            Spacer(Modifier.height(6.dp))
+            Footnote(footnote, celebrate, accent)
+          }
+        }
       }
     }
   }
 }
+
+/**
+ * "Your fee: $3", "Ends October 29" on the accent's wash: on one line when a step smaller does it,
+ * else on two, as the bottom of the circle is narrow.
+ */
+@Composable
+private fun Footnote(text: String, celebrate: Boolean, accent: AccentPalette) {
+  val style =
+    MaterialTheme.typography.labelSmall.copy(
+      color = if (celebrate) Color(accent.ink) else Ink.secondary,
+      textAlign = TextAlign.Center,
+    )
+  val measurer = rememberTextMeasurer()
+  BoxWithConstraints(Modifier.padding(horizontal = 12.dp)) {
+    val inner = 8.dp
+    val width = with(LocalDensity.current) { (maxWidth - inner * 2).roundToPx() }
+    val fitsOneLine =
+      remember(text, width) {
+        !measurer
+          .measure(
+            text,
+            style.copy(fontSize = 10.sp),
+            maxLines = 1,
+            constraints = Constraints(maxWidth = width),
+          )
+          .hasVisualOverflow
+      }
+    BasicText(
+      text,
+      style = style,
+      maxLines = if (fitsOneLine) 1 else 2,
+      autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = style.fontSize),
+      modifier =
+        Modifier.background(
+            if (celebrate) Color(accent.glow).copy(alpha = 0.15f)
+            else Ink.primary.copy(alpha = 0.08f),
+            RoundedCornerShape(12.dp),
+          )
+          .padding(horizontal = inner, vertical = 3.dp),
+    )
+  }
+}
+
+/**
+ * [content] centered in the space it is given, and shrunk a little when it would be taller, so
+ * that nothing meets the bezel.
+ */
+@Composable
+private fun FitInWindow(content: @Composable () -> Unit) {
+  Layout(content) { measurables, constraints ->
+    val unbounded = constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity)
+    val placeable = measurables.single().measure(unbounded)
+    val limit = constraints.maxHeight
+    val scale =
+      if (placeable.height <= limit) 1f else max(MIN_SCALE, limit.toFloat() / placeable.height)
+    val height = min(placeable.height, limit)
+    layout(placeable.width, height) {
+      placeable.placeWithLayer(0, (height - placeable.height) / 2) {
+        scaleX = scale
+        scaleY = scale
+      }
+    }
+  }
+}
+
+/** Text shrinks this much at most: smaller would no longer read at a glance. */
+private const val MIN_SCALE = 0.82f
 
 /** The amount as a hero readout, shrunk to fit one line; a name on two lines at most. */
 @Composable
 private fun Headline(card: MomentCard, celebrate: Boolean) {
   val color = if (celebrate) Ink.primary else Ink.secondary
   if (card.headlineIsName) {
-    Text(
+    // A name is read in full: on two lines, a step smaller if it has to.
+    val style = MaterialTheme.typography.titleLarge
+    BasicText(
       card.headline,
-      style = MaterialTheme.typography.titleLarge,
-      color = color,
-      textAlign = TextAlign.Center,
+      style = style.copy(color = color, textAlign = TextAlign.Center),
       maxLines = 2,
-      overflow = TextOverflow.Ellipsis,
+      autoSize = TextAutoSize.StepBased(minFontSize = 13.sp, maxFontSize = style.fontSize),
     )
     return
   }
@@ -204,7 +276,7 @@ private fun Headline(card: MomentCard, celebrate: Boolean) {
           fontFeatureSettings = "tnum",
         ),
       maxLines = 1,
-      autoSize = TextAutoSize.StepBased(minFontSize = 20.sp, maxFontSize = 44.sp),
+      autoSize = TextAutoSize.StepBased(minFontSize = 20.sp, maxFontSize = 40.sp),
       modifier = Modifier.weight(1f, fill = false),
     )
     card.metric?.let {
