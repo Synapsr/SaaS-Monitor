@@ -94,6 +94,10 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   recorded phrases (`RECORDED_PHRASES`) ship as clips in `public/voices`: after changing one, run
   `pnpm tsx scripts/generate-voices.ts` with `GRADIUM_API_KEY` set. A screen's own phrases are
   synthesized by its server from the moment's items, never from text a display sends.
+- **Sounds** (`src/lib/sounds`) are synthesized live with Web Audio on walls. The app and its
+  notifications play them as files rendered from the same recipes,
+  `public/sounds/<pack>/<event>.wav`: after changing a sound or a pack, run
+  `pnpm tsx scripts/generate-sounds.ts` (with Google Chrome installed) and commit what changed.
 - **Screen colors are tokens** (`wall-palette.css`, `d/display.css`), redefined by the light theme:
   never hard-code a white or black on a screen. Accents come from `accentPalette`, which keeps
   custom colors readable on both themes.
