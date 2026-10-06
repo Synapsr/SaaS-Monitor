@@ -69,6 +69,8 @@ const config: ExpoConfig = {
     "./targets/with-shared-code",
     "@bacons/apple-targets",
     "./plugins/withAndroidWidgets",
+    // iOS 27 stops apps that don't adopt the scene life cycle at launch.
+    "./plugins/withSceneLifecycle",
   ],
   experiments: { typedRoutes: true },
 };
