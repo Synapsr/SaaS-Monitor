@@ -23,6 +23,8 @@ object DisplayStateJson {
     val metrics = root.getJSONObject("metrics")
     val feed = root.optJSONArray("feed") ?: JSONArray()
     val accounts = root.optJSONArray("accounts") ?: JSONArray()
+    val revenue = metrics.optJSONObject("revenue") ?: JSONObject()
+    val series = root.optJSONObject("series")?.optJSONArray("mrr") ?: JSONArray()
     return ScreenSnapshot(
       screenName = screen.optString("name"),
       status = enumOf(root.optString("status"), ScreenSnapshot.Status.READY) { it.wire },
@@ -39,7 +41,7 @@ object DisplayStateJson {
         ),
       mrr = metrics.optLong("mrr"),
       mrr30DaysAgo = metrics.optLong("mrr30DaysAgo"),
-      revenueToday = metrics.optJSONObject("revenue")?.optLong("today") ?: 0,
+      revenueToday = revenue.optLong("today"),
       arpu = metrics.optLong("arpu"),
       customersCreatedToday = metrics.optLong("customersCreatedToday"),
       feed = (0 until feed.length()).mapNotNull { feed.optJSONObject(it)?.let(::parseFeedEntry) },
@@ -47,6 +49,15 @@ object DisplayStateJson {
         (0 until accounts.length()).mapNotNull { accounts.optJSONObject(it)?.let(::parseAccount) },
       testEventId = root.optJSONObject("testEvent")?.optNullableString("id"),
       generatedAt = IsoInstant.parse(root.optString("generatedAt")) ?: System.currentTimeMillis(),
+      mrrSeries =
+        ScreenSnapshot.sampleSeries(
+          (0 until series.length()).mapNotNull { index ->
+            series.optJSONObject(index)?.takeIf { it.has("value") }?.optLong("value")
+          }
+        ),
+      revenueYesterday = revenue.optLong("yesterday"),
+      revenueMonthToDate = revenue.optLong("monthToDate"),
+      revenuePreviousMonthToDate = revenue.optLong("previousMonthToDate"),
     )
   }
 
@@ -85,9 +96,22 @@ object DisplayStateJson {
         JSONObject()
           .put("mrr", snapshot.mrr)
           .put("mrr30DaysAgo", snapshot.mrr30DaysAgo)
-          .put("revenue", JSONObject().put("today", snapshot.revenueToday))
+          .put(
+            "revenue",
+            JSONObject()
+              .put("today", snapshot.revenueToday)
+              .put("yesterday", snapshot.revenueYesterday)
+              .put("monthToDate", snapshot.revenueMonthToDate)
+              .put("previousMonthToDate", snapshot.revenuePreviousMonthToDate),
+          )
           .put("arpu", snapshot.arpu)
           .put("customersCreatedToday", snapshot.customersCreatedToday),
+      )
+      // Days are not kept: sparklines only draw the values.
+      .put(
+        "series",
+        JSONObject()
+          .put("mrr", JSONArray(snapshot.mrrSeries.map { JSONObject().put("value", it) })),
       )
       // Widgets and watches show a few items: a cache keeps no more.
       .put(

@@ -6,6 +6,7 @@ import com.saasmonitor.core.state.FeedKind
 import com.saasmonitor.core.state.Metric
 import com.saasmonitor.core.state.ScreenSnapshot
 import com.saasmonitor.core.state.Theme
+import kotlin.math.sin
 
 /** A believable screen for previews: widget pickers, Compose previews, tile previews. */
 object SampleSnapshots {
@@ -71,7 +72,19 @@ object SampleSnapshots {
           ),
         ),
       generatedAt = now,
+      mrrSeries = SERIES,
+      revenueYesterday = 98_000,
+      revenueMonthToDate = 1_486_000,
+      revenuePreviousMonthToDate = 1_372_000,
     )
+
+  /** Two months of a business that grows, with the dips of real life, ending at today's MRR. */
+  private val SERIES: List<Long> =
+    List(61) { day ->
+      val trend = 1_020_000 + day * 3_800L
+      val wobble = (sin(day / 3.0) * 9_000 + sin(day / 7.0) * 14_000).toLong()
+      if (day == 60) 1_248_000 else trend + wobble
+    }
 
   private fun entry(
     id: String,

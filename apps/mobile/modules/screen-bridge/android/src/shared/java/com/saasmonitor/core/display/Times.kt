@@ -58,3 +58,13 @@ private fun format(at: Long, skeleton: String, timeZone: String, language: Langu
 /** A day in the screen's time zone, month in full: "October 29", "29 octobre". */
 fun formatDate(at: Long, timeZone: String, language: Language): String =
   format(at, "MMMMd", timeZone, language)
+
+/** The month before [now]'s, in full: "September", "septembre" (`formatMonth` of the web app). */
+fun formatPreviousMonth(now: Long, timeZone: String, language: Language): String {
+  val month =
+    calendar(now, timeZone).apply {
+      set(Calendar.DAY_OF_MONTH, 1)
+      add(Calendar.MONTH, -1)
+    }
+  return format(month.timeInMillis, "MMMM", timeZone, language)
+}

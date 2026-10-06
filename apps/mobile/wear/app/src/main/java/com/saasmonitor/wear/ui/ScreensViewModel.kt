@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saasmonitor.core.SharedScreen
+import com.saasmonitor.core.display.Language
 import com.saasmonitor.core.moments.Moment
 import com.saasmonitor.core.moments.MomentCard
 import com.saasmonitor.core.moments.MomentTracker
@@ -32,6 +33,8 @@ data class WatchMoment(
   val id: String,
   val screenName: String,
   val accent: String,
+  /** The screen's language: its labels are uppercased with its rules. */
+  val language: Language,
   val card: MomentCard,
   val isMilestone: Boolean,
 )
@@ -68,13 +71,17 @@ class ScreensViewModel(application: Application) : AndroidViewModel(application)
     queue.map { it.firstOrNull() }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
   init {
+    // The screens the watch knows and their last numbers at once: the phone may be away and the
+    // network slow, and nothing here needs them.
     viewModelScope.launch {
-      screens.syncFromPhone()
-      // The last known numbers at once, before the first poll fetches them.
-      for (screen in screens.all()) states.update {
-        it + (screen.key to repository.cached(screen.key))
+      for (screen in screens.all()) {
+        val cached = repository.cached(screen.key)
+        // A fetch may have been quicker: its numbers are fresher than the cache's.
+        states.update { if (screen.key in it) it else it + (screen.key to cached) }
       }
     }
+    // Screens the phone sent while the app was closed, read from the watch's Data Layer.
+    viewModelScope.launch { screens.syncFromPhone() }
     viewModelScope.launch { playMoments() }
   }
 
@@ -117,6 +124,7 @@ class ScreensViewModel(application: Application) : AndroidViewModel(application)
         id = "${screen.key}:${it.id}",
         screenName = screen.name,
         accent = state.settings.accent,
+        language = state.settings.language,
         card = MomentCard.of(it, state),
         isMilestone = it is Moment.Milestone,
       )

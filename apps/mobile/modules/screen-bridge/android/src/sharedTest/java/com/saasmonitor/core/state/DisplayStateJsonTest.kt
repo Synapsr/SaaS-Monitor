@@ -18,8 +18,10 @@ class DisplayStateJsonTest {
       "currency": "eur", "status": "ready",
       "accounts": [{ "id": "acct_1", "name": "Acme", "status": "ready", "livemode": true }],
       "metrics": { "mrr": 4235000, "mrr30DaysAgo": 4410000, "arr": 50820000, "arpu": 4990,
-        "revenue": { "today": 51990, "yesterday": 0, "monthToDate": 0, "previousMonthToDate": 0 } },
-      "series": { "mrr": [{ "date": "2026-10-05", "value": 4235000 }] }, "views": [],
+        "revenue": { "today": 51990, "yesterday": 12000, "monthToDate": 98000,
+          "previousMonthToDate": 87000 } },
+      "series": { "mrr": [{ "date": "2026-10-04", "value": 4410000 },
+        { "date": "2026-10-05", "value": 4235000 }] }, "views": [],
       "feed": [
         { "id": "payment:1", "kind": "payment", "amount": 4900, "original": null,
           "occurredAt": "2026-10-05T11:57:00.000Z", "live": true, "customerKey": "k",
@@ -48,6 +50,10 @@ class DisplayStateJsonTest {
     assertEquals(51_990L, snapshot.revenueToday)
     assertEquals(1_791_201_600_000L, snapshot.generatedAt)
     assertEquals(4_990L, snapshot.arpu)
+    assertEquals(listOf(4_410_000L, 4_235_000L), snapshot.mrrSeries)
+    assertEquals(12_000L, snapshot.revenueYesterday)
+    assertEquals(98_000L, snapshot.revenueMonthToDate)
+    assertEquals(87_000L, snapshot.revenuePreviousMonthToDate)
     assertEquals(listOf(ScreenSnapshot.Account("acct_1", "Acme")), snapshot.accounts)
     assertEquals("test-1", snapshot.testEventId)
     assertEquals(ScreenEvent.entries.toSet() - ScreenEvent.CUSTOMER, snapshot.settings.momentEvents)
@@ -74,5 +80,23 @@ class DisplayStateJsonTest {
   fun `a snapshot survives its cache`() {
     val snapshot = DisplayStateJson.parse(state)
     assertEquals(snapshot, DisplayStateJson.parse(DisplayStateJson.encode(snapshot)))
+  }
+
+  @Test
+  fun `a state of an older server has no series`() {
+    val old = DisplayStateJson.parse(state.replace("\"series\"", "\"seriesOfLater\""))
+    assertEquals(emptyList<Long>(), old.mrrSeries)
+  }
+
+  @Test
+  fun `a long series is sampled, keeping its first and last days`() {
+    val year = (0L until 366L).map { it * 100 }
+    val sampled = ScreenSnapshot.sampleSeries(year)
+    assertEquals(ScreenSnapshot.MAX_SERIES_POINTS, sampled.size)
+    assertEquals(0L, sampled.first())
+    assertEquals(36_500L, sampled.last())
+    assertEquals(sampled.sorted(), sampled)
+    // A short series stays as it is.
+    assertEquals(listOf(1L, 2L, 3L), ScreenSnapshot.sampleSeries(listOf(1L, 2L, 3L)))
   }
 }

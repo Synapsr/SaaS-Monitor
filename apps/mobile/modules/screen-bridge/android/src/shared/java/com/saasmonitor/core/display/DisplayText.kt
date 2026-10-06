@@ -28,6 +28,8 @@ class DisplayText(
   val mrrName: String,
   val arrName: String,
   val inThirtyDays: String,
+  /** The growth's period on a badge: "30d". */
+  val thirtyDaysShort: String,
   val goal: String,
   val nextMilestone: String,
   private val toGo: String,
@@ -35,6 +37,12 @@ class DisplayText(
   val today: String,
   val tomorrow: String,
   val revenueToday: String,
+  /** Fresh numbers, as the wall's top bar says it (`topBar.live`). */
+  val live: String,
+  val thisMonth: String,
+  private val yesterdayAmount: String,
+  private val versus: String,
+  private val versusAmount: String,
   val feedTitle: String,
   val feedEmpty: String,
   val payment: String,
@@ -95,6 +103,16 @@ class DisplayText(
   /** "at this pace: Feb 2027". */
   fun atThisPace(time: String) = atThisPace.replace("{when}", time)
 
+  /** "$1,240 yesterday". */
+  fun yesterdayAmount(amount: String) = yesterdayAmount.replace("{amount}", amount)
+
+  /** "vs September", after a change. */
+  fun versus(month: String) = versus.replace("{month}", month)
+
+  /** "vs $0 in September", when there is no change to show. */
+  fun versusAmount(amount: String, month: String) =
+    versusAmount.replace("{amount}", amount).replace("{month}", month)
+
   fun minutesAgo(minutes: Int) = minutesAgo.replace("{minutes}", minutes.toString())
 
   fun hoursAgo(hours: Int) = hoursAgo.replace("{hours}", hours.toString())
@@ -135,6 +153,7 @@ internal object DisplayTexts {
       mrrName = "Monthly recurring revenue",
       arrName = "Annual recurring revenue",
       inThirtyDays = "in 30 days",
+      thirtyDaysShort = "30d",
       goal = "Goal",
       nextMilestone = "Next milestone",
       toGo = "{amount} to go",
@@ -142,6 +161,11 @@ internal object DisplayTexts {
       today = "today",
       tomorrow = "tomorrow",
       revenueToday = "Revenue today",
+      live = "Live",
+      thisMonth = "This month",
+      yesterdayAmount = "{amount} yesterday",
+      versus = "vs {month}",
+      versusAmount = "vs {amount} in {month}",
       feedTitle = "Latest activity",
       feedEmpty =
         "New customers, payments and subscriptions will appear here the moment they happen.",
@@ -201,6 +225,7 @@ internal object DisplayTexts {
       mrrName = "Revenu mensuel récurrent",
       arrName = "Revenu annuel récurrent",
       inThirtyDays = "en 30 jours",
+      thirtyDaysShort = "30j",
       goal = "Objectif",
       nextMilestone = "Prochain palier",
       toGo = "encore {amount}",
@@ -208,6 +233,11 @@ internal object DisplayTexts {
       today = "aujourd’hui",
       tomorrow = "demain",
       revenueToday = "Revenu du jour",
+      live = "En direct",
+      thisMonth = "Ce mois-ci",
+      yesterdayAmount = "{amount} hier",
+      versus = "vs {month}",
+      versusAmount = "vs {amount} en {month}",
       feedTitle = "Activité récente",
       feedEmpty =
         "Nouveaux clients, paiements et abonnements s’afficheront ici dès qu’ils arrivent.",
@@ -267,6 +297,7 @@ internal object DisplayTexts {
       mrrName = "Monatlich wiederkehrender Umsatz",
       arrName = "Jährlich wiederkehrender Umsatz",
       inThirtyDays = "in 30 Tagen",
+      thirtyDaysShort = "30\u00a0T.",
       goal = "Ziel",
       nextMilestone = "Nächster Meilenstein",
       toGo = "noch {amount}",
@@ -274,6 +305,11 @@ internal object DisplayTexts {
       today = "heute",
       tomorrow = "morgen",
       revenueToday = "Umsatz heute",
+      live = "Live",
+      thisMonth = "Diesen Monat",
+      yesterdayAmount = "{amount} gestern",
+      versus = "vs. {month}",
+      versusAmount = "vs. {amount} im {month}",
       feedTitle = "Letzte Aktivität",
       feedEmpty = "Neue Kunden, Zahlungen und Abos erscheinen hier, sobald sie passieren.",
       payment = "Zahlung",
@@ -332,6 +368,7 @@ internal object DisplayTexts {
       mrrName = "Ingresos recurrentes mensuales",
       arrName = "Ingresos recurrentes anuales",
       inThirtyDays = "en 30 días",
+      thirtyDaysShort = "30d",
       goal = "Objetivo",
       nextMilestone = "Próximo hito",
       toGo = "faltan {amount}",
@@ -339,6 +376,11 @@ internal object DisplayTexts {
       today = "hoy",
       tomorrow = "mañana",
       revenueToday = "Ingresos de hoy",
+      live = "En directo",
+      thisMonth = "Este mes",
+      yesterdayAmount = "{amount} ayer",
+      versus = "vs. {month}",
+      versusAmount = "vs. {amount} en {month}",
       feedTitle = "Actividad reciente",
       feedEmpty = "Los nuevos clientes, pagos y suscripciones aparecerán aquí en cuanto ocurran.",
       payment = "Pago",
@@ -397,6 +439,7 @@ internal object DisplayTexts {
       mrrName = "Ricavi ricorrenti mensili",
       arrName = "Ricavi ricorrenti annuali",
       inThirtyDays = "in 30 giorni",
+      thirtyDaysShort = "30gg",
       goal = "Obiettivo",
       nextMilestone = "Prossimo traguardo",
       toGo = "mancano {amount}",
@@ -404,6 +447,11 @@ internal object DisplayTexts {
       today = "oggi",
       tomorrow = "domani",
       revenueToday = "Ricavi di oggi",
+      live = "In diretta",
+      thisMonth = "Questo mese",
+      yesterdayAmount = "{amount} ieri",
+      versus = "vs {month}",
+      versusAmount = "vs {amount} a {month}",
       feedTitle = "Attività recenti",
       feedEmpty = "Nuovi clienti, pagamenti e abbonamenti appariranno qui non appena arrivano.",
       payment = "Pagamento",
@@ -462,6 +510,7 @@ internal object DisplayTexts {
       mrrName = "Receita recorrente mensal",
       arrName = "Receita recorrente anual",
       inThirtyDays = "em 30 dias",
+      thirtyDaysShort = "30d",
       goal = "Meta",
       nextMilestone = "Próximo marco",
       toGo = "faltam {amount}",
@@ -469,6 +518,11 @@ internal object DisplayTexts {
       today = "hoje",
       tomorrow = "amanhã",
       revenueToday = "Receita de hoje",
+      live = "Ao vivo",
+      thisMonth = "Este mês",
+      yesterdayAmount = "{amount} ontem",
+      versus = "vs. {month}",
+      versusAmount = "vs. {amount} em {month}",
       feedTitle = "Atividade recente",
       feedEmpty = "Novos clientes, pagamentos e assinaturas aparecem aqui assim que acontecem.",
       payment = "Pagamento",
@@ -527,6 +581,7 @@ internal object DisplayTexts {
       mrrName = "Maandelijks terugkerende omzet",
       arrName = "Jaarlijks terugkerende omzet",
       inThirtyDays = "in 30 dagen",
+      thirtyDaysShort = "30d",
       goal = "Doel",
       nextMilestone = "Volgende mijlpaal",
       toGo = "nog {amount}",
@@ -534,6 +589,11 @@ internal object DisplayTexts {
       today = "vandaag",
       tomorrow = "morgen",
       revenueToday = "Omzet vandaag",
+      live = "Live",
+      thisMonth = "Deze maand",
+      yesterdayAmount = "{amount} gisteren",
+      versus = "vs. {month}",
+      versusAmount = "vs. {amount} in {month}",
       feedTitle = "Recente activiteit",
       feedEmpty =
         "Nieuwe klanten, betalingen en abonnementen verschijnen hier zodra ze binnenkomen.",
