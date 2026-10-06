@@ -47,21 +47,13 @@ struct ScreenFigures: Sendable {
   var text: DisplayText { format.text }
 
   var change: Int { value - valueThirtyDaysAgo }
-  var isGrowing: Bool { change >= 0 }
   var trend: Trend { Trend(change) }
   /// Relative change in 30 days, or `nil` when there is nothing to compare with.
   var growth: Double? {
     valueThirtyDaysAgo > 0 ? Double(change) / Double(valueThirtyDaysAgo) : nil
   }
 
-  var valueText: String { format.amount(value) }
   var compactValueText: String { format.amount(value, compact: true) }
-  /// "+$1,020 · +8.9%", as the wall's growth badge.
-  var growthText: String {
-    [format.amount(change, signed: true), growth.map { format.percent($0, signed: true) }]
-      .compactMap(\.self)
-      .joined(separator: " · ")
-  }
   var growthPercentText: String? { growth.map { format.percent($0, signed: true) } }
   /// The growth chip's figure: the percentage, or the change itself when there is nothing to
   /// compare with.
@@ -74,7 +66,6 @@ struct ScreenFigures: Sendable {
     if change == 0 { return format.percent(0) }
     return growth.map { format.percent(abs($0)) } ?? format.amount(abs(change), compact: true)
   }
-  var revenueTodayText: String { format.amount(revenueToday) }
   /// "$980 yesterday".
   var revenueYesterdayText: String { text.yesterdayAmount(format.amount(revenueYesterday)) }
 
@@ -104,8 +95,6 @@ struct ScreenFigures: Sendable {
   var goalEtaText: String? {
     goal.daysLeft.map { text.atThisPace(format.eta(inDays: $0, from: generatedAt)) }
   }
-
-  var hasNumbers: Bool { status == .ready }
 
   /// What shows instead of the numbers, when the screen has none yet.
   var statusMessage: String? {
