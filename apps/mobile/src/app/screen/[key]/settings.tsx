@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, Linking, ScrollView, View } from "react-native";
 import { SCREEN_EVENTS } from "@/contract/display/events";
+import { SoundsAndVoices } from "@/audio/sounds-and-voices";
 import { recurringMetric } from "@/contract/display/metric";
 import { notificationsNote } from "@/notifications/describe";
 import { EVENT_LABELS, screenSendsEvent } from "@/notifications/events";
@@ -138,6 +139,8 @@ export default function ScreenSettings() {
           })}
         </SettingsGroup>
       )}
+
+      <SoundsAndVoices />
 
       <SettingsGroup title="Instance">
         <SettingsRow label={instanceLabel(screen.baseUrl)} detail={screen.accessProof ? "Protected by a password" : undefined} />

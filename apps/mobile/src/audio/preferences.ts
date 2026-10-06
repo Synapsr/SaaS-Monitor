@@ -12,7 +12,9 @@ export interface AudioPreferences {
   whenLocked: boolean;
 }
 
-const DEFAULTS: AudioPreferences = { play: false, whenLocked: false };
+/** Until the device's choices are read, and on a device that never made any. */
+export const DEFAULT_AUDIO_PREFERENCES: AudioPreferences = { play: false, whenLocked: false };
+const DEFAULTS = DEFAULT_AUDIO_PREFERENCES;
 
 /** Whether notifications play their moment's sound and voice. */
 export function notificationAudio({ play, whenLocked }: AudioPreferences): boolean {
