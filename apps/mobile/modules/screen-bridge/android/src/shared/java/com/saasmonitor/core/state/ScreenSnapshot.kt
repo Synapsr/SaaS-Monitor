@@ -28,6 +28,17 @@ data class ScreenSnapshot(
   val testEventId: String? = null,
   /** When the server made the state, in epoch milliseconds. */
   val generatedAt: Long,
+  /**
+   * MRR along the screen's chart (`series.mrr`), oldest first, the last one being today's: at most
+   * [MAX_SERIES_POINTS], sampled, for sparklines.
+   */
+  val mrrSeries: List<Long> = emptyList(),
+  /** Cash received yesterday, in the screen's time zone. */
+  val revenueYesterday: Long = 0,
+  /** Cash received since the first day of the month. */
+  val revenueMonthToDate: Long = 0,
+  /** The same number of days at the start of the previous month, for a fair comparison. */
+  val revenuePreviousMonthToDate: Long = 0,
 ) {
   data class Account(val id: String, val name: String)
 
@@ -58,6 +69,18 @@ data class ScreenSnapshot(
   companion object {
     /** A watch shows a few items, the large widget one: the rest is not kept. */
     const val MAX_FEED_ITEMS = 5
+    /** A sparkline on a wrist or a widget draws no more: a year of days would only weigh. */
+    const val MAX_SERIES_POINTS = 64
+
+    /**
+     * [values] thinned to [max] points spread evenly, keeping the first and the last (today's), so
+     * that the curve keeps its shape.
+     */
+    fun sampleSeries(values: List<Long>, max: Int = MAX_SERIES_POINTS): List<Long> {
+      if (values.size <= max || max < 2) return values
+      val step = (values.size - 1).toDouble() / (max - 1)
+      return List(max) { index -> values[Math.round(index * step).toInt()] }
+    }
   }
 }
 
