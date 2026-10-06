@@ -12,12 +12,13 @@ import type { DisplayState } from "@/contract/display/types";
 /**
  * Detects what just happened between two states and plays it as moments, one at a time, like the
  * wall display (`useMoments` on the web): those with a card for as long as the screen's settings
- * say, the others for a breath. `onStart` runs once as each moment starts.
+ * say, the others for a breath. `onStart` runs once as each moment starts; `skip` ends the moment
+ * on screen at once, when it is tapped.
  */
 export function useMoments(
   state: DisplayState | null,
   onStart: (moment: Moment) => void,
-): Moment | null {
+): { moment: Moment | null; skip: () => void } {
   const settings = state?.screen.settings;
   const durationOf = useCallback(
     (moment: Moment, waiting: number) =>
@@ -48,5 +49,6 @@ export function useMoments(
     if (moment) start(moment);
   }, [moment]);
 
-  return moment;
+  const skip = useCallback(() => queue.skip(), [queue]);
+  return { moment, skip };
 }

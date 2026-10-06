@@ -70,11 +70,11 @@ function Display({ state, online, layout, leading, trailing, onRefresh, footer, 
   const reducedMotion = useReducedMotion();
   const { settings } = state.screen;
   const [confetti, setConfetti] = useState<{ id: string; kind: Celebration } | null>(null);
-  const playAudio = useMomentAudio(audio, state);
+  const momentAudio = useMomentAudio(audio, state);
 
-  const playing = useMoments(state, (started) => {
+  const { moment: playing, skip } = useMoments(state, (started) => {
     const seen = momentPlays(started, settings, "moment");
-    playAudio(started, state);
+    momentAudio.play(started, state);
     // Haptics go with the wall's sound: they play when it would.
     if (seen || momentSound(started, settings) !== null) playMomentHaptic(started);
     const celebration = momentCelebration(started);
@@ -152,7 +152,15 @@ function Display({ state, online, layout, leading, trailing, onRefresh, footer, 
           </ScrollView>
         </>
       )}
-      <MomentOverlay moment={moment} state={state} />
+      <MomentOverlay
+        moment={moment}
+        state={state}
+        onDismiss={() => {
+          momentAudio.stop();
+          setConfetti(null);
+          skip();
+        }}
+      />
       {confetti && <Confetti key={confetti.id} kind={confetti.kind} colors={palette.confetti} />}
     </View>
   );

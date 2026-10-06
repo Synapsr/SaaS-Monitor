@@ -1,5 +1,5 @@
 import { createElement, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutUp, ZoomIn } from "react-native-reanimated";
 import { recurringMetric } from "@/contract/display/metric";
 import { nextMilestone } from "@/contract/display/milestones";
@@ -14,12 +14,25 @@ import { RadialGlow } from "@/display/radial-glow";
 import { DisplayText } from "@/display/text";
 import { CircleDollarSignIcon, LogoPulse, PartyPopperIcon } from "@/ui/icons";
 
+interface MomentOverlayProps {
+  moment: Moment | null;
+  state: DisplayState;
+  /** A tap anywhere ends the moment: several waiting go by quickly. */
+  onDismiss: () => void;
+}
+
 /** What is being celebrated right now: a card, or the whole screen for a milestone. */
-export function MomentOverlay({ moment, state }: { moment: Moment | null; state: DisplayState }) {
+export function MomentOverlay({ moment, state, onDismiss }: MomentOverlayProps) {
   const { locale } = useDisplay();
   if (!moment) return null;
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill} accessibilityLiveRegion="polite">
+    <Pressable
+      onPress={onDismiss}
+      style={StyleSheet.absoluteFill}
+      accessibilityLiveRegion="polite"
+      accessibilityRole="button"
+      accessibilityHint="Dismisses this moment"
+    >
       {moment.kind === "milestone" && state.screen.settings.celebrations ? (
         <MilestoneCelebration
           key={moment.id}
@@ -32,7 +45,7 @@ export function MomentOverlay({ moment, state }: { moment: Moment | null; state:
       ) : (
         <MomentCard key={moment.id} {...describeMoment(moment, state, locale)} />
       )}
-    </View>
+    </Pressable>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { AppState } from "react-native";
 import { expoClips, prefetch } from "@/audio/expo-clips";
 import { MomentAudioPlayer } from "@/audio/moment-player";
@@ -23,16 +23,20 @@ function useInFront(): boolean {
   return useSyncExternalStore(subscribeToAppState, () => AppState.currentState !== "background");
 }
 
+/** What a screen on display does with the sound and voice of its moments. */
+export interface MomentAudioControls {
+  play: (moment: Moment, state: DisplayState) => void;
+  /** Silences the moment playing, e.g. when it is dismissed. */
+  stop: () => void;
+}
+
 /**
  * Plays the moments of a screen on display as its wall display does, when this device asks for
  * it ("Play sounds and voices"). `access` says where the screen's sounds and voices come from;
  * `null` keeps it silent: the demo, a screen under a sheet. Everything stops when the screen
  * closes, and in the background.
  */
-export function useMomentAudio(
-  access: ScreenAccess | null,
-  state: DisplayState,
-): (moment: Moment, state: DisplayState) => void {
+export function useMomentAudio(access: ScreenAccess | null, state: DisplayState): MomentAudioControls {
   const preferences = useAudioPreferences();
   const inFront = useInFront();
   const enabled = preferences?.play === true && inFront && access !== null;
@@ -56,8 +60,10 @@ export function useMomentAudio(
     prefetch(SOUND_EVENTS.map((event) => `${baseUrl}${soundClipUrl(sound.pack, event)}`));
   }, [enabled, baseUrl, sound.enabled, sound.pack]);
 
-  return useCallback((moment: Moment, current: DisplayState) => {
+  const play = useCallback((moment: Moment, current: DisplayState) => {
     const audio = momentAudio(moment, current.screen.settings, current.personalizedVoice);
     if (audio) player.current?.play(audio);
   }, []);
+  const stop = useCallback(() => player.current?.stop(), []);
+  return useMemo(() => ({ play, stop }), [play, stop]);
 }
