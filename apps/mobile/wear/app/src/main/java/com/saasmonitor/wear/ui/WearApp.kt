@@ -2,6 +2,7 @@ package com.saasmonitor.wear.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
@@ -29,9 +30,11 @@ fun WearApp(ambient: Boolean = false, viewModel: ScreensViewModel = viewModel())
     if (ambient) viewModel.clearMoments()
     else lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.poll() }
   }
-  Box {
-    WearTheme { Screens(viewModel) }
-    MomentOverlay(moment, onDismiss = viewModel::dismissMoment)
+  CompositionLocalProvider(LocalAmbient provides ambient) {
+    Box {
+      WearTheme { Screens(viewModel) }
+      MomentOverlay(moment, onDismiss = viewModel::dismissMoment)
+    }
   }
 }
 
