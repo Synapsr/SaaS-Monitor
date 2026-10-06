@@ -1,5 +1,5 @@
 import { eq, isNotNull } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { payments, pushDevices } from "@/db/schema";
 import { MINUTE_SECONDS } from "@/lib/durations";
@@ -21,6 +21,9 @@ import type { ApnsNotification, ApnsSender } from "./apns";
 import type { ExpoMessage, ExpoSender, ExpoTicket } from "./expo";
 import type { NativeResult } from "./native";
 import { notifyPhones } from "./notify";
+
+// This instance synthesizes the phrases of screens that write their own.
+vi.mock("@/server/voice/gradium", () => ({ canSynthesize: () => true }));
 
 const IMPORTED_AT = new Date("2026-03-15T12:00:00Z");
 const T0 = IMPORTED_AT.getTime() / 1000;
@@ -163,18 +166,72 @@ describe("phone notifications", () => {
         to: PHONE,
         title: "New subscriber",
         body: "+$29 MRR · Pro · 🇺🇸 United States",
-        data: { type: "moment", screen: screenKey(token), event: "subscription" },
+        data: {
+          type: "moment",
+          screen: screenKey(token),
+          event: "subscription",
+          // What the screen's displays play: their sound, the voice being off by default.
+          audio: { sound: { pack: "register", event: "mrrUp", volume: 0.7 }, voice: null },
+        },
         sound: "default",
         priority: "high",
         channelId: "moments",
         interruptionLevel: "time-sensitive",
+        mutableContent: true,
       },
       expect.objectContaining({
         title: "Payment received",
         body: "$29 · Pro · 🇺🇸 United States",
-        data: { type: "moment", screen: screenKey(token), event: "payment" },
+        data: expect.objectContaining({
+          type: "moment",
+          screen: screenKey(token),
+          event: "payment",
+        }),
       }),
     ]);
+  });
+
+  it("carries the sound and voice the screen plays for each moment", async () => {
+    await followedScreen([PHONE], {
+      language: "fr",
+      sound: { pack: "chime", volume: 0.5 },
+      voice: { enabled: true, voiceId: "marius", personalized: true },
+    });
+    checkout("grace", 2_900, MINUTE_SECONDS);
+
+    await syncAt(2 * MINUTE_SECONDS);
+
+    const [subscription, payment] = expo.sent().map(({ data }) => data.audio);
+    expect(subscription).toEqual({
+      sound: { pack: "chime", event: "mrrUp", volume: 0.5 },
+      voice: {
+        id: "marius",
+        phrase: "subscription",
+        volume: 0.8,
+        delayMs: 800,
+        // The screen says its own words: the phone asks its server for them.
+        announcement: {
+          kind: "movement",
+          id: expect.any(String),
+          movementId: expect.any(String),
+        },
+      },
+    });
+    expect(payment).toMatchObject({
+      sound: { event: "payment" },
+      voice: { phrase: "payment", announcement: { kind: "payment" } },
+    });
+  });
+
+  it("plays nothing more than the default sound for moments the screen keeps quiet", async () => {
+    await followedScreen([PHONE], { sound: { enabled: false } });
+    pay("one", 4_900, MINUTE_SECONDS);
+
+    await syncAt(2 * MINUTE_SECONDS);
+
+    const [message] = expo.sent();
+    expect(message.data.audio).toBeUndefined();
+    expect(message.mutableContent).toBeUndefined();
   });
 
   it("never tells the same thing twice, however often syncs run", async () => {
@@ -318,8 +375,14 @@ describe("phone notifications", () => {
             sound: "default",
             "interruption-level": "time-sensitive",
             "thread-id": screenKey(token),
+            "mutable-content": 1,
           },
-          body: { type: "moment", screen: screenKey(token), event: "subscription" },
+          body: {
+            type: "moment",
+            screen: screenKey(token),
+            event: "subscription",
+            audio: { sound: { pack: "register", event: "mrrUp", volume: 0.7 }, voice: null },
+          },
           type: "moment",
           screen: screenKey(token),
           event: "subscription",

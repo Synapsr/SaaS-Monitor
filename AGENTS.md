@@ -39,6 +39,7 @@ Node 24 (`.nvmrc`), pnpm 10.
     their link (and the proof of their password, `X-Screen-Access`) and registers phones. After
     each sync, `src/server/push` notifies them of what the sync recorded: through Apple and
     Google with the instance's credentials (`APNS_*`, `FCM_SERVICE_ACCOUNT`), else through Expo.
+    Notifications carry what the moment plays (`audio`), for phones that play it as walls do.
   - `/api/webhooks/stripe/[accountId]`: Stripe webhooks, which only trigger a sync.
   - `/api/health`: liveness probe for containers (checks the database).
 - `src/components/ui` — shadcn/ui primitives (Radix). Feature components live next to them in

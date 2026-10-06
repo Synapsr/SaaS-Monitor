@@ -72,6 +72,50 @@ describe("APNs payloads", () => {
   });
 });
 
+describe("APNs payloads of moments that play a sound and a voice", () => {
+  const audio: NonNullable<Notice["audio"]> = {
+    sound: { pack: "register", event: "payment", volume: 0.7 },
+    voice: {
+      id: "harper",
+      phrase: "payment",
+      volume: 0.8,
+      delayMs: 900,
+      announcement: { kind: "payment", id: "payment:1", paymentId: "payment:1" },
+    },
+  };
+
+  it("let the app's extension play them, from the app's data", () => {
+    const payload = apnsPayload({ ...item, audio });
+    expect(payload.aps["mutable-content"]).toBe(1);
+    expect(payload.body).toEqual({
+      type: "moment",
+      screen: "0123456789abcdef",
+      event: "payment",
+      audio,
+    });
+    // Once is enough.
+    expect(payload).not.toHaveProperty("audio");
+  });
+
+  it("stay within Apple's 4 KB, however long their words and identifiers", () => {
+    const long = "x".repeat(200);
+    const payload = apnsPayload({
+      ...item,
+      title: `${"Acme Corporation International".repeat(3)} · 🎉 Nouveau palier`,
+      body: `${"Grace Hopper · 1 234 567,89 € · Enterprise annual · 🇺🇸 États-Unis · ".repeat(3)}`,
+      audio: {
+        ...audio,
+        voice: {
+          ...audio.voice!,
+          phrase: "cancellationScheduled",
+          announcement: { kind: "movement", id: long, movementId: "y".repeat(100) },
+        },
+      },
+    });
+    expect(Buffer.byteLength(JSON.stringify(payload))).toBeLessThan(2_048);
+  });
+});
+
 describe("APNs answers", () => {
   it("forget tokens Apple says are dead, and only those", () => {
     expect(apnsResult(200, "")).toEqual({ status: "sent" });

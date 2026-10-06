@@ -52,8 +52,11 @@ export function apnsJwt(
   );
 }
 
-export interface ApnsPayload extends PushData {
-  /** The app's data where expo-notifications reads it on iOS, as Expo's own pushes carry it. */
+export interface ApnsPayload extends Omit<PushData, "audio"> {
+  /**
+   * The app's data where expo-notifications reads it on iOS, as Expo's own pushes carry it: the
+   * moment's `audio` only there, where the app's notification service extension reads it too.
+   */
   body: PushData;
   aps: {
     alert: { title: string; body: string };
@@ -62,19 +65,23 @@ export interface ApnsPayload extends PushData {
     "interruption-level": "time-sensitive";
     /** Notifications of a screen are grouped together. */
     "thread-id": string;
+    /** The app's extension may play the moment's sound and voice instead of the default sound. */
+    "mutable-content"?: 1;
   };
 }
 
 export function apnsPayload(item: Notice): ApnsPayload {
+  const { audio, ...data } = pushData(item);
   return {
     aps: {
       alert: { title: item.title, body: item.body },
       sound: "default",
       "interruption-level": "time-sensitive",
       "thread-id": item.screen,
+      ...(audio && { "mutable-content": 1 }),
     },
     body: pushData(item),
-    ...pushData(item),
+    ...data,
   };
 }
 

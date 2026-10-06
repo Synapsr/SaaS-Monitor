@@ -1,5 +1,6 @@
 import "server-only";
 import { momentEvents, type ScreenEvent } from "@/lib/display/events";
+import type { MomentAudio } from "@/lib/display/moment-audio";
 import type { Moment } from "@/lib/display/moments";
 import { pushContent, type PushContent, type PushContext } from "./content";
 import type { Device } from "./devices";
@@ -23,6 +24,8 @@ export interface Notice extends PushContent {
   events: ScreenEvent[];
   /** A moment of the screen, or the test the founder sent from the dashboard. */
   type: PushData["type"];
+  /** What the moment plays on the screen's displays; absent when it plays nothing. */
+  audio?: MomentAudio;
 }
 
 /** What the app reads from a notification, to open the right screen and show the right icon. */
@@ -30,10 +33,15 @@ export interface PushData {
   type: "moment" | "test";
   screen: string;
   event: ScreenEvent;
+  /**
+   * The moment's sound and voice, for phones that play them as the notification's sound, like the
+   * screen's displays (the app's notification service extension, on iOS).
+   */
+  audio?: MomentAudio;
 }
 
-export function pushData({ type, screen, events }: Notice): PushData {
-  return { type, screen, event: events[0] };
+export function pushData({ type, screen, events, audio }: Notice): PushData {
+  return { type, screen, event: events[0], ...(audio && { audio }) };
 }
 
 /** What a screen tells its phones about what a sync just recorded. */
@@ -53,8 +61,13 @@ export interface Delivery {
   notice: Notice;
 }
 
-/** The notice of a moment on a screen. */
-export function notice(moment: Moment, screen: string, context: PushContext): Notice {
+/** The notice of a moment on a screen, and what the moment plays there. */
+export function notice(
+  moment: Moment,
+  screen: string,
+  context: PushContext,
+  audio: MomentAudio | null,
+): Notice {
   const content = pushContent(moment, context);
   return {
     ...content,
@@ -67,6 +80,7 @@ export function notice(moment: Moment, screen: string, context: PushContext): No
     screen,
     events: momentEvents(moment),
     type: "moment",
+    ...(audio && { audio }),
   };
 }
 
