@@ -71,13 +71,17 @@ class ScreensViewModel(application: Application) : AndroidViewModel(application)
     queue.map { it.firstOrNull() }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
   init {
+    // The screens the watch knows and their last numbers at once: the phone may be away and the
+    // network slow, and nothing here needs them.
     viewModelScope.launch {
-      screens.syncFromPhone()
-      // The last known numbers at once, before the first poll fetches them.
-      for (screen in screens.all()) states.update {
-        it + (screen.key to repository.cached(screen.key))
+      for (screen in screens.all()) {
+        val cached = repository.cached(screen.key)
+        // A fetch may have been quicker: its numbers are fresher than the cache's.
+        states.update { if (screen.key in it) it else it + (screen.key to cached) }
       }
     }
+    // Screens the phone sent while the app was closed, read from the watch's Data Layer.
+    viewModelScope.launch { screens.syncFromPhone() }
     viewModelScope.launch { playMoments() }
   }
 
