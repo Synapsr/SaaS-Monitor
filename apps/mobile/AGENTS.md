@@ -22,7 +22,10 @@ one (https://saas-monitor.com) or a self-hosted one; the same store apps serve t
 
 ## Layout
 
-- `src/app/` — routes (Expo Router). Other app code lives in `src/`.
+- `src/app/` — routes (Expo Router). Other app code lives in `src/`: `src/audio/` plays the
+  moments of the screen on display with its sound and voice, when the device asks for it
+  (Settings, "Play sounds and voices"), like notification sounds: the ring/silent switch silences
+  them, and they mix with other audio.
 - `src/contract/` — the web app's display contract (`DisplayState`…), copied from `../SaaS-Monitor`
   by `scripts/sync-contract.mjs`: never edited by hand.
 - `modules/screen-bridge/` — local Expo module handing the app's screens to widgets and watches.
@@ -60,6 +63,12 @@ Every client (app, widgets, watches) talks to the instance of the screen, `{base
   want. Idempotent: the app sends it on every launch, when screens or choices change, and when a
   token rolls.
 - `DELETE {baseUrl}/api/screens/{token}/devices` with `{ installationId }` → `204`.
+- What moments play, as the wall display does (`momentAudio`, in `src/contract/display/`):
+  `GET {baseUrl}/sounds/{pack}/{event}.wav` (rendered from the wall's sounds),
+  `GET {baseUrl}/voices/{voice}/{phrase}.mp3` (recorded phrases), and, for a screen that says its
+  own words, `POST {baseUrl}/api/screens/{token}/announcement` with
+  `{ "moment": announcement, "format": "wav" }` (and `X-Screen-Access` if needed) → `200` the
+  audio, or an error (`404`, `409`, `429`, `502`…) after which the recorded phrase plays.
 
 Notifications come from APNs or FCM directly, or through the Expo push service (which needs no
 credentials from the instance), handled alike: `title` and `body` in the screen's language,

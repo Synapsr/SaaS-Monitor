@@ -1,5 +1,5 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { useDisplay } from "@/display/context";
 import { ScreenDisplay } from "@/display/screen-display";
@@ -23,16 +23,22 @@ export default function ScreenRoute() {
   const { ready } = useScreens();
   const screen = useScreen(key);
   const { state, connection, refresh } = usePolledState(screen ?? null);
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     if (key && state) rememberState(key, state);
   }, [key, state]);
 
-  // Its notifications show as moments here: no banner on top of them.
+  // Its notifications show as moments here: no banner on top of them. Its sounds and voices only
+  // play while it is in front, not under its settings.
   useFocusEffect(
     useCallback(() => {
       setFocusedScreen(key ?? null);
-      return () => setFocusedScreen(null);
+      setFocused(true);
+      return () => {
+        setFocusedScreen(null);
+        setFocused(false);
+      };
     }, [key]),
   );
 
@@ -105,6 +111,7 @@ export default function ScreenRoute() {
             trailing={trailing}
             onRefresh={refresh}
             footer={layout === "phone" && <TvHint />}
+            audio={focused ? screen : null}
           />
         );
       }}

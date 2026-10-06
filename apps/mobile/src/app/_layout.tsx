@@ -4,6 +4,7 @@ import { Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { audioPreferencesStore } from "@/audio/preferences";
 import { handleForegroundNotifications } from "@/notifications/handler";
 import { useNotifications } from "@/notifications/use-notifications";
 import { shareScreens } from "@/screens/bridge";
@@ -19,6 +20,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     void screensStore.load();
+    // Read before any screen opens, to play its moments from the first one.
+    void audioPreferencesStore.load();
   }, []);
 
   useEffect(() => {

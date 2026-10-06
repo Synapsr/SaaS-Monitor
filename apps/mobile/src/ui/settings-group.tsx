@@ -77,19 +77,22 @@ export function SwitchRow({
   disabled?: boolean;
 }) {
   return (
-    <SettingsRow
-      label={label}
-      detail={detail}
-      accessory={
-        <Switch
-          accessibilityLabel={label}
-          value={value}
-          onValueChange={onValueChange}
-          disabled={disabled}
-          trackColor={{ true: colors.accent, false: colors.fill }}
-          ios_backgroundColor={colors.fill}
-        />
-      }
-    />
+    // Greyed out while it can't be changed, like the system's settings.
+    <View style={{ opacity: disabled ? 0.4 : 1 }}>
+      <SettingsRow
+        label={label}
+        detail={detail}
+        accessory={
+          <Switch
+            accessibilityLabel={label}
+            value={value}
+            onValueChange={onValueChange}
+            disabled={disabled}
+            trackColor={{ true: colors.accent, false: colors.fill }}
+            ios_backgroundColor={colors.fill}
+          />
+        }
+      />
+    </View>
   );
 }

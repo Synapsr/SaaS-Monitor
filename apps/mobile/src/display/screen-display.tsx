@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMomentAudio } from "@/audio/use-moment-audio";
 import { momentPlays } from "@/contract/display/events";
 import { recurringMetric } from "@/contract/display/metric";
 import { goalProgress } from "@/contract/display/milestones";
@@ -31,6 +32,7 @@ import { useMoments } from "@/display/use-moments";
 import { useNow } from "@/display/use-now";
 import { useRotation } from "@/display/use-rotation";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
+import type { ScreenAccess } from "@/screens/api";
 
 export interface ScreenDisplayProps {
   state: DisplayState;
@@ -45,6 +47,11 @@ export interface ScreenDisplayProps {
   onRefresh?: () => Promise<void>;
   /** Under everything, in the portrait layout. */
   footer?: ReactNode;
+  /**
+   * Where the screen's sounds and voices come from, while it is on display: its moments play them
+   * if this device asks for it. Without, the screen stays silent (the demo).
+   */
+  audio?: ScreenAccess | null;
 }
 
 /** A screen, rendered like its wall display: its numbers and the moments of what just happened. */
@@ -57,23 +64,25 @@ export function ScreenDisplay(props: ScreenDisplayProps) {
   );
 }
 
-function Display({ state, online, layout, leading, trailing, onRefresh, footer }: ScreenDisplayProps) {
+function Display({ state, online, layout, leading, trailing, onRefresh, footer, audio = null }: ScreenDisplayProps) {
   const { palette, scale } = useDisplay();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const { settings } = state.screen;
   const [confetti, setConfetti] = useState<{ id: string; kind: Celebration } | null>(null);
+  const playAudio = useMomentAudio(audio, state);
 
   const playing = useMoments(state, (started) => {
     const seen = momentPlays(started, settings, "moment");
-    // Haptics stand in for the wall's sound: they play when it would.
+    playAudio(started, state);
+    // Haptics go with the wall's sound: they play when it would.
     if (seen || momentSound(started, settings) !== null) playMomentHaptic(started);
     const celebration = momentCelebration(started);
     if (celebration && settings.celebrations && seen && !reducedMotion) {
       setConfetti({ id: started.id, kind: celebration });
     }
   });
-  // Events kept off screen only play their haptic.
+  // Events kept off screen only play their sound, voice and haptic.
   const moment = playing && momentPlays(playing, settings, "moment") ? playing : null;
 
   // A moment brings the slide of its account on screen: the numbers behind it are the ones it moves.

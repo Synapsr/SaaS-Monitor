@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 import { Linking, ScrollView } from "react-native";
+import { audioPreferencesStore, useAudioPreferences } from "@/audio/preferences";
 import { CONTRACT_SOURCE } from "@/contract/source";
 import { notificationsNote } from "@/notifications/describe";
 import { pauseStore, useNotificationsPaused } from "@/notifications/preferences";
@@ -28,6 +29,7 @@ export default function Settings() {
   const paused = useNotificationsPaused() === true;
   const { screens } = useScreens();
   const muted = screens.filter((screen) => !screen.notify).length;
+  const audio = useAudioPreferences();
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, gap: 28 }}>
@@ -63,6 +65,17 @@ export default function Settings() {
           <SettingsRow label="Open Settings" tone="accentInk" onPress={() => void Linking.openSettings()} />
         )}
       </SettingsGroup>
+
+      {audio && (
+        <SettingsGroup title="Sounds and voices" footer="The ring/silent switch keeps them quiet, like other sounds.">
+          <SwitchRow
+            label="Play sounds and voices"
+            detail="An open screen plays each moment as its wall display does, with the screen’s settings."
+            value={audio.play}
+            onValueChange={(play) => audioPreferencesStore.update({ play })}
+          />
+        </SettingsGroup>
+      )}
 
       <SettingsGroup title="SaaS Monitor" footer="Open source, MIT licensed. Any instance works with this app, hosted or self-hosted.">
         <LinkRow label="Hosted instance" detail="saas-monitor.com" url={HOSTED_URL} />
