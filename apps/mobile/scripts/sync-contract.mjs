@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Copies the web app's display contract into `src/contract/`: the `DisplayState` types and the pure
- * helpers a wall display renders with (formatting, words of every language, moments, accents,
- * chart layout, the demo's simulation), so that the app shows a screen exactly like the web.
+ * helpers a wall display renders with (formatting, words of every language, moments and what they
+ * play, accents, chart layout, the demo's simulation), so that the app shows a screen exactly like
+ * the web.
  *
  *   node scripts/sync-contract.mjs [path/to/SaaS-Monitor]     write src/contract/
  *   node scripts/sync-contract.mjs --check [path]             fail when src/contract/ is stale
@@ -24,6 +25,7 @@ const OUTPUT = join(APP_ROOT, "src", "contract");
 const ENTRIES = [
   "display/types.ts",
   "display/accents.ts",
+  "display/audio-timing.ts",
   "display/backoff.ts",
   "display/chart.ts",
   "display/customer.ts",
@@ -33,6 +35,7 @@ const ENTRIES = [
   "display/i18n/index.ts",
   "display/metric.ts",
   "display/milestones.ts",
+  "display/moment-audio.ts",
   "display/moment-queue.ts",
   "display/moments.ts",
   "display/rotation.ts",
