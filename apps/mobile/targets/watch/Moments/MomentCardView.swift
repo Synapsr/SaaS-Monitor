@@ -50,8 +50,9 @@ struct MomentCardView: View {
         Text(card.details.joined(separator: " · "))
           .font(.caption2)
           .foregroundStyle(style.ink2)
-          // A footnote takes the second line.
-          .lineLimit(card.footnote == nil ? 2 : 1)
+          // Read in full: a test celebration's sentence takes three lines; a footnote takes the last.
+          .lineLimit(card.footnote == nil ? 3 : 2)
+          .minimumScaleFactor(0.85)
           .multilineTextAlignment(.center)
       }
       if let footnote = card.footnote {
