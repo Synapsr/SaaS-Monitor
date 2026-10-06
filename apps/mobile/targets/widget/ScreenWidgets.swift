@@ -20,7 +20,7 @@ struct ScreenWidget: Widget {
       ScreenWidgetView(entry: entry)
     }
     .configurationDisplayName("Screen")
-    .description("Your recurring revenue, its growth and today’s revenue, at a glance.")
+    .description("Your recurring revenue live: its growth, its curve, your goal and today’s revenue.")
     .supportedFamilies([
       .systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline,
     ])

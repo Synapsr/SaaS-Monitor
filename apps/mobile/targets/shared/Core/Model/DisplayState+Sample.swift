@@ -50,8 +50,9 @@ extension DisplayState {
         activeCustomers: 214,
         arpu: 58_32,
         customersCreatedToday: 3,
-        revenue: .init(today: 1_245_00, yesterday: 980_00, monthToDate: 6_120_00)
+        revenue: .init(today: 1_245_00, yesterday: 980_00, monthToDate: 6_120_00, previousMonthToDate: 5_480_00)
       ),
+      series: Series(mrr: sampleCurve(to: 12_480_00, now: now)),
       feed: [
         item("1", .payment, 49_00, minutesAgo: 4, customer: "Jane Cooper", country: "US", plan: "Pro"),
         item("2", .new, 99_00, minutesAgo: 38, customer: "Lumen Labs", country: "FR", plan: "Team"),
@@ -60,6 +61,20 @@ extension DisplayState {
       ],
       testEvent: nil
     )
+  }
+}
+
+/// Ninety days of MRR rising to `last`, with the dips and plateaus of a real business.
+private func sampleCurve(to last: Int, now: Date) -> [DisplayState.SeriesPoint] {
+  let days = 90
+  let calendar = Calendar(identifier: .gregorian)
+  let format = Date.ISO8601FormatStyle().year().month().day()
+  return (0..<days).map { index in
+    let progress = Double(index) / Double(days - 1)
+    let wave = sin(progress * 11) * 0.025 + sin(progress * 29) * 0.012
+    let value = Double(last) * (0.78 + 0.22 * progress + wave * (1 - progress))
+    let date = calendar.date(byAdding: .day, value: index - days + 1, to: now) ?? now
+    return DisplayState.SeriesPoint(date: date.formatted(format), value: index == days - 1 ? last : Int(value))
   }
 }
 

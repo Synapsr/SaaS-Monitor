@@ -19,12 +19,17 @@ struct WatchScreenWidget: Widget {
       AccessoryScreenView(entry: entry)
         .containerBackground(for: .widget) {
           // Shown in the Smart Stack only: faces draw complications on their own background.
-          ScreenBackground(style: (entry.content.figures?.style ?? ScreenStyle(accent: "emerald", theme: .dark)).onDark)
+          TelemetryBackground(
+            style: (entry.content.figures?.style ?? ScreenStyle(accent: "emerald", theme: .dark)).onDark,
+            glowCenter: .topLeading,
+            glowRadius: 160,
+            showsGrid: false
+          )
         }
         .widgetURL(entry.url)
     }
     .configurationDisplayName("Screen")
-    .description("Your recurring revenue and its growth, at a glance.")
+    .description("Your recurring revenue, its growth and your goal, at a glance.")
     .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryCorner, .accessoryInline])
   }
 }

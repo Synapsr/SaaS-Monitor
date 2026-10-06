@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// A screen on the wrist: its recurring revenue, growth, today's revenue, goal and latest
-/// activity, fetched from its instance while the app is in front, and its moments as they happen.
+/// A screen on the wrist, a page at a time as the Digital Crown turns: now, the goal, today and
+/// this month, the latest activity. Fetched from its instance while the app is in front, with its
+/// moments as they happen.
 struct ScreenDetailView: View {
   @Environment(\.scenePhase) private var scenePhase
   let screen: SharedScreen
@@ -12,28 +13,27 @@ struct ScreenDetailView: View {
   private static let refreshInterval: Duration = .seconds(10)
 
   var body: some View {
-    ScrollView {
-      Group {
-        if let snapshot {
-          switch ScreenContent(snapshot) {
-          case .figures(let figures):
-            ScreenFiguresView(figures: figures, snapshot: snapshot)
-          case .message(let message, _):
-            Text(message)
-              .font(.footnote)
-              .foregroundStyle(.secondary)
-              .frame(maxWidth: .infinity, alignment: .leading)
-          }
-        } else {
-          ProgressView()
-        }
+    content
+      .navigationTitle(screen.name)
+      // In the screen's accent, as everything else.
+      .toolbarForegroundStyle(style(of: snapshot?.state.map(ScreenFigures.init)).glowInk, for: .navigationBar)
+      .task(id: scenePhase) { await refresh() }
+      .fullScreenCover(isPresented: showsMoment) { MomentStage(presenter: moments) }
+  }
+
+  @ViewBuilder
+  private var content: some View {
+    if let snapshot {
+      switch ScreenContent(snapshot) {
+      case .figures(let figures):
+        ScreenPages(figures: figures, snapshot: snapshot)
+      case .message(let message, let figures):
+        ScreenMessageView(message: message, symbol: Self.symbol(snapshot.problem, figures?.status), style: style(of: figures))
       }
-      .padding(.horizontal, 4)
+    } else {
+      ProgressView()
+        .containerBackground(for: .navigation) { TelemetryBackground(style: style(of: nil)) }
     }
-    .navigationTitle(screen.name)
-    .containerBackground(accentGradient, for: .navigation)
-    .task(id: scenePhase) { await refresh() }
-    .fullScreenCover(isPresented: showsMoment) { MomentStage(presenter: moments) }
   }
 
   private var showsMoment: Binding<Bool> {
@@ -52,72 +52,48 @@ struct ScreenDetailView: View {
     }
   }
 
-  /// The accent glowing from the top, as on the wall.
-  private var accentGradient: LinearGradient {
-    let style = snapshot?.state.map(ScreenFigures.init)?.style.onDark ?? ScreenStyle(accent: "emerald", theme: .dark)
-    return LinearGradient(colors: [style.glow.opacity(0.3), style.background], startPoint: .top, endPoint: .center)
+  private static func symbol(_ problem: ScreenSnapshot.Problem?, _ status: DisplayState.Status?) -> String {
+    switch (problem, status) {
+    case (.locked, _): "lock.fill"
+    case (.gone, _): "link"
+    case (_, .importing): "hourglass"
+    case (_, .empty): "powerplug"
+    case (_, .error): "exclamationmark.triangle"
+    default: "icloud.slash"
+    }
+  }
+
+  /// The watch is always dark: the screen's accent on the dark theme.
+  private func style(of figures: ScreenFigures?) -> ScreenStyle {
+    figures?.style.onDark ?? ScreenStyle(accent: "emerald", theme: .dark)
   }
 }
 
-private struct ScreenFiguresView: View {
-  let figures: ScreenFigures
-  let snapshot: ScreenSnapshot
-
-  private var style: ScreenStyle { figures.style.onDark }
+/// Why there are no numbers: a protected or gone screen, one still importing, or an instance out
+/// of reach.
+private struct ScreenMessageView: View {
+  let message: String
+  let symbol: String
+  let style: ScreenStyle
 
   var body: some View {
-    TimelineView(.everyMinute) { context in
-      VStack(alignment: .leading, spacing: 10) {
-        hero
-        GoalBar(figures: figures, style: style, showsRemaining: true)
-          .font(.caption2)
-        activity(now: context.date)
-        if snapshot.isStale(at: context.date), let fetchedAt = snapshot.fetchedAt {
-          Label(figures.format.fetchTime(fetchedAt, now: context.date), systemImage: snapshot.problem == .offline ? "icloud.slash" : "clock")
-            .font(.caption2)
-            .foregroundStyle(style.ink3)
-        }
-      }
-    }
-  }
-
-  private var hero: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      Text(figures.metric.label)
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(style.ink3)
-      Text(figures.valueText)
-        .font(.system(size: 32, weight: .semibold))
-        .monospacedDigit()
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
+    VStack(alignment: .leading, spacing: 10) {
+      Image(systemName: symbol)
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(style.glowInk)
+        .frame(width: 38, height: 38)
+        .background(style.glowWash, in: .circle)
+        .overlay { Circle().strokeBorder(style.glow.opacity(0.4), lineWidth: 1) }
+        .shadow(color: style.glow.opacity(0.5), radius: 8)
+      Text(message)
+        .font(.headline)
         .foregroundStyle(style.ink)
-      GrowthLabel(figures: figures, style: style)
-        .font(.footnote)
-      HStack(spacing: 4) {
-        Text(figures.text.revenueToday).foregroundStyle(style.ink3)
-        Text(figures.revenueTodayText).fontWeight(.semibold).monospacedDigit().foregroundStyle(style.ink)
-      }
-      .font(.footnote)
-      .lineLimit(1)
-      .padding(.top, 2)
+        .fixedSize(horizontal: false, vertical: true)
+      Spacer(minLength: 0)
     }
-  }
-
-  @ViewBuilder
-  private func activity(now: Date) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text(figures.text.latestActivity)
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(style.ink3)
-      if figures.feed.isEmpty {
-        Text(figures.text.noActivity).font(.footnote).foregroundStyle(style.ink2)
-      }
-      ForEach(figures.feed.prefix(5)) { item in
-        FeedRow(item: item, figures: figures, style: style, now: now, iconSize: 22)
-          .font(.footnote)
-      }
-    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .padding(.horizontal, 4)
+    .containerBackground(for: .navigation) { TelemetryBackground(style: style, showsGrid: false) }
   }
 }
 

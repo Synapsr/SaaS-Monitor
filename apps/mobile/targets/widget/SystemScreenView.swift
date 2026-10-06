@@ -12,7 +12,7 @@ struct SystemScreenView: View {
   var body: some View {
     content
       .containerBackground(for: .widget) {
-        ScreenBackground(style: screenStyle)
+        TelemetryBackground(style: screenStyle, glowCenter: .topLeading, glowRadius: family == .systemMedium ? 260 : 190)
       }
   }
 
@@ -26,7 +26,13 @@ struct SystemScreenView: View {
         SmallScreenView(entry: entry, figures: figures, style: style)
       }
     case .message(let message, let figures):
-      WidgetMessageView(name: figures?.name ?? entry.screen?.name, message: message, hasScreen: entry.screen != nil, style: style)
+      WidgetMessageView(
+        name: figures?.name ?? entry.screen?.name,
+        message: message,
+        hasScreen: entry.screen != nil,
+        locale: figures?.format.locale ?? .current,
+        style: style
+      )
     }
   }
 
@@ -45,17 +51,21 @@ struct WidgetMessageView: View {
   let name: String?
   let message: String
   let hasScreen: Bool
+  let locale: Locale
   let style: ScreenStyle
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Image(systemName: hasScreen ? "exclamationmark.circle" : "plus.circle")
-        .font(.title3)
+      Image(systemName: hasScreen ? "exclamationmark" : "plus")
+        .font(.system(size: 14, weight: .bold))
         .foregroundStyle(style.glowInk)
+        .frame(width: 30, height: 30)
+        .background(style.glowWash, in: .circle)
+        .overlay { Circle().strokeBorder(style.glow.opacity(0.4), lineWidth: 1) }
         .widgetAccentable()
       Spacer(minLength: 0)
       if let name {
-        Text(name).font(.caption.weight(.semibold)).foregroundStyle(style.ink2).lineLimit(1)
+        TelemetryLabel(name, locale: locale).foregroundStyle(style.ink3)
       }
       Text(message)
         .font(.subheadline.weight(.medium))

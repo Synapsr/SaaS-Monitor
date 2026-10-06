@@ -19,16 +19,27 @@ struct ScreenFormat: Sendable {
   /// Exact up to a million, compact beyond (`$1.2M`) so they stay glanceable; or compact anyway,
   /// for the smallest places (`$12.5K`).
   func amount(_ amount: Int, signed: Bool = false, compact: Bool = false, cents: Bool = false) -> String {
+    Money.majorUnits(amount, currency: currency)
+      .formatted(currencyStyle(amount, signed: signed, compact: compact, cents: cents))
+  }
+
+  /// `amount(_:signed:compact:cents:)`, the same characters, with its currency symbol marked
+  /// (`numberSymbol == .currency`), before or after the digits: a hero sets it smaller.
+  func attributedAmount(_ amount: Int, signed: Bool = false, compact: Bool = false, cents: Bool = false) -> AttributedString {
+    Money.majorUnits(amount, currency: currency)
+      .formatted(currencyStyle(amount, signed: signed, compact: compact, cents: cents).attributed)
+  }
+
+  private func currencyStyle(_ amount: Int, signed: Bool, compact: Bool, cents: Bool) -> Decimal.FormatStyle.Currency {
     let major = Money.majorUnits(amount, currency: currency)
-    let isCompact = compact || abs(major) >= 1_000_000
     var style = Decimal.FormatStyle.Currency(code: currency.uppercased(), locale: locale)
-    if isCompact {
+    if compact || abs(major) >= 1_000_000 {
       style = style.notation(.compactName).precision(.fractionLength(0...1))
     } else {
       style = style.precision(.fractionLength(cents ? Money.minorUnitDigits(currency) : 0))
     }
     if signed { style = style.sign(strategy: .always(showZero: false)) }
-    return major.formatted(style)
+    return style
   }
 
   /// A bare compact number, where even a currency symbol is too much: "12.5K".
@@ -40,8 +51,15 @@ struct ScreenFormat: Sendable {
 
   /// A payment shows its cents only when it has some: `$49` but `$49.99`.
   func payment(_ amount: Int) -> String {
-    let unit = Int(pow(10, Double(Money.minorUnitDigits(currency))))
-    return self.amount(amount, cents: amount % unit != 0)
+    self.amount(amount, cents: hasCents(amount))
+  }
+
+  func attributedPayment(_ amount: Int) -> AttributedString {
+    attributedAmount(amount, cents: hasCents(amount))
+  }
+
+  private func hasCents(_ amount: Int) -> Bool {
+    amount % Int(pow(10, Double(Money.minorUnitDigits(currency)))) != 0
   }
 
   /// "+9.9%", "−3%", "+120%": one decimal only when it carries information.
@@ -76,6 +94,22 @@ struct ScreenFormat: Sendable {
     return Calendar.current.isDate(date, inSameDayAs: now)
       ? date.formatted(style)
       : date.formatted(style.month(.abbreviated).day())
+  }
+
+  /// When a target is reached `days` after `now`, as the wall's goal says it (`formatEta`):
+  /// "today", "tomorrow", "Dec 14", then "Mar 2027".
+  func eta(inDays days: Double, from now: Date) -> String {
+    if days < 1 { return text.today }
+    if days < 2 { return text.tomorrow }
+    let date = now.addingTimeInterval(days * 86_400)
+    return date.formatted(days < 45 ? dateStyle.month(.abbreviated).day() : dateStyle.month(.abbreviated).year())
+  }
+
+  /// The month before the one of `date`, in full, as months compare on the wall: "September".
+  func previousMonthName(of date: Date) -> String {
+    let start = calendar.dateInterval(of: .month, for: date)?.start ?? date
+    let previous = calendar.date(byAdding: .month, value: -1, to: start) ?? start
+    return previous.formatted(dateStyle.month(.wide))
   }
 
   private var calendar: Calendar {

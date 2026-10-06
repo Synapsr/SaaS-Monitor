@@ -1,42 +1,37 @@
 import SwiftUI
 
 /// A feed item as the wall lists it (`live-feed.tsx`): its amount leads (or the customer, for a new
-/// one), then what it is, who, and when. On one line where room is short.
+/// one), then what it is, who, and when.
 struct FeedRow: View {
   let item: FeedItem
   let figures: ScreenFigures
   let style: ScreenStyle
   /// The time "5 min ago" is counted from.
   let now: Date
-  var singleLine = false
   var iconSize: CGFloat = 24
 
   var body: some View {
     HStack(spacing: 8) {
       KindIcon(item: item, style: style, size: iconSize)
-      if singleLine {
-        HStack(alignment: .firstTextBaseline, spacing: 5) {
-          headlineText
-          Text(details.joined(separator: " · "))
-            .foregroundStyle(style.ink2)
-            .layoutPriority(-1)
-          Spacer(minLength: 4)
-          timeText
-        }
-        .lineLimit(1)
-      } else {
-        VStack(alignment: .leading, spacing: 1) {
-          HStack(alignment: .firstTextBaseline, spacing: 4) {
-            headlineText
-            Spacer(minLength: 4)
-            timeText
+      VStack(alignment: .leading, spacing: 1) {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+          // The metric goes first where the time needs the room.
+          ViewThatFits(in: .horizontal) {
+            headlineText(showsMetric: true)
+            headlineText(showsMetric: false)
           }
-          Text(detailLine)
-            .font(.footnote)
-            .foregroundStyle(style.ink2)
+          Spacer(minLength: 4)
+          Text(format.feedTime(item.occurredAt, now: now))
+            .font(.caption2)
+            .monospacedDigit()
+            .foregroundStyle(style.ink3)
+            .fixedSize()
         }
-        .lineLimit(1)
+        Text(detailLine)
+          .font(.footnote)
+          .foregroundStyle(style.ink2)
       }
+      .lineLimit(1)
     }
     .accessibilityElement(children: .combine)
   }
@@ -62,24 +57,16 @@ struct FeedRow: View {
     return [item.flag, rest].compactMap(\.self).joined(separator: " ")
   }
 
-  private var headlineText: some View {
+  private func headlineText(showsMetric: Bool) -> some View {
     HStack(alignment: .firstTextBaseline, spacing: 3) {
       Text(headline)
         .fontWeight(.semibold)
         .monospacedDigit()
         .foregroundStyle(item.kind.isGoodNews ? style.ink : style.ink2)
       // A subscription change reads "+$99 MRR"; a payment is money received.
-      if amount != nil, item.kind != .payment {
-        Text(figures.metric.label).font(.caption2.weight(.medium)).foregroundStyle(style.ink3)
+      if showsMetric, amount != nil, item.kind != .payment {
+        TelemetryLabel(figures.metric.label, locale: format.locale, size: 9).foregroundStyle(style.ink3)
       }
     }
-    .layoutPriority(1)
-  }
-
-  private var timeText: some View {
-    Text(format.feedTime(item.occurredAt, now: now))
-      .font(.caption2)
-      .foregroundStyle(style.ink3)
-      .layoutPriority(1)
   }
 }

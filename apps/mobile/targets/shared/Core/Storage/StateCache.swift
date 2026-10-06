@@ -57,6 +57,7 @@ private extension DisplayState {
       status: status,
       accounts: accounts,
       metrics: metrics,
+      series: series,
       feed: Array(feed.prefix(length)),
       testEvent: testEvent
     )
