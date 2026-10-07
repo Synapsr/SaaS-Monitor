@@ -56,7 +56,7 @@ export default function PrivacyPage() {
             "We collect what the service needs to run: your account, your workspaces, and the Stripe data your screens show.",
             "Your Stripe key is stored encrypted. The restricted key we recommend only reads your data, apart from managing the webhook endpoint the service adds.",
             "Customer names and email addresses stay off your screens unless you turn them on.",
-            "No ads, no tracking cookies, and we never sell your data. Our analytics use no cookies and identify no one.",
+            "No ads, no tracking, no analytics, and we never sell your data.",
             "Disconnect a Stripe account, and everything imported from it is deleted right away.",
           ]}
         />
@@ -164,17 +164,7 @@ export default function PrivacyPage() {
 
               <Subheading>Visits to this site</Subheading>
               <p>
-                We count visits with Plausible Analytics, through our own domain. It uses no cookies
-                and stores nothing on your device. It records the page, with any identifier in its
-                address removed, the site you came from, how long you stayed, and your browser,
-                operating system, type of device and country. It also counts a few steps, such as
-                opening the demo, signing up or connecting Stripe, without anything that says who
-                took them. Screens are never counted.
-              </p>
-              <p>
-                Your IP address and user agent only serve to tell visitors of the same day apart,
-                through a hash whose salt is deleted every 24 hours; they are never stored. What
-                remains are statistics that identify no one.
+                We don’t measure them: the site runs no analytics, and loads no third-party script.
               </p>
             </>
           ),
@@ -208,12 +198,6 @@ export default function PrivacyPage() {
                     term: "Answer you",
                     description: "Your emails, and the account they are about.",
                     note: "Our legitimate interest in replying, or the contract when you are a user.",
-                  },
-                  {
-                    term: "Measure the site’s audience",
-                    description:
-                      "Anonymous visit statistics. Nothing is stored on or read from your device, so no consent is needed.",
-                    note: "Our legitimate interest in improving the site.",
                   },
                   {
                     term: "Comply with the law",
@@ -274,8 +258,7 @@ export default function PrivacyPage() {
               </p>
               <p>
                 All of these either make the service work or remember a choice you made, so they
-                need no consent. We use no advertising or tracking cookies, and our analytics set
-                none.
+                need no consent. We use no advertising, tracking or analytics cookies.
               </p>
             </>
           ),
@@ -298,11 +281,6 @@ export default function PrivacyPage() {
                     description:
                       "Synthesizes the phrases of screens set to say their own words, and those you preview in the screen editor. It receives the text of each phrase, which can include a customer’s name (on screens that show names), an amount, a plan, a country and a product name.",
                     note: "151 bis rue Saint-Honoré, 75001 Paris, France",
-                  },
-                  {
-                    term: "Plausible Insights OÜ",
-                    description: "Counts visits to this site, without cookies.",
-                    note: "Västriku tn 2, 50403 Tartu, Estonia",
                   },
                   {
                     term: "Google",
@@ -333,10 +311,9 @@ export default function PrivacyPage() {
           title: "Where it is processed",
           content: (
             <p>
-              Our server and database are in France, and Plausible keeps its data in the European
-              Union. Gradium sends each request to its nearest servers, which may be outside the
-              European Union, and Google may process emails outside it, under the European
-              Commission’s standard contractual clauses.
+              Our server and database are in France. Gradium sends each request to its nearest
+              servers, which may be outside the European Union, and Google may process emails
+              outside it, under the European Commission’s standard contractual clauses.
             </p>
           ),
         },
@@ -379,10 +356,6 @@ export default function PrivacyPage() {
                   term: "Your emails",
                   description:
                     "As long as needed to follow up, and at most three years after our last exchange.",
-                },
-                {
-                  term: "Visit statistics",
-                  description: "As long as the site runs: they identify no one.",
                 },
               ]}
             />
