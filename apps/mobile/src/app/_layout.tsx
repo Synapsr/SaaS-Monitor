@@ -11,6 +11,10 @@ import { shareScreens } from "@/screens/bridge";
 import { screensStore, useScreens } from "@/screens/store";
 import { colors, navigationTheme } from "@/ui/theme";
 
+// A link or a notification may open the app on the add sheet or a screen: the list stays below
+// them, for "back" and for the sheet to close onto once its screen is added.
+export const unstable_settings = { anchor: "index" };
+
 // The screens come from the keychain: the splash stays until they are read.
 void SplashScreen.preventAutoHideAsync();
 handleForegroundNotifications();
