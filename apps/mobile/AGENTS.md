@@ -20,6 +20,13 @@ There is no account in the app. A screen link, `https://<instance>/d/<token>`, i
 from its QR code (screen settings, "Open on your phone") or pasted. Any instance works, the hosted
 one (https://saas-monitor.com) or a self-hosted one; the same store apps serve them all.
 
+People without SaaS Monitor (and app reviewers) start with the **demo screen**,
+https://saas-monitor.com/d/demo (`src/screens/demo.ts`): the empty home, the add sheet and the list
+offer to add it, and it is then a screen like the others, fetched from its instance (live simulated
+data), on widgets and watches too. `/demo` is the same demo simulated on the device, offered when
+its instance can't be reached. Set `EXPO_PUBLIC_DEMO_URL` (e.g. `http://localhost:3000/d/demo`)
+when bundling to add another instance's demo instead.
+
 ## Layout
 
 - `src/app/` — routes (Expo Router). Other app code lives in `src/`: `src/audio/` plays the

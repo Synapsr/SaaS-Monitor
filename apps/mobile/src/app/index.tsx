@@ -1,6 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { DemoOffer } from "@/add/demo-offer";
 import { ScreenCard } from "@/home/screen-card";
 import { Welcome } from "@/home/welcome";
 import { useScreenSummaries } from "@/screens/use-screen-summaries";
@@ -87,15 +88,9 @@ export default function Home() {
               Turn your phone sideways on a screen for TV mode: it stays awake, like the wall.
             </AppText>
           </View>
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => router.push("/demo")}
-            style={{ alignSelf: "flex-start", paddingHorizontal: 6, paddingVertical: 8 }}
-          >
-            <AppText variant="callout" tone="accentInk">
-              Try the demo screen
-            </AppText>
-          </Pressable>
+          <View style={{ paddingHorizontal: 6 }}>
+            <DemoOffer variant="link" />
+          </View>
         </ScrollView>
       )}
     </>

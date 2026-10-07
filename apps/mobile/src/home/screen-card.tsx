@@ -4,6 +4,7 @@ import { formatAmount, formatPercent, percentChange } from "@/contract/display/f
 import { displayLocale } from "@/contract/display/i18n";
 import { recurringMetric } from "@/contract/display/metric";
 import type { DisplayState } from "@/contract/display/types";
+import { isDemoScreen } from "@/screens/demo";
 import { instanceLabel } from "@/screens/link";
 import { displayName, type SavedScreen } from "@/screens/types";
 import type { ScreenSummary } from "@/screens/use-screen-summaries";
@@ -64,7 +65,7 @@ export function ScreenCard({ screen, summary, editing, first, last, onPress, onM
           {displayName(screen)}
         </AppText>
         <AppText variant="caption" tone="ink3" numberOfLines={1}>
-          {instanceLabel(screen.baseUrl)}
+          {isDemoScreen(screen) ? `Demo · ${instanceLabel(screen.baseUrl)}` : instanceLabel(screen.baseUrl)}
         </AppText>
         {stacked && !editing && (
           <View style={{ alignItems: "flex-start", paddingTop: 6 }}>

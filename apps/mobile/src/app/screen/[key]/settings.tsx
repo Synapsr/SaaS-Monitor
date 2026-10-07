@@ -16,6 +16,7 @@ import {
   setScreenNotifications,
 } from "@/screens/actions";
 import { fetchScreenState } from "@/screens/api";
+import { isDemoScreen } from "@/screens/demo";
 import { instanceLabel, screenUrl } from "@/screens/link";
 import { useCachedState } from "@/screens/state-cache";
 import { screensStore, useScreen } from "@/screens/store";
@@ -49,6 +50,7 @@ export default function ScreenSettings() {
   if (!screen) return null;
   const blocked = status.kind === "denied" || status.kind === "unavailable";
   const metric = recurringMetric(state?.screen.settings.metric ?? "mrr").label;
+  const demo = isDemoScreen(screen);
 
   async function toggleNotifications(on: boolean) {
     if (!screen) return;
@@ -143,7 +145,10 @@ export default function ScreenSettings() {
       <SoundsAndVoices />
 
       <SettingsGroup title="Instance">
-        <SettingsRow label={instanceLabel(screen.baseUrl)} detail={screen.accessProof ? "Protected by a password" : undefined} />
+        <SettingsRow
+          label={instanceLabel(screen.baseUrl)}
+          detail={demo ? "Its demo screen: a sample company, simulated" : screen.accessProof ? "Protected by a password" : undefined}
+        />
         <SettingsRow
           label="Open in the browser"
           tone="accentInk"

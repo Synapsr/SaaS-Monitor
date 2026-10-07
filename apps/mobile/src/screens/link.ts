@@ -9,9 +9,6 @@ export interface ScreenLink {
   token: string;
 }
 
-/** The web's demo screen, `/d/demo`: simulated in the app, with no instance behind it. */
-export const DEMO_TOKEN = "demo";
-
 /** Screen tokens are base64url (`generatePublicToken` on the server), 32 characters today. */
 const TOKEN = /^[A-Za-z0-9_-]{4,256}$/;
 

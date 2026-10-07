@@ -3,11 +3,13 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
-import { addErrorMessage, NOT_A_SCREEN_LINK } from "@/add/messages";
+import { DemoOffer } from "@/add/demo-offer";
+import { addErrorMessage, demoErrorMessage, NOT_A_SCREEN_LINK } from "@/add/messages";
+import { openAddedScreen } from "@/add/open-added";
 import { Scanner } from "@/add/scanner";
-import { notificationsStore } from "@/notifications/status";
 import { addScreen, type AddResult } from "@/screens/actions";
-import { DEMO_TOKEN, instanceLabel, parseScreenLink, type ScreenLink } from "@/screens/link";
+import { isDemoScreen } from "@/screens/demo";
+import { instanceLabel, parseScreenLink, type ScreenLink } from "@/screens/link";
 import { Button } from "@/ui/button";
 import { Field } from "@/ui/field";
 import { ClipboardPasteIcon, LockIcon } from "@/ui/icons";
@@ -38,12 +40,8 @@ export default function AddScreen() {
 
   async function finish(result: AddResult, link: ScreenLink, withPassword: boolean) {
     if (result.kind === "added") {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.dismiss();
-      router.push({ pathname: "/screen/[key]", params: { key: result.key } });
-      // After a first screen, explain notifications before the system asks.
-      const notifications = await notificationsStore.refresh();
-      if (result.first && notifications.kind === "undetermined") router.push("/notifications");
+      await openAddedScreen(router, result);
       return;
     }
     if (result.kind === "locked") {
@@ -51,7 +49,9 @@ export default function AddScreen() {
       return;
     }
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    const error = addErrorMessage(result, instanceLabel(link.baseUrl));
+    const host = instanceLabel(link.baseUrl);
+    // An instance that doesn't serve the demo yet answers 404: "no longer works" would mislead.
+    const error = isDemoScreen(link) ? demoErrorMessage(host) : addErrorMessage(result, host);
     setStep(withPassword ? { kind: "password", link, error, pending: false } : { kind: "idle", error });
   }
 
@@ -63,11 +63,6 @@ export default function AddScreen() {
         rejected.current = input;
         setStep({ kind: "idle", error: NOT_A_SCREEN_LINK });
       }
-      return;
-    }
-    if (link.token === DEMO_TOKEN) {
-      router.dismiss();
-      router.push("/demo");
       return;
     }
     busy.current = true;
@@ -193,6 +188,7 @@ export default function AddScreen() {
             {error}
           </AppText>
         )}
+        {!checking && <DemoOffer variant="link" beforeOpen={() => router.dismiss()} />}
         <AppText variant="caption" tone="ink3" style={{ textAlign: "center" }}>
           A screen’s link is its key: the app keeps it in this device’s keychain, and only talks to
           the screen’s own instance.
