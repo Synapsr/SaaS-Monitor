@@ -1,4 +1,8 @@
-import { notificationRequestScreen, notificationScreen } from "@/notifications/moment-data";
+import {
+  isPushNotification,
+  notificationRequestScreen,
+  notificationScreen,
+} from "@/notifications/moment-data";
 
 describe("notificationScreen", () => {
   it("reads the screen of a moment", () => {
@@ -53,5 +57,19 @@ describe("notificationRequestScreen", () => {
 
   it("ignores other notifications", () => {
     expect(notificationRequestScreen({ content: { data: { type: "news" } }, trigger: null })).toBeNull();
+  });
+});
+
+describe("isPushNotification", () => {
+  it("tells notifications from a server", () => {
+    expect(isPushNotification({ trigger: { type: "push", payload: { aps: {} } } })).toBe(true);
+    expect(isPushNotification({ trigger: { type: "push", remoteMessage: { data: {} } } })).toBe(true);
+  });
+
+  it("from a test scheduled on the device", () => {
+    expect(isPushNotification({ trigger: { type: "timeInterval", seconds: 5, repeats: false } })).toBe(
+      false,
+    );
+    expect(isPushNotification({ trigger: null })).toBe(false);
   });
 });

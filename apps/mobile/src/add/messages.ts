@@ -16,3 +16,8 @@ export function addErrorMessage(result: Exclude<AddResult, { kind: "added" | "lo
 
 export const NOT_A_SCREEN_LINK =
   "This isn’t a screen link. It looks like https://saas-monitor.com/d/…, from a screen’s “Open on your phone”.";
+
+/** Why the demo screen didn't add: its instance is out of reach, or doesn't serve it (yet). */
+export function demoErrorMessage(host: string): string {
+  return `${host} can’t show its demo screen right now. Check your connection, then try again.`;
+}

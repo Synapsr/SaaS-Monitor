@@ -1,4 +1,5 @@
 import type { ExpoConfig } from "expo/config";
+import release from "./version.json";
 
 /** Identifiers of the store apps. Self-hosted instances use the same apps: nothing to change. */
 const BUNDLE_ID = "com.saasmonitor.app";
@@ -9,13 +10,16 @@ const config: ExpoConfig = {
   name: "SaaS Monitor",
   slug: "saas-monitor",
   scheme: "saasmonitor",
-  version: "1.0.0",
+  // Store versions live in `version.json`, with the build numbers to bump for each upload.
+  version: release.version,
   orientation: "default",
   icon: "./assets/icon.png",
   // The app is dark like the wall display; a screen may still show its light theme.
   userInterfaceStyle: "dark",
   ios: {
     bundleIdentifier: BUNDLE_ID,
+    // The app's targets (widgets, watch, notification extension) get it too: `with-build-number`.
+    buildNumber: String(release.ios.buildNumber),
     supportsTablet: true,
     // Signing of the app and its targets; set APPLE_TEAM_ID to build for a device.
     appleTeamId: process.env.APPLE_TEAM_ID,
@@ -36,6 +40,8 @@ const config: ExpoConfig = {
   },
   android: {
     package: BUNDLE_ID,
+    // The Wear OS app's is 10000 more (`wear/app/build.gradle.kts`): both share the Play listing.
+    versionCode: release.android.versionCode,
     adaptiveIcon: {
       backgroundColor: "#0A0B0D",
       foregroundImage: "./assets/android-icon-foreground.png",
@@ -43,6 +49,13 @@ const config: ExpoConfig = {
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,
+    // Declared by Expo's template (drawing over other apps) and by expo-secure-store (biometrics):
+    // the app neither draws over other apps nor locks its keychain items behind biometrics.
+    blockedPermissions: [
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.USE_BIOMETRIC",
+      "android.permission.USE_FINGERPRINT",
+    ],
   },
   plugins: [
     "expo-router",
@@ -76,6 +89,7 @@ const config: ExpoConfig = {
     ],
     // Before `@bacons/apple-targets`, whose targets it edits (see the file).
     "./targets/with-shared-code",
+    "./targets/with-build-number",
     "@bacons/apple-targets",
     "./plugins/withAndroidWidgets",
     // iOS 27 stops apps that don't adopt the scene life cycle at launch.

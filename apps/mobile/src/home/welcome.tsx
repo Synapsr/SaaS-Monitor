@@ -1,31 +1,35 @@
 import { useRouter } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DemoOffer } from "@/add/demo-offer";
 import { RadialGlow } from "@/display/radial-glow";
 import { Button } from "@/ui/button";
 import { ClipboardPasteIcon, LogoPulse, ScanQrCodeIcon } from "@/ui/icons";
 import { AppText } from "@/ui/text";
 import { colors } from "@/ui/theme";
 
-/** The first launch: what the app does, and how to add a first screen. */
+/**
+ * The first launch: what the app does, how to add a first screen, and, for people without
+ * SaaS Monitor yet, the demo screen.
+ */
 export function Welcome() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24, paddingBottom: insets.bottom + 24, gap: 32 }}
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24, paddingBottom: insets.bottom + 24, gap: 24 }}
     >
-      <View style={{ alignItems: "center", gap: 18 }}>
-        <View style={{ width: 120, height: 120, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ position: "absolute", width: 220, height: 220 }}>
+      <View style={{ alignItems: "center", gap: 14 }}>
+        <View style={{ width: 96, height: 96, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ position: "absolute", width: 200, height: 200 }}>
             <RadialGlow color={colors.accent} opacity={0.22} />
           </View>
           <View
             style={{
-              width: 84,
-              height: 84,
-              borderRadius: 22,
+              width: 72,
+              height: 72,
+              borderRadius: 19,
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "#0a0a0a",
@@ -33,7 +37,7 @@ export function Welcome() {
               borderColor: colors.hairline,
             }}
           >
-            <LogoPulse height={30} color={colors.accent} />
+            <LogoPulse height={26} color={colors.accent} />
           </View>
         </View>
         <AppText variant="largeTitle" style={{ textAlign: "center" }} accessibilityRole="header">
@@ -57,7 +61,9 @@ export function Welcome() {
           code.
         </AppText>
       </View>
-      <Button label="Try the demo screen" variant="plain" onPress={() => router.push("/demo")} />
+      <View style={{ width: "100%", maxWidth: 420, alignSelf: "center" }}>
+        <DemoOffer />
+      </View>
     </ScrollView>
   );
 }
