@@ -8,6 +8,7 @@ import { notificationsNote } from "@/notifications/describe";
 import { EVENT_LABELS, screenSendsEvent } from "@/notifications/events";
 import { useNotificationsPaused } from "@/notifications/preferences";
 import { notificationsStore, useNotificationsStatus } from "@/notifications/status";
+import { TestNotificationRow } from "@/notifications/test-notification-row";
 import {
   rememberState,
   removeScreen,
@@ -51,6 +52,8 @@ export default function ScreenSettings() {
   const blocked = status.kind === "denied" || status.kind === "unavailable";
   const metric = recurringMetric(state?.screen.settings.metric ?? "mrr").label;
   const demo = isDemoScreen(screen);
+  // A device that may show notifications can show its own test, push tokens or not.
+  const testable = screen.notify && !paused && status.kind !== "denied" && status.kind !== "loading";
 
   async function toggleNotifications(on: boolean) {
     if (!screen) return;
@@ -106,7 +109,8 @@ export default function ScreenSettings() {
         title="Notifications"
         footer={
           notificationsNote(status) ??
-          (paused ? "Paused for every screen in the app’s settings: these choices come back when you resume." : null)
+          (paused ? "Paused for every screen in the app’s settings: these choices come back when you resume." : null) ??
+          (demo ? "The demo’s simulated moments don’t notify phones: its test shows what a moment looks like." : null)
         }
       >
         <SwitchRow
@@ -117,6 +121,12 @@ export default function ScreenSettings() {
         />
         {status.kind === "denied" && (
           <SettingsRow label="Open Settings" tone="accentInk" onPress={() => void Linking.openSettings()} />
+        )}
+        {testable && (
+          <TestNotificationRow
+            screen={screen.key}
+            language={state?.screen.settings.language ?? screen.appearance?.language ?? "en"}
+          />
         )}
       </SettingsGroup>
 

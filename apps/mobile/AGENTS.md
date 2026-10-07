@@ -23,9 +23,12 @@ one (https://saas-monitor.com) or a self-hosted one; the same store apps serve t
 People without SaaS Monitor (and app reviewers) start with the **demo screen**,
 https://saas-monitor.com/d/demo (`src/screens/demo.ts`): the empty home, the add sheet and the list
 offer to add it, and it is then a screen like the others, fetched from its instance (live simulated
-data), on widgets and watches too. `/demo` is the same demo simulated on the device, offered when
-its instance can't be reached. Set `EXPO_PUBLIC_DEMO_URL` (e.g. `http://localhost:3000/d/demo`)
-when bundling to add another instance's demo instead.
+data), on widgets and watches too. Its instance accepts its device registrations but sends it no
+notifications: each screen's settings has "Send a test notification", scheduled on the device
+(`src/notifications/test-notification.ts`), which arrives as the server's test does. `/demo` is the
+same demo simulated on the device, offered when its instance can't be reached. Set
+`EXPO_PUBLIC_DEMO_URL` (e.g. `http://localhost:3000/d/demo`) when bundling to add another
+instance's demo instead.
 
 ## Layout
 
@@ -82,8 +85,9 @@ Every client (app, widgets, watches) talks to the instance of the screen, `{base
 Notifications come from APNs or FCM directly, or through the Expo push service (which needs no
 credentials from the instance), handled alike: `title` and `body` in the screen's language,
 `data: { "type": "moment" | "test", "screen": key, "event", "audio"? }` (`test`: "Send a test
-celebration" on the dashboard), where `key` is the first 16 hex characters of the SHA-256 of the
-screen's token, `event` one of the web app's screen events (`payment`, `connectPayment`,
+celebration" on the dashboard; the app's "Send a test notification" schedules the same on the
+device), where `key` is the first 16 hex characters of the SHA-256 of the screen's token, `event`
+one of the web app's screen events (`payment`, `connectPayment`,
 `subscription`…) and `audio` what the moment plays on the screen's displays (`MomentAudio`; a JSON
 string on FCM), when it plays something. iOS notifications are `time-sensitive`, and
 `mutable-content` with `audio` (in `body` on APNs, like Expo's); Android ones use the channel

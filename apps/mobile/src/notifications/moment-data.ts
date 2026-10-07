@@ -39,3 +39,12 @@ export function notificationRequestScreen(request: NotificationRequestLike): str
   }
   return null;
 }
+
+/**
+ * Whether a notification came from a server (APNs, FCM or Expo), rather than from this device: a
+ * test scheduled in a screen's settings.
+ */
+export function isPushNotification(request: Pick<NotificationRequestLike, "trigger">): boolean {
+  const trigger = request.trigger;
+  return typeof trigger === "object" && trigger !== null && (trigger as { type?: unknown }).type === "push";
+}
