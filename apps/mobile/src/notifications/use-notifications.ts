@@ -53,9 +53,12 @@ export function useNotifications(): void {
       if (response?.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
       Notifications.clearLastNotificationResponse();
       const key = notificationRequestScreen(response.notification.request);
-      if (key !== null && screensStore.find(key)) {
-        router.navigate({ pathname: "/screen/[key]", params: { key } });
-      }
+      if (key === null || !screensStore.find(key)) return;
+      const screen = { pathname: "/screen/[key]", params: { key } } as const;
+      // Over a sheet (the screen's settings, where tests are sent) or another screen, the screen
+      // takes their place rather than open on top of them.
+      if (router.canDismiss()) router.dismissTo(screen);
+      else router.navigate(screen);
     };
     // The app may have been opened by a notification.
     open(Notifications.getLastNotificationResponse());
