@@ -21,6 +21,17 @@ android {
   }
 
   signingConfigs {
+    // Store builds sign with the phone app's upload key (plugins/withReleaseSigning.ts): the
+    // Wearable Data Layer only pairs apps with the same id and signature.
+    val uploadKey = findProperty("SAAS_MONITOR_UPLOAD_STORE_FILE") as String?
+    if (uploadKey != null) {
+      create("release") {
+        storeFile = file(uploadKey)
+        storePassword = findProperty("SAAS_MONITOR_UPLOAD_STORE_PASSWORD") as String?
+        keyAlias = findProperty("SAAS_MONITOR_UPLOAD_KEY_ALIAS") as String?
+        keyPassword = findProperty("SAAS_MONITOR_UPLOAD_KEY_PASSWORD") as String?
+      }
+    }
     // Debug builds sign with the phone app's debug key (Expo's template), so that they pair.
     getByName("debug") {
       val phoneDebugKey = file("../../android/app/debug.keystore")
@@ -35,6 +46,7 @@ android {
 
   buildTypes {
     release {
+      signingConfig = signingConfigs.findByName("release")
       isMinifyEnabled = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
     }

@@ -19,6 +19,15 @@ const config: ExpoConfig = {
     supportsTablet: true,
     // Signing of the app and its targets; set APPLE_TEAM_ID to build for a device.
     appleTeamId: process.env.APPLE_TEAM_ID,
+    config: {
+      // HTTPS only, through the system: exempt from export compliance documentation.
+      usesNonExemptEncryption: false,
+    },
+    infoPlist: {
+      // Self-hosted instances on a local network (http://192.168.1.20:3000).
+      NSLocalNetworkUsageDescription:
+        "SaaS Monitor connects to the screens of SaaS Monitor instances on your local network.",
+    },
     entitlements: {
       "com.apple.security.application-groups": [APP_GROUP],
       // Moments are sent `time-sensitive`: they break through Focus, and Siri may announce them.
@@ -71,6 +80,8 @@ const config: ExpoConfig = {
     "./plugins/withAndroidWidgets",
     // iOS 27 stops apps that don't adopt the scene life cycle at launch.
     "./plugins/withSceneLifecycle",
+    // Store builds sign with the upload key, kept out of the repository.
+    "./plugins/withReleaseSigning",
   ],
   experiments: { typedRoutes: true },
 };
