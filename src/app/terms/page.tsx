@@ -24,7 +24,7 @@ export default function TermsPage() {
   return (
     <LegalDocument
       page="terms"
-      updated="2026-09-30"
+      updated="2026-10-07"
       lead={
         <>
           The rules for using {siteConfig.name} as we host it at <HostedDomain />. The code is open
@@ -134,7 +134,8 @@ export default function TermsPage() {
             <>
               <p>
                 <Emphasis>
-                  Anyone with a screen’s link can see the screen, without signing in.
+                  Anyone with a screen’s link can see the screen, without signing in, and follow it
+                  in the {siteConfig.name} app, with its notifications.
                 </Emphasis>{" "}
                 You decide what each screen shows, where it is displayed and who gets its link.
                 Customer names and email addresses are hidden unless you turn them on, a screen can
@@ -187,7 +188,8 @@ export default function TermsPage() {
                 <li>
                   <Emphasis>Instructions.</Emphasis> We process it only to provide the service as
                   your settings direct: importing it, computing your metrics, showing it on your
-                  dashboard and screens. Your settings are your documented instructions.
+                  dashboard and screens, and in the notifications of the devices that follow them.
+                  Your settings are your documented instructions.
                 </li>
                 <li>
                   <Emphasis>Duration.</Emphasis> As long as the Stripe account stays connected.
