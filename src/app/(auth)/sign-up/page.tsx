@@ -8,8 +8,8 @@ import { TermsConsent } from "@/components/auth/terms-consent";
 import { Button } from "@/components/ui/button";
 import { env } from "@/env";
 import { invitationIdFromPath } from "@/lib/invitations";
-import { isHostedService } from "@/lib/legal";
 import { safeRedirectPath, withRedirect } from "@/lib/safe-redirect";
+import { isHostedInstance } from "@/lib/site";
 import { getInvitationPreview } from "@/server/members";
 import { getSession } from "@/server/session";
 import { enabledSocialProviders } from "@/server/social-providers";
@@ -70,7 +70,8 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
           invitedEmail={invitation?.email ?? null}
           signupsDisabled={signupsDisabled}
         />
-        {isHostedService(APP_URL) && <TermsConsent />}
+        {/* Only the hosted service has terms to accept: a self-hosted copy isn't bound by them. */}
+        {isHostedInstance(APP_URL) && <TermsConsent />}
       </AuthCard>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}

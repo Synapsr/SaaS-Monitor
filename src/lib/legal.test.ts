@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatLegalDate,
   host,
-  isHostedService,
+  HOSTED_DOMAIN,
   LEGAL_PAGES,
   postalAddress,
   publisher,
@@ -47,18 +47,9 @@ describe("legal facts", () => {
   });
 });
 
-describe("isHostedService", () => {
-  it("recognizes the hosted service by its domain", () => {
-    expect(isHostedService("https://saas-monitor.com")).toBe(true);
-    expect(isHostedService("https://www.saas-monitor.com")).toBe(true);
-  });
-
-  it("leaves self-hosted instances and look-alike domains out", () => {
-    expect(isHostedService("http://localhost:3000")).toBe(false);
-    expect(isHostedService("https://monitor.example.com")).toBe(false);
-    expect(isHostedService("https://saas-monitor.com.example.com")).toBe(false);
-    expect(isHostedService("https://my-saas-monitor.com")).toBe(false);
-    expect(isHostedService("not a url")).toBe(false);
+describe("HOSTED_DOMAIN", () => {
+  it("is the hosted service's domain, as the pages print it", () => {
+    expect(HOSTED_DOMAIN).toBe("saas-monitor.com");
   });
 });
 

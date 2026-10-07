@@ -1,23 +1,15 @@
+import { siteConfig } from "@/lib/site";
+
 /**
  * Who publishes and hosts saas-monitor.com, as its legal pages state it (French law asks for this
  * notice, the LCEN). A self-hosted instance is published by whoever runs it: these facts, and the
- * pages that print them, describe the hosted service only.
+ * pages that print them, describe the hosted service only (`isHostedInstance` tells it apart).
  */
 
 export const LEGAL_EMAIL = "hello@lumy.bzh";
 
 /** The domain of the hosted service, the one these facts and its terms are about. */
-export const HOSTED_DOMAIN = "saas-monitor.com";
-
-/**
- * Whether the instance serving `appUrl` is the hosted service. Only it asks people to accept its
- * terms when they sign up: a self-hosted copy is not bound by them, and has none of its own here.
- */
-export function isHostedService(appUrl: string): boolean {
-  if (!URL.canParse(appUrl)) return false;
-  const { hostname } = new URL(appUrl);
-  return hostname === HOSTED_DOMAIN || hostname === `www.${HOSTED_DOMAIN}`;
-}
+export const HOSTED_DOMAIN = new URL(siteConfig.hostedUrl).host;
 
 export interface PostalAddress {
   street: string;
