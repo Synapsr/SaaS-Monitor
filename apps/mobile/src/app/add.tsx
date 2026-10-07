@@ -190,8 +190,8 @@ export default function AddScreen() {
         )}
         {!checking && <DemoOffer variant="link" beforeOpen={() => router.dismiss()} />}
         <AppText variant="caption" tone="ink3" style={{ textAlign: "center" }}>
-          A screen’s link is its key: the app keeps it in this device’s keychain, and only talks to
-          the screen’s own instance.
+          A screen’s link is its key: the app keeps it in this device’s secure storage, and only
+          talks to the screen’s own instance.
         </AppText>
       </ScrollView>
     </KeyboardAvoidingView>
