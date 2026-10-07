@@ -53,6 +53,8 @@ instance's demo instead.
 - `plugins/` — config plugins for anything native the app needs beyond Expo's
   (`withAndroidWidgets.ts`: the Glance widgets of `modules/screen-bridge/android`).
 - `docs/` — notes, such as why there is no Android Auto app (`android-auto.md`).
+- `version.json` — the store version of every app and the build numbers of the next uploads (see
+  "Releases").
 
 ## Server API (v1)
 
@@ -113,6 +115,20 @@ for both Expo and native tokens.
   as `@/contract/…`, and `@/…` is `src/`.
 - Commits: Conventional Commits (`feat:`, `fix:`…), no AI attribution or `Co-Authored-By`
   trailers.
+
+## Releases
+
+`version.json` is the one place to bump before each store upload:
+
+- `ios.buildNumber` — iOS (App Store Connect and TestFlight). Every upload needs a higher one. The
+  app, its widgets, its watch app and its notification extension all get it
+  (`targets/with-build-number.js`): run `npx expo prebuild -p ios` after changing it.
+- `android.versionCode` — Google Play. The phone app gets it through `app.config.ts`; the Wear OS
+  app (`wear/app/build.gradle.kts`) reads the same file and adds 10000, as both bundles share the
+  Play listing and each upload needs a code of its own. Run `npx expo prebuild -p android` after
+  changing it.
+- `version` — the version name both stores show (`1.0.0`), shared by every app. Build numbers and
+  version codes keep growing across versions.
 
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 

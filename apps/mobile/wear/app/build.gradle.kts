@@ -7,6 +7,10 @@ plugins {
 /** Models, fetching and formatting shared with the phone's widgets. */
 val shared = "../../modules/screen-bridge/android/src"
 
+/** The store version of the apps, `version.json` at the root of the repository. */
+@Suppress("UNCHECKED_CAST")
+val release = groovy.json.JsonSlurper().parse(rootDir.resolve("../version.json")) as Map<String, Any>
+
 android {
   namespace = "com.saasmonitor.wear"
   compileSdk = 36
@@ -16,8 +20,10 @@ android {
     applicationId = "com.saasmonitor.app"
     minSdk = 30
     targetSdk = 36
-    versionCode = 10001
-    versionName = "1.0.0"
+    // The phone app's, plus 10000: the phone and the watch bundles share the Play listing, and each
+    // upload needs a code of its own.
+    versionCode = 10_000 + ((release["android"] as Map<String, Any>)["versionCode"] as Int)
+    versionName = release["version"] as String
   }
 
   signingConfigs {

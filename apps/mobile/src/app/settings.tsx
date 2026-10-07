@@ -1,3 +1,4 @@
+import * as Application from "expo-application";
 import Constants from "expo-constants";
 import { Linking, ScrollView } from "react-native";
 import { SoundsAndVoices } from "@/audio/sounds-and-voices";
@@ -84,10 +85,17 @@ export default function Settings() {
       </SettingsGroup>
 
       <AppText variant="caption" tone="ink3" style={{ textAlign: "center" }}>
-        Version {Constants.expoConfig?.version ?? "?"} · display contract {CONTRACT_SOURCE}
+        {`Version ${appVersion()} · display contract ${CONTRACT_SOURCE}`}
       </AppText>
     </ScrollView>
   );
+}
+
+/** "1.0.0 (2)": the store version, and the build reviewers and testers see. */
+function appVersion(): string {
+  const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? "?";
+  const build = Application.nativeBuildVersion;
+  return build ? `${version} (${build})` : version;
 }
 
 function LinkRow({ label, detail, url }: { label: string; detail: string; url: string }) {
