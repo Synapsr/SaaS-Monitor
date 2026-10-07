@@ -478,6 +478,16 @@ export function advanceDemoWorlds(
   );
 }
 
+/**
+ * The same world, whose live events take another course from `salt` on: its history stays, what
+ * happens next differs. The demo polled by the app plays another hour every hour this way.
+ */
+export function reseedDemo(world: DemoWorld, salt: number): DemoWorld {
+  const random = createRandom(salt);
+  const mix = () => Math.floor(random() * 4_294_967_296);
+  return { ...world, seed: (world.seed ^ mix()) >>> 0, leadSeed: (world.leadSeed ^ mix()) >>> 0 };
+}
+
 /** Delay before the demo's next turn. */
 export function nextDemoWorldsDelay(worlds: readonly DemoWorld[], turn: number): number {
   return nextDemoDelay(worlds[turn % worlds.length]);
