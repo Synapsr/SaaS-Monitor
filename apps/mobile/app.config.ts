@@ -49,6 +49,13 @@ const config: ExpoConfig = {
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,
+    // Declared by Expo's template (drawing over other apps) and by expo-secure-store (biometrics):
+    // the app neither draws over other apps nor locks its keychain items behind biometrics.
+    blockedPermissions: [
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.USE_BIOMETRIC",
+      "android.permission.USE_FINGERPRINT",
+    ],
   },
   plugins: [
     "expo-router",
