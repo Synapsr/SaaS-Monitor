@@ -1,4 +1,5 @@
 import "server-only";
+import { DEMO_TOKEN } from "@/lib/display/demo/business";
 import { momentText } from "@/lib/voice/moment-speech";
 import { requestedMoment, type AnnouncementRequest } from "@/lib/voice/request";
 import { screenVoice } from "@/lib/voice/voices";
@@ -20,13 +21,15 @@ export type AnnouncementResult =
 
 /**
  * What a screen's voice says about one of its moments, in its own words. The display names the
- * moment; its items, their details and the phrase come from the screen itself.
+ * moment; its items, their details and the phrase come from the screen itself. The demo screen
+ * says recorded phrases (`personalizedVoice` is false): no server synthesizes its moments.
  */
 export async function screenAnnouncement(
   token: string,
   request: AnnouncementRequest,
   headers: Headers,
 ): Promise<AnnouncementResult> {
+  if (token === DEMO_TOKEN) return { outcome: "unavailable" };
   const lock = await findScreenLock(token);
   if (!lock) return { outcome: "gone" };
   if (!(await canViewScreen(lock, headers))) return { outcome: "locked" };

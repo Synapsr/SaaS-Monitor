@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { members, screens } from "@/db/schema";
 import { env } from "@/env";
+import { DEMO_TOKEN } from "@/lib/display/demo/business";
 import { DAY_SECONDS } from "@/lib/durations";
 import {
   parseScreenSettings,
@@ -135,13 +136,15 @@ export type UnlockResult =
 
 /**
  * Checks a password typed on a screen's lock, and returns the cookie that opens it on this device
- * from now on. Attempts are limited per screen and client address.
+ * from now on. Attempts are limited per screen and client address. The demo screen has no
+ * password: it opens like any screen without one.
  */
 export async function unlockScreen(
   token: string,
   password: string,
   headers: Headers,
 ): Promise<UnlockResult> {
+  if (token === DEMO_TOKEN) return { outcome: "unlocked", cookie: null };
   const lock = await findScreenLock(token);
   if (!lock) return { outcome: "gone" };
   // Removed in the meantime: nothing left to prove.

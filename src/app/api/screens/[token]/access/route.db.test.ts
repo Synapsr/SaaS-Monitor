@@ -62,6 +62,14 @@ describe("screen access endpoint", () => {
     expect(await response.json()).toEqual({ proof: null });
   });
 
+  it("opens the demo screen, which has no password", async () => {
+    const response = await unlock("demo", { password: "anything" });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ proof: null });
+    expect((await unlock("demo", {})).status).toBe(400);
+  });
+
   it("answers 404 for an unknown screen, and 400 without a password", async () => {
     expect((await unlock("unknown-token", { password: "4321" })).status).toBe(404);
     const { token } = await protectedScreen();

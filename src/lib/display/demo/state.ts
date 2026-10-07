@@ -166,7 +166,7 @@ export function demoState(worlds: readonly DemoWorld[], now: Date): DisplayState
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
       .map((item) => (options.showCustomerNames ? item : { ...item, customerName: null })),
     testEvent: null,
-    // The demo runs in the browser alone: its voice says recorded phrases.
+    // No server synthesizes the demo's phrases: its voice says recorded ones.
     personalizedVoice: false,
     warnings: [],
   };

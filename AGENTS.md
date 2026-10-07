@@ -34,7 +34,9 @@ Node 24 (`.nvmrc`), pnpm 10.
   - `/app/*`: the authenticated dashboard; `/sign-in`, `/sign-up`, and `/invite/[id]` for
     invitation links.
   - `/d/[token]`: a public wall display, polling `/api/screens/[token]/state`. `/d/demo` is a
-    screen fed by a simulation (landing page, trying the product without Stripe).
+    screen fed by a simulation (landing page, trying the product without Stripe). The screen API
+    answers for `demo` too, for the app: the same simulation, driven by the clock
+    (`src/lib/display/demo/clock.ts`), with no database row.
   - `/api/screens/[token]/access` and `/devices`: the SaaS Monitor app, which opens screens with
     their link (and the proof of their password, `X-Screen-Access`) and registers phones. After
     each sync, `src/server/push` notifies them of what the sync recorded: through Apple and
