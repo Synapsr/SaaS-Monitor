@@ -1,10 +1,10 @@
+import { DEMO_TOKEN } from "@/contract/display/demo/business";
 import { parseScreenLink, type ScreenLink } from "@/screens/link";
 
-/**
- * The token of the demo screen: `/d/demo` on an instance is a screen of simulated data, a sample
- * company whose payments and subscribers keep coming. Real tokens are 32 random characters.
+/*
+ * `/d/demo` on an instance is a screen of simulated data, a sample company whose payments and
+ * subscribers keep coming, which its screen API serves like any screen's.
  */
-export const DEMO_TOKEN = "demo";
 
 /** The hosted instance's demo screen, the one the app offers: no account, no Stripe. */
 export const HOSTED_DEMO: ScreenLink = { baseUrl: "https://saas-monitor.com", token: DEMO_TOKEN };
