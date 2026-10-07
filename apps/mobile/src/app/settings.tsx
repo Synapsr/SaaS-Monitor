@@ -14,6 +14,8 @@ import { colors } from "@/ui/theme";
 const REPOSITORY_URL = "https://github.com/Synapsr/SaaS-Monitor";
 const HOSTED_URL = "https://saas-monitor.com";
 const SELF_HOSTING_URL = `${REPOSITORY_URL}/blob/main/docs/self-hosting.md`;
+/** The hosted service's policy, whose section "The SaaS Monitor app" covers the app. */
+const PRIVACY_URL = `${HOSTED_URL}/privacy`;
 
 const STATUS_LABELS: Record<NotificationsStatus["kind"], string> = {
   loading: "…",
@@ -76,8 +78,9 @@ export default function Settings() {
       <SettingsGroup title="Privacy">
         <SettingsRow
           label="No account, no tracking"
-          detail="Screens stay on this device, in its keychain. The app talks to your screens’ instances only, and to Apple’s, Google’s or Expo’s push services when notifications are on. It collects nothing."
+          detail="Screens stay on this device, in its secure storage. The app talks only to your screens’ instances and, for notifications, to Apple’s, Google’s or Expo’s push services. With notifications on, each screen’s instance gets this device’s push tokens, a random installation ID, its language and your notification choices for the screen."
         />
+        <LinkRow label="Privacy policy" detail="saas-monitor.com/privacy" url={PRIVACY_URL} />
       </SettingsGroup>
 
       <AppText variant="caption" tone="ink3" style={{ textAlign: "center" }}>
