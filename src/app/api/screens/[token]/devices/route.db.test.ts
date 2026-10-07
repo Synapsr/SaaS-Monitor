@@ -181,6 +181,26 @@ describe("devices endpoint", () => {
     expect((await call(DELETE, token, { installationId: "nope" })).status).toBe(400);
   });
 
+  it("lets phones follow the demo screen, keeping none: the demo notifies nobody", async () => {
+    const device = { installationId: INSTALLATION, platform: "ios", deviceToken: APNS_TOKEN };
+
+    const response = await call(PUT, "demo", device);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(await db().select({ id: pushDevices.id }).from(pushDevices)).toEqual([]);
+    expect((await call(DELETE, "demo", { installationId: INSTALLATION })).status).toBe(204);
+    expect((await call(PUT, "demo", { installationId: INSTALLATION })).status).toBe(400);
+  });
+
+  it("limits the registrations to the demo screen too", async () => {
+    const device = { installationId: INSTALLATION, platform: "ios", deviceToken: APNS_TOKEN };
+    const address = { "x-forwarded-for": "198.51.100.23" };
+
+    for (let attempt = 0; attempt < 30; attempt += 1) await call(PUT, "demo", device, address);
+    const blocked = await call(PUT, "demo", device, address);
+    expect(blocked.status).toBe(429);
+  });
+
   it("answers 404 for an unknown screen", async () => {
     const device = { installationId: INSTALLATION, platform: "ios", pushToken: EXPO_TOKEN };
     expect((await call(PUT, "unknown", device)).status).toBe(404);

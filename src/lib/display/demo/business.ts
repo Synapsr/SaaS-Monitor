@@ -2,6 +2,12 @@
  * The fictional SaaS of the demo screen: its name, goal, plans and customers.
  */
 
+/**
+ * The demo screen's token: its page, `/d/demo`, and the screen API's `/api/screens/demo/…`, which
+ * the SaaS Monitor app polls like any screen's. Real tokens are 32 characters: no screen has it.
+ */
+export const DEMO_TOKEN = "demo";
+
 /** A Stripe account of the demo, simulated from its own seed. */
 export interface DemoBusiness {
   /** Its id in the display state, like a real account's. */

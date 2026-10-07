@@ -86,6 +86,32 @@ describe("display polling endpoint", () => {
     expect((await withHeader("forged")).status).toBe(401);
   });
 
+  it("serves the demo screen from its simulation, without a database row", async () => {
+    const response = await poll("demo");
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const state = (await response.json()) as DisplayState;
+    expect(state).toMatchObject({
+      status: "ready",
+      currency: "usd",
+      screen: { name: "Acme Analytics", settings: { language: "en", goal: 15_000 } },
+      accounts: [{ id: "demo", name: "Acme Analytics" }],
+      personalizedVoice: false,
+    });
+    expect(state.feed.length).toBeGreaterThan(0);
+    expect(after).not.toHaveBeenCalled();
+  });
+
+  it("serves the variants of the demo's page", async () => {
+    const response = await GET(new Request("http://localhost/api/screens/demo/state?lang=fr"), {
+      params: Promise.resolve({ token: "demo" }),
+    });
+
+    const state = (await response.json()) as DisplayState;
+    expect(state.screen.settings.language).toBe("fr");
+  });
+
   it("answers 404 for an unknown screen", async () => {
     const response = await poll("unknown-token");
 

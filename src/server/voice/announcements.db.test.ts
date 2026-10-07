@@ -99,6 +99,12 @@ describe("screen announcements", () => {
     expect(synthesize).not.toHaveBeenCalled();
   });
 
+  it("leave the demo screen to its recorded phrases", async () => {
+    const result = await screenAnnouncement("demo", paymentRequest("payment:demo-1"), device);
+    expect(result.outcome).toBe("unavailable");
+    expect(synthesize).not.toHaveBeenCalled();
+  });
+
   it("only say what is on the screen", async () => {
     const { token } = await screenWithPayment();
     const other = await screenWithPayment();

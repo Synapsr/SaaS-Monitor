@@ -21,6 +21,11 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   accepted by the state endpoint as an `X-Screen-Access` header) and
   `PUT`/`DELETE /api/screens/:token/devices` (an installation of the app following a screen, with
   its Expo and native push tokens and its choices).
+- The demo screen in the SaaS Monitor app, its widgets and watches: the screen API answers for
+  `demo` (`/api/screens/demo/state`, and the same query string as `/d/demo`), from the web demo's
+  simulation. Polls agree on what happened: every hour, on the hour, the demo starts over just
+  below its goal, then something happens every 30 to 90 seconds. It has no password, accepts the
+  phones that follow it without keeping them (it notifies nobody), and says recorded phrases.
 - **Send a test celebration** also notifies the phones following the screen, to check
   notifications end to end; the toast says how many were notified.
 - The SaaS Monitor app plays moments as the screen's displays do, its sound then its voice, in

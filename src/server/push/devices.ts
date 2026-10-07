@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, isNull, ne, or, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, type Transaction } from "@/db";
 import { APNS_ENVIRONMENTS, PUSH_PLATFORMS, pushDevices } from "@/db/schema";
+import { DEMO_TOKEN } from "@/lib/display/demo/business";
 import { SCREEN_EVENTS, type ScreenEvent } from "@/lib/display/events";
 import { clientAddress, createRateLimiter } from "@/server/rate-limit";
 import { canViewScreen, findScreenLock } from "@/server/screen-access";
@@ -80,13 +81,18 @@ export type RegistrationResult = "registered" | "gone" | "locked" | "too-many-re
 /**
  * Lets a phone follow a screen, or confirms it still does with its current tokens and choices:
  * the app calls it at every launch, and whenever they change. A password-protected screen asks
- * for the proof of its password, like its state does.
+ * for the proof of its password, like its state does. The demo screen accepts every phone, as
+ * any screen does, but keeps none: its simulation records nothing, so it notifies nobody.
  */
 export async function registerDevice(
   token: string,
   device: DeviceRegistration,
   headers: Headers,
 ): Promise<RegistrationResult> {
+  if (token === DEMO_TOKEN) {
+    const allowed = registrations.consume(`${DEMO_TOKEN}:${clientAddress(headers)}`);
+    return allowed ? "registered" : "too-many-registrations";
+  }
   const lock = await findScreenLock(token);
   if (!lock) return "gone";
   if (!(await canViewScreen(lock, headers))) return "locked";
@@ -139,12 +145,13 @@ export async function registerDevice(
 
 /**
  * Stops notifying a phone. Its installation id is all it takes: it is the app's own secret, and
- * removing it reveals nothing, so a screen's password is not asked for.
+ * removing it reveals nothing, so a screen's password is not asked for. The demo kept none.
  */
 export async function unregisterDevice(
   token: string,
   installationId: string,
 ): Promise<"removed" | "gone"> {
+  if (token === DEMO_TOKEN) return "removed";
   const lock = await findScreenLock(token);
   if (!lock) return "gone";
   await db()
