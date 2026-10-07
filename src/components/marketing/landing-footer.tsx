@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LogoMark } from "@/components/logo";
 import { siteConfig } from "@/lib/site";
 
-/** The license, and links to the demo, the docs, the code and the dashboard. */
+/** The license, and links to the demo, the docs, the code, the dashboard and the legal pages. */
 export function LandingFooter() {
   return (
     <footer className="border-t border-white/[0.06]">
@@ -11,7 +11,7 @@ export function LandingFooter() {
           <LogoMark className="size-5" />
           Open source under the MIT license.
         </p>
-        <nav aria-label="Footer" className="flex gap-5">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/d/demo" className="hover:text-(--ink)">
             Live demo
           </Link>
@@ -23,6 +23,15 @@ export function LandingFooter() {
           </a>
           <Link href="/sign-in" className="hover:text-(--ink)">
             Sign in
+          </Link>
+          <Link href="/privacy" className="hover:text-(--ink)">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-(--ink)">
+            Terms
+          </Link>
+          <Link href="/legal" className="hover:text-(--ink)">
+            Legal notice
           </Link>
         </nav>
       </div>

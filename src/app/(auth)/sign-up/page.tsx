@@ -4,9 +4,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthCard, AuthHeader } from "@/components/auth/auth-shell";
 import { SignUpForm } from "@/components/auth/sign-up-form";
+import { TermsConsent } from "@/components/auth/terms-consent";
 import { Button } from "@/components/ui/button";
 import { env } from "@/env";
 import { invitationIdFromPath } from "@/lib/invitations";
+import { isHostedService } from "@/lib/legal";
 import { safeRedirectPath, withRedirect } from "@/lib/safe-redirect";
 import { getInvitationPreview } from "@/server/members";
 import { getSession } from "@/server/session";
@@ -27,7 +29,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
   if (await getSession()) redirect(next);
 
   const invitation = await pendingInvitation(next);
-  const { DISABLE_SIGNUPS: signupsDisabled } = env();
+  const { DISABLE_SIGNUPS: signupsDisabled, APP_URL } = env();
   const signInHref = withRedirect("/sign-in", next);
 
   // Invited people can always sign up: the server lets pending invitations through.
@@ -68,6 +70,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
           invitedEmail={invitation?.email ?? null}
           signupsDisabled={signupsDisabled}
         />
+        {isHostedService(APP_URL) && <TermsConsent />}
       </AuthCard>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
