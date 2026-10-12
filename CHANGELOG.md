@@ -6,6 +6,11 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ### Added
 
+- The site speaks the languages of screens: the home page and the Stripe notification sound page
+  in French, German, Spanish, Italian, Portuguese and Dutch (`/fr`, `/de`…), English staying at
+  its address. The home page is redesigned, presents the SaaS Monitor app, and its TV shows the
+  demo's picture at once, and on phones. Self-hosted instances serve the site with
+  `X-Robots-Tag: noindex`, its canonical links pointing to saas-monitor.com.
 - The server side of the SaaS Monitor app (iOS and Android): a phone opens a screen with its link,
   scanned from the QR code of **Open on your phone** in the screen settings, and its password if
   it has one, then gets notified of what happens, in the screen's language. **Events** gains a
