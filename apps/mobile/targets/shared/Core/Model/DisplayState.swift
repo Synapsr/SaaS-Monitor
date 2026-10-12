@@ -18,6 +18,9 @@ struct DisplayState: Codable, Sendable {
   let feed: [FeedItem]
   /// Present after "Send a test celebration" was clicked in the screen's settings.
   let testEvent: TestEvent?
+  /// The screen's server says moments in the screen's own words (`POST …/announcement`), rather
+  /// than in recorded phrases. `nil` in states cached before the apps read it.
+  let personalizedVoice: Bool?
 
   struct Screen: Codable, Sendable {
     let name: String

@@ -17,6 +17,8 @@ enum Moment: Sendable {
   struct Summary: Sendable {
     let id: String
     let accountId: String
+    /// The events of the items it sums up, each once: it plays when one of them does.
+    let events: [ScreenEvent]
     let payments: Int
     /// Subscription changes: new, upgraded, downgraded, canceled…
     let changes: Int
