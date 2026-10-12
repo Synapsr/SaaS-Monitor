@@ -1,8 +1,0 @@
-@import "./wall-palette.css";
-
-/* The landing page uses the wall display's palette: it is the stage for its live demo. */
-.landing {
-  background: var(--screen);
-  color: var(--ink);
-  color-scheme: dark;
-}

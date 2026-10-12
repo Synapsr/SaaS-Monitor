@@ -34,7 +34,7 @@ cross $10K MRR.
 
 <table>
   <tr>
-    <td colspan="2"><img src="docs/assets/screen.webp" alt="A SaaS Monitor screen: MRR in large type, growth, goal progress, MRR chart, revenue tiles and a live activity feed" /></td>
+    <td colspan="2"><img src="public/images/demo/en.webp" alt="A SaaS Monitor screen: MRR in large type, growth, goal progress, MRR chart, revenue tiles and a live activity feed" /></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/assets/light.webp" alt="A light screen in German, in a custom orange" /></td>
