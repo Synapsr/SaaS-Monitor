@@ -34,6 +34,18 @@ describe("sitemap", () => {
     expect(sounds).toHaveLength(7);
   });
 
+  it("lists every page of the docs in every language", () => {
+    const entries = sitemap();
+    const docs = entries.filter((entry) => /\/docs(\/|$)/.test(entry.url));
+    expect(docs).toHaveLength(8 * 7);
+    const guide = entries.find((entry) => entry.url === "https://saas-monitor.com/de/docs/numbers");
+    expect(guide?.alternates?.languages).toMatchObject({
+      en: "https://saas-monitor.com/docs/numbers",
+      de: "https://saas-monitor.com/de/docs/numbers",
+      "x-default": "https://saas-monitor.com/docs/numbers",
+    });
+  });
+
   it("gives pages written only in English no alternates", () => {
     const changelog = sitemap().find((entry) => entry.url.endsWith("/changelog"));
     expect(changelog).toEqual({ url: "https://saas-monitor.com/changelog" });

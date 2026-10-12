@@ -19,6 +19,9 @@ describe("llmsTxt", () => {
     expect(text).toContain(`(${siteConfig.repositoryUrl})`);
     expect(text).toContain("(https://saas-monitor.com/fr)");
     expect(text).toContain("(https://saas-monitor.com/llms-full.txt)");
+    expect(text).toContain("(https://saas-monitor.com/docs)");
+    expect(text).toContain("(https://saas-monitor.com/docs/get-started)");
+    expect(text).toContain("(https://saas-monitor.com/docs/self-hosting)");
     expect(text).not.toMatch(/\]\(\//);
   });
 

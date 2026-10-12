@@ -1,5 +1,7 @@
 import { ALTERNATIVES } from "@/lib/marketing/alternatives";
 import { absoluteUrl, apps, siteConfig } from "@/lib/site";
+import { en as docs } from "@/lib/site/docs/en";
+import { DOCS_SLUGS, DOCS_TEXT_KEYS, docsPath } from "@/lib/site/docs/pages";
 import { LANGUAGE_NAMES, SITE_LANGUAGES } from "@/lib/site/languages";
 import { localizedPath } from "@/lib/site/paths";
 
@@ -55,6 +57,13 @@ ${siteConfig.name} does not replace subscription analytics such as Baremetrics o
 - [Stripe notification sounds](${page("/stripe-notification-sound")}): every sound to play or download as WAV.
 
 ## Docs
+
+Short guides on the site, also in every language of the site (\`/fr/docs\`, \`/de/docs\`…):
+
+- [Docs](${page(docsPath("overview"))}): every guide, in a minute or two each.
+${DOCS_SLUGS.map((slug) => `- [${docs.common.pages[slug]}](${page(docsPath(slug))}): ${docs[DOCS_TEXT_KEYS[slug]].summary}`).join("\n")}
+
+The technical guides, on GitHub:
 
 - [Connect Stripe](${siteConfig.stripeDocsUrl}): the restricted key and its permissions, how MRR is computed, instant updates with webhooks.
 - [Put a screen on the wall](${siteConfig.wallDisplayDocsUrl}): TVs, Raspberry Pi kiosk mode, sound, voices, languages.
