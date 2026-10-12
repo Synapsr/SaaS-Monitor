@@ -1,0 +1,10 @@
+/*
+ * Gleap's help widget (`src/lib/gleap.ts`), on the dashboard and the site. It draws parts of
+ * itself, such as its chat bar, in transparent frames whose documents keep the light color scheme:
+ * on a dark page, browsers paint a frame opaque when its scheme differs from the page's, a white
+ * box around the bar. Giving the frames their documents' scheme keeps them see-through.
+ */
+iframe[class^="gleap"],
+[class^="gleap"] iframe {
+  color-scheme: light;
+}

@@ -5,6 +5,7 @@
  */
 @import "tailwindcss" source(none);
 @import "./wall-palette.css";
+@import "./gleap.css";
 
 @source "../components/site";
 @source "../components/content";
