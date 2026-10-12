@@ -31,7 +31,7 @@ Node 24 (`.nvmrc`), pnpm 10.
 
 - `src/app` — routes only, kept thin: components live in `src/components`, logic in `src/server`.
   Two root layouts: `app/[lang]` is the public site (home page, `/stripe-notification-sound`,
-  comparisons, changelog, legal pages), `app/(product)` the rest, in English. The site serves
+  the docs at `/docs`, comparisons, changelog, legal pages), `app/(product)` the rest, in English. The site serves
   English without a prefix and the other languages under theirs (`/fr`): `src/proxy.ts` rewrites
   `/` to `/en` and redirects `/en/…` back (`src/lib/site/routing.ts`), never by
   `Accept-Language`. Unknown addresses get the site's 404 (`[lang]/not-found.tsx`,
