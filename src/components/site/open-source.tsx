@@ -1,21 +1,11 @@
 import { StarIcon } from "lucide-react";
-import { Fragment } from "react";
 import { GitHubIcon } from "@/components/brand-icons";
 import { buttonClass } from "@/components/site/button-styles";
-import { CopyText } from "@/components/site/copy-text";
 import { RichText } from "@/components/site/rich-text";
 import { Container, SectionHeading } from "@/components/site/section";
+import { INSTALL_COMMANDS, Terminal } from "@/components/site/terminal";
 import { siteConfig } from "@/lib/site";
 import type { SiteText } from "@/lib/site/i18n";
-
-/**
- * The install, as docs/self-hosting.md gives it: the script is served by saas-monitor.com itself
- * (public/install.sh), so a self-hosted site shows the same commands.
- */
-const INSTALL_COMMANDS = [
-  "curl -fsSL https://saas-monitor.com/install.sh | sh",
-  "cd saas-monitor && docker compose up -d",
-];
 
 /** Open source and self-hosted: the license, the stars, and the two commands to run it. */
 export function OpenSource({
@@ -72,31 +62,15 @@ export function OpenSource({
             </div>
 
             <div className="min-w-0">
-              <div className="overflow-hidden rounded-2xl bg-(--screen) shadow-(--shadow-device)">
-                <div className="flex items-center justify-between gap-2 py-1.5 pr-1.5 pl-4 shadow-[0_1px_0_var(--hairline)]">
-                  <span className="flex items-center gap-1.5" aria-hidden>
-                    <span className="size-2.5 rounded-full bg-(--surface-hover)" />
-                    <span className="size-2.5 rounded-full bg-(--surface-hover)" />
-                    <span className="size-2.5 rounded-full bg-(--surface-hover)" />
-                  </span>
-                  <span className="text-xs text-(--ink-3)">{text.terminal}</span>
-                  <CopyText
-                    value={INSTALL_COMMANDS.join("\n")}
-                    labels={{ copy: text.copy, copied: text.copied, failed: text.copyFailed }}
-                  />
-                </div>
-                <pre className="overflow-x-auto p-5 font-mono text-[0.78rem] leading-7 text-(--ink-2) sm:p-6 sm:text-[0.84rem]">
-                  <code className="flex flex-col gap-1">
-                    {INSTALL_COMMANDS.map((command) => (
-                      // Long commands wrap under themselves, past the prompt, on small screens.
-                      <span key={command} className="pl-[2ch] -indent-[2ch] whitespace-pre-wrap">
-                        <span className="text-(--glow) select-none">$ </span>
-                        <CommandText command={command} />
-                      </span>
-                    ))}
-                  </code>
-                </pre>
-              </div>
+              <Terminal
+                commands={INSTALL_COMMANDS}
+                labels={{
+                  title: text.terminal,
+                  copy: text.copy,
+                  copied: text.copied,
+                  failed: text.copyFailed,
+                }}
+              />
               <p className="mt-4 text-sm text-pretty text-(--ink-3)">
                 <RichText text={text.script} links={links} />
               </p>
@@ -106,22 +80,4 @@ export function OpenSource({
       </Container>
     </section>
   );
-}
-
-/**
- * A command that wraps only between words or after a URL's slash: cut at the hyphen of
- * saas-monitor.com, the address would read as two.
- */
-function CommandText({ command }: { command: string }) {
-  return command.split(" ").map((word, wordIndex) => (
-    <Fragment key={wordIndex}>
-      {wordIndex > 0 && " "}
-      {word.split(/(?<=[^/]\/)(?=[^/])/).map((piece, pieceIndex) => (
-        <Fragment key={pieceIndex}>
-          {pieceIndex > 0 && <wbr />}
-          <span className="whitespace-nowrap">{piece}</span>
-        </Fragment>
-      ))}
-    </Fragment>
-  ));
 }

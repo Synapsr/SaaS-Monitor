@@ -8,6 +8,7 @@
 
 @source "../components/site";
 @source "../components/content";
+@source "../components/docs";
 @source "../components/legal";
 @source "../components/logo.tsx";
 @source "../components/brand-icons.tsx";
@@ -99,9 +100,19 @@
   --dots: radial-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px);
 }
 
-/* Section anchors land below the sticky header. */
+/* Section anchors land below the sticky header, and below the docs' own bar on phones. */
 .landing [id] {
   scroll-margin-top: 5rem;
+}
+
+.landing .docs [id] {
+  scroll-margin-top: 8rem;
+}
+
+@media (width >= 64rem) {
+  .landing .docs [id] {
+    scroll-margin-top: 6rem;
+  }
 }
 
 .landing ::selection {
@@ -229,14 +240,26 @@
   transition-behavior: allow-discrete;
 }
 
-.landing .menu-sheet:popover-open::backdrop {
+.landing .menu-sheet:popover-open::backdrop,
+.landing .docs-sheet:popover-open::backdrop {
   background: rgb(0 0 0 / 0.55);
 }
 
 @starting-style {
-  .landing .menu-sheet:popover-open::backdrop {
+  .landing .menu-sheet:popover-open::backdrop,
+  .landing .docs-sheet:popover-open::backdrop {
     background: transparent;
   }
+}
+
+/* The docs' pages on phones: a sheet under the header and the docs' bar. */
+.landing .docs-sheet {
+  position: fixed;
+  inset: 7.5rem 0.75rem auto;
+  width: auto;
+  max-height: calc(100dvh - 8.5rem);
+  overflow-y: auto;
+  margin: 0;
 }
 
 /* Folded answers open with their content easing in. */
