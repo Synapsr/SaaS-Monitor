@@ -54,7 +54,7 @@ export function CopyText({
           () => setState("failed"),
         )
       }
-      className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs text-(--ink-2) transition-[background-color,color,scale] duration-150 hover:bg-(--surface-raised) hover:text-(--ink) focus-visible:outline-2 focus-visible:outline-(--glow) active:scale-[0.96]"
+      className="relative flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs text-(--ink-2) transition-[background-color,color,scale] duration-150 after:absolute after:-inset-1 hover:bg-(--surface-raised) hover:text-(--ink) focus-visible:outline-2 focus-visible:outline-(--glow) active:scale-[0.96]"
     >
       <span aria-hidden className="relative size-3.5">
         <CopyIcon

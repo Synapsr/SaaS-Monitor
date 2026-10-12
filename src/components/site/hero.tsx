@@ -48,7 +48,7 @@ export function Hero({
           className="animate-rise text-hero mx-auto mt-7 max-w-4xl font-semibold text-balance [animation-delay:80ms]"
         >
           {hero.title.start}
-          <span className="text-(--glow) [text-shadow:0_0_40px_color-mix(in_oklab,var(--glow)_50%,transparent)]">
+          <span className="whitespace-nowrap text-(--glow) [text-shadow:0_0_40px_color-mix(in_oklab,var(--glow)_50%,transparent)]">
             {hero.title.highlight}
           </span>
           {hero.title.end}
