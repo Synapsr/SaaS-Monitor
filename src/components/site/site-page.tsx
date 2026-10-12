@@ -13,7 +13,7 @@ import {
 } from "@/lib/site/languages";
 import { demoPath, localizedPath, pathIn } from "@/lib/site/paths";
 import { siteLinks } from "@/lib/site/rich-text";
-import { repositoryStars } from "@/server/github";
+import { shownStars } from "@/server/github";
 
 /**
  * A page of the public site in `language`: skip link, header, the page, footer, and the offer of
@@ -31,7 +31,7 @@ export async function SitePage({
 }) {
   const text = siteText(language);
   const locale = INTL_LOCALES[language];
-  const stars = await repositoryStars();
+  const stars = await shownStars();
   const home = localizedPath(language, "/");
 
   const languages: LanguageLink[] = SITE_LANGUAGES.map((other) => ({

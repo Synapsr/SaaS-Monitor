@@ -19,7 +19,7 @@ import { INTL_LOCALES, isSiteLanguage } from "@/lib/site/languages";
 import { demoPath, demoPoster, localizedPath } from "@/lib/site/paths";
 import { siteLinks } from "@/lib/site/rich-text";
 import { homeJsonLd } from "@/lib/structured-data";
-import { repositoryStars } from "@/server/github";
+import { shownStars } from "@/server/github";
 
 /** The star count is GitHub's, fetched again at most every hour. */
 export const revalidate = 3600;
@@ -49,7 +49,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
   const text = siteText(lang);
   const locale = INTL_LOCALES[lang];
   const links = siteLinks(lang);
-  const count = await repositoryStars();
+  const count = await shownStars();
   const stars = count === null ? null : formatCount(count, locale);
 
   return (

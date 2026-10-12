@@ -27,3 +27,15 @@ export async function repositoryStars(): Promise<number | null> {
     return null;
   }
 }
+
+/**
+ * A handful of stars reads as an empty room: the count shows from this many on. Until then, the
+ * site asks for a star without a number.
+ */
+const STARS_WORTH_SHOWING = 50;
+
+/** The repository's stars when they speak for the project, else `null`. */
+export async function shownStars(): Promise<number | null> {
+  const stars = await repositoryStars();
+  return stars !== null && stars >= STARS_WORTH_SHOWING ? stars : null;
+}
