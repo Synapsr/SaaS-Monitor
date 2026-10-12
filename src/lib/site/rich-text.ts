@@ -45,9 +45,10 @@ export function siteLinks(language: SiteLanguage): Record<string, string> {
     issues: `${siteConfig.repositoryUrl}/issues`,
     "self-hosting": siteConfig.selfHostingUrl,
     "install-script": INSTALL_SCRIPT_URL,
-    louez: "https://github.com/Synapsr/Louez",
-    hovod: "https://github.com/Synapsr/Hovod",
+    louez: `${siteConfig.maker.githubUrl}/Louez`,
+    hovod: `${siteConfig.maker.githubUrl}/Hovod`,
     sounds: localizedPath(language, "/stripe-notification-sound"),
     apps: `${localizedPath(language, "/")}#apps`,
+    synapsr: siteConfig.maker.url,
   };
 }

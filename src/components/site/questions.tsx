@@ -1,7 +1,7 @@
 import { Faq } from "@/components/site/faq";
 import { RichText } from "@/components/site/rich-text";
 import { Container, SectionHeading } from "@/components/site/section";
-import { publisher } from "@/lib/legal";
+import { siteConfig } from "@/lib/site";
 import type { SiteText } from "@/lib/site/i18n";
 
 /**
@@ -10,12 +10,9 @@ import type { SiteText } from "@/lib/site/i18n";
  */
 export function Questions({
   text,
-  country,
   links,
 }: {
   text: SiteText["faq"];
-  /** The publisher's country, in the page's language. */
-  country: string;
   links: Record<string, string>;
 }) {
   return (
@@ -26,7 +23,7 @@ export function Questions({
           <aside className="reveal rounded-3xl bg-(--surface) p-6 text-sm leading-relaxed text-pretty text-(--ink-2) shadow-(--edge)">
             <h3 className="font-medium text-(--ink)">{text.maker.title}</h3>
             <p className="mt-2">
-              {text.maker.text(publisher.address.city, country, publisher.director, publisher.name)}
+              <RichText text={text.maker.text(siteConfig.maker.builder)} links={links} />
             </p>
             <p className="mt-2">
               <RichText text={text.maker.also} links={links} />

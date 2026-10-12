@@ -19,7 +19,7 @@ const home = (language: "en" | "fr" = "en") =>
   });
 
 describe("homeJsonLd", () => {
-  it("describes a free, open-source business application published by Lumy.Media", () => {
+  it("describes a free, open-source business application made by Synapsr", () => {
     const data = home();
     expect(data["@context"]).toBe("https://schema.org");
     expect(nodeOf(data, "SoftwareApplication")).toMatchObject({
@@ -32,8 +32,17 @@ describe("homeJsonLd", () => {
       releaseNotes: "https://saas-monitor.com/changelog",
       publisher: { "@id": "https://saas-monitor.com/#organization" },
     });
-    expect(nodeOf(data, "Organization")).toMatchObject({ name: "Lumy.Media SAS" });
-    expect(JSON.stringify(data)).not.toContain('Synapsr"');
+    expect(nodeOf(data, "SoftwareApplication")).toMatchObject({
+      author: { "@id": "https://saas-monitor.com/#organization" },
+      creator: { "@id": "https://saas-monitor.com/#organization" },
+    });
+    expect(nodeOf(data, "Organization")).toEqual({
+      "@type": "Organization",
+      "@id": "https://saas-monitor.com/#organization",
+      name: "Synapsr",
+      url: "https://synapsr.io",
+      sameAs: ["https://github.com/Synapsr"],
+    });
   });
 
   it("links the open-source code to the application", () => {

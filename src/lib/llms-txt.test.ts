@@ -22,8 +22,8 @@ describe("llmsTxt", () => {
     expect(text).not.toMatch(/\]\(\//);
   });
 
-  it("names the company that publishes it", () => {
-    expect(text).toContain("Lumy.Media SAS");
+  it("credits its maker", () => {
+    expect(text).toContain("Made by [Synapsr](https://synapsr.io)");
   });
 });
 

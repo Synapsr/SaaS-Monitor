@@ -1,4 +1,3 @@
-import { publisher } from "@/lib/legal";
 import { apps, siteConfig } from "@/lib/site";
 import { LANGUAGE_TAGS, SITE_LANGUAGES, type SiteLanguage } from "@/lib/site/languages";
 import { canonicalUrl } from "@/lib/site/paths";
@@ -7,8 +6,8 @@ import { plainText } from "@/lib/site/rich-text";
 /**
  * The site described for search engines and AI assistants (schema.org, as JSON-LD). Every
  * address is on saas-monitor.com, like canonical links: self-hosted copies describe the original.
- * The publisher is the company behind the hosted service (`src/lib/legal.ts`); the repository's
- * GitHub organization is not a legal entity.
+ * It credits the product to its maker, Synapsr (`siteConfig.maker`); the legal publisher of the
+ * hosted service stays on the legal pages (`src/lib/legal.ts`).
  */
 
 const HOME = canonicalUrl("en", "/");
@@ -25,15 +24,9 @@ function organization() {
   return {
     "@type": "Organization",
     "@id": ORGANIZATION_ID,
-    name: publisher.name,
-    email: publisher.email,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: publisher.address.street,
-      postalCode: publisher.address.postalCode,
-      addressLocality: publisher.address.city,
-      addressCountry: "FR",
-    },
+    name: siteConfig.maker.name,
+    url: siteConfig.maker.url,
+    sameAs: [siteConfig.maker.githubUrl],
   };
 }
 
@@ -54,6 +47,8 @@ function softwareApplication(language: SiteLanguage, description: string) {
     sameAs: [siteConfig.repositoryUrl],
     releaseNotes: canonicalUrl("en", "/changelog"),
     softwareHelp: { "@type": "CreativeWork", url: siteConfig.docsUrl },
+    author: { "@id": ORGANIZATION_ID },
+    creator: { "@id": ORGANIZATION_ID },
     publisher: { "@id": ORGANIZATION_ID },
   };
 }
@@ -68,6 +63,7 @@ function sourceCode() {
     programmingLanguage: "TypeScript",
     runtimePlatform: "Node.js",
     targetProduct: { "@id": SOFTWARE_ID },
+    author: { "@id": ORGANIZATION_ID },
   };
 }
 

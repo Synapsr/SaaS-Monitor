@@ -315,8 +315,7 @@ export const en = {
     ],
     maker: {
       title: "Who makes it",
-      text: (city: string, country: string, director: string, company: string) =>
-        `SaaS Monitor is made in ${city}, ${country}, by ${director} and the team at ${company}.`,
+      text: (director: string) => `SaaS Monitor is built by ${director} at [Synapsr](synapsr).`,
       also: "We also make [Louez](louez), open-source software for rental businesses, and [Hovod](hovod), an open-source video platform you host yourself.",
     },
   },
@@ -327,8 +326,7 @@ export const en = {
   },
   footer: {
     license: "Open source under the MIT license.",
-    madeIn: (city: string, country: string, company: string) =>
-      `Made in ${city}, ${country}, by ${company}.`,
+    madeBy: "Made by [Synapsr](synapsr).",
     trademark:
       "Stripe is a trademark of Stripe, Inc. SaaS Monitor is not affiliated with or endorsed by Stripe.",
     columns: { product: "Product", openSource: "Open source", legal: "Legal" },

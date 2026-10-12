@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/logo";
 import type { LanguageLink } from "@/components/site/language-list";
-import { publisher } from "@/lib/legal";
+import { RichText } from "@/components/site/rich-text";
 import { siteConfig } from "@/lib/site";
 import type { SiteText } from "@/lib/site/i18n";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,8 @@ interface FooterLink {
 export interface SiteFooterProps {
   text: SiteText["footer"];
   tagline: string;
-  /** The country of the publisher, in the page's language. */
-  country: string;
+  /** Where the links of its texts point (`siteLinks()`). */
+  links: Record<string, string>;
   demo: string;
   sounds: string;
   /** Whether the page is in English: the English-only pages need no warning then. */
@@ -35,7 +35,7 @@ const linkClass =
 export function SiteFooter({
   text,
   tagline,
-  country,
+  links,
   demo,
   sounds,
   english,
@@ -79,7 +79,9 @@ export function SiteFooter({
           </p>
           <p className="text-(--ink-2)">{tagline}</p>
           <p>{text.license}</p>
-          <p>{text.madeIn(publisher.address.city, country, publisher.name)}</p>
+          <p>
+            <RichText text={text.madeBy} links={links} />
+          </p>
         </div>
 
         <nav

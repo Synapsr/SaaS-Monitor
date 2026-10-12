@@ -13,7 +13,7 @@ import { SetupSteps } from "@/components/site/setup-steps";
 import { SitePage } from "@/components/site/site-page";
 import { Sounds } from "@/components/site/sounds";
 import { sitePageMetadata } from "@/lib/marketing/page-metadata";
-import { formatCount, regionName } from "@/lib/site/format";
+import { formatCount } from "@/lib/site/format";
 import { siteText } from "@/lib/site/i18n";
 import { INTL_LOCALES, isSiteLanguage } from "@/lib/site/languages";
 import { demoPath, demoPoster, localizedPath } from "@/lib/site/paths";
@@ -79,7 +79,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
       <SetupSteps text={text.steps} />
       <Pricing text={text.pricing} />
       <OpenSource text={text.openSource} stars={stars} links={links} />
-      <Questions text={text.faq} country={regionName("FR", locale)} links={links} />
+      <Questions text={text.faq} links={links} />
       <Closing text={text.closing} stars={stars} />
     </SitePage>
   );

@@ -2,7 +2,7 @@ import { LanguageHint, type LanguageOffer } from "@/components/site/language-hin
 import type { LanguageLink } from "@/components/site/language-list";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { formatCount, regionName } from "@/lib/site/format";
+import { formatCount } from "@/lib/site/format";
 import { siteText, siteTexts } from "@/lib/site/i18n";
 import {
   INTL_LOCALES,
@@ -12,6 +12,7 @@ import {
   type SiteLanguage,
 } from "@/lib/site/languages";
 import { demoPath, localizedPath, pathIn } from "@/lib/site/paths";
+import { siteLinks } from "@/lib/site/rich-text";
 import { repositoryStars } from "@/server/github";
 
 /**
@@ -72,7 +73,7 @@ export async function SitePage({
       <SiteFooter
         text={text.footer}
         tagline={`${text.hero.title.start}${text.hero.title.highlight}${text.hero.title.end}`}
-        country={regionName("FR", locale)}
+        links={siteLinks(language)}
         demo={demoPath(language)}
         sounds={localizedPath(language, "/stripe-notification-sound")}
         english={language === "en"}

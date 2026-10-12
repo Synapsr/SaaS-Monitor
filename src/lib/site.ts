@@ -17,6 +17,17 @@ export const siteConfig = {
   selfHostingUrl: `${repositoryUrl}/blob/main/docs/self-hosting.md`,
   stripeDocsUrl: `${repositoryUrl}/blob/main/docs/stripe.md`,
   wallDisplayDocsUrl: `${repositoryUrl}/blob/main/docs/wall-display.md`,
+  /**
+   * Who makes it, as the site credits it. The legal publisher of the hosted service is another
+   * matter: `publisher` (`src/lib/legal.ts`), on the legal pages.
+   */
+  maker: {
+    name: "Synapsr",
+    url: "https://synapsr.io",
+    githubUrl: "https://github.com/Synapsr",
+    /** Who builds it there. */
+    builder: "Loan Talvat",
+  },
 } as const;
 
 export interface StoreApp {

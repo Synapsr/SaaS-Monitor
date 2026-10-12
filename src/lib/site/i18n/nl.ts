@@ -316,8 +316,8 @@ export const nl: SiteText = {
     ],
     maker: {
       title: "Wie erachter zit",
-      text: (city, country, director, company) =>
-        `SaaS Monitor wordt gemaakt in ${city}, ${country}, door ${director} en het team van ${company}.`,
+      text: (director: string) =>
+        `SaaS Monitor wordt gebouwd door ${director} bij [Synapsr](synapsr).`,
       also: "We maken ook [Louez](louez), open-source software voor verhuurbedrijven, en [Hovod](hovod), een open-source videoplatform dat je zelf host.",
     },
   },
@@ -328,7 +328,7 @@ export const nl: SiteText = {
   },
   footer: {
     license: "Open source onder de MIT-licentie.",
-    madeIn: (city, country, company) => `Gemaakt in ${city}, ${country}, door ${company}.`,
+    madeBy: "Gemaakt door [Synapsr](synapsr).",
     trademark:
       "Stripe is een handelsmerk van Stripe, Inc. SaaS Monitor is niet verbonden aan of goedgekeurd door Stripe.",
     columns: { product: "Product", openSource: "Open source", legal: "Juridisch" },

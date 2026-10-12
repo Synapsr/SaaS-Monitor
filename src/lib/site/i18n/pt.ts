@@ -314,8 +314,8 @@ export const pt: SiteText = {
     ],
     maker: {
       title: "Quem faz",
-      text: (city: string, country: string, director: string, company: string) =>
-        `O SaaS Monitor é feito em ${city}, ${country}, por ${director} e pela equipe da ${company}.`,
+      text: (director: string) =>
+        `O SaaS Monitor é desenvolvido por ${director} na [Synapsr](synapsr).`,
       also: "Também fazemos o [Louez](louez), um software open source para empresas de locação, e o [Hovod](hovod), uma plataforma de vídeo open source que você hospeda por conta própria.",
     },
   },
@@ -326,8 +326,7 @@ export const pt: SiteText = {
   },
   footer: {
     license: "Open source sob a licença MIT.",
-    madeIn: (city: string, country: string, company: string) =>
-      `Feito em ${city}, ${country}, pela ${company}.`,
+    madeBy: "Feito pela [Synapsr](synapsr).",
     trademark:
       "Stripe é uma marca comercial da Stripe, Inc. O SaaS Monitor não tem afiliação com a Stripe nem é endossado por ela.",
     columns: { product: "Produto", openSource: "Open source", legal: "Jurídico" },

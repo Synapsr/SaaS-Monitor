@@ -1,4 +1,3 @@
-import { publisher } from "@/lib/legal";
 import { ALTERNATIVES } from "@/lib/marketing/alternatives";
 import { absoluteUrl, apps, siteConfig } from "@/lib/site";
 import { LANGUAGE_NAMES, SITE_LANGUAGES } from "@/lib/site/languages";
@@ -72,7 +71,7 @@ ${SITE_LANGUAGES.filter((language) => language !== "en")
 
 - [Source code on GitHub](${siteConfig.repositoryUrl}): MIT license.
 - [Changelog](${page("/changelog")})
-- Published by ${publisher.name}, ${publisher.address.city}, ${publisher.address.country}.
+- Made by [${siteConfig.maker.name}](${siteConfig.maker.url}), which also makes [Louez](${siteConfig.maker.githubUrl}/Louez) and [Hovod](${siteConfig.maker.githubUrl}/Hovod), open source too.
 `;
 }
 
