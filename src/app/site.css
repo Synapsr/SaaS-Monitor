@@ -243,3 +243,11 @@
 .landing details[open] > :not(summary) {
   animation: rise 0.4s var(--ease-out-soft);
 }
+
+/*
+ * Quotation marks follow the surrounding text. French sets them apart with narrow no-break spaces,
+ * which browsers' own French quotes leave out.
+ */
+:lang(fr) > q {
+  quotes: "«\202F" "\202F»" "“" "”";
+}
