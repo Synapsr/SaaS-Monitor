@@ -104,7 +104,7 @@ All settings are environment variables, documented in [`.env.example`](../.env.e
 | `DISABLE_SIGNUPS`                          | no       | `true` to close registrations; invited people can still join.                                            |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | no       | Enables "Continue with GitHub".                                                                          |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables "Continue with Google".                                                                          |
-| `GLEAP_API_KEY`                            | no       | A [Gleap](https://gleap.io) project's SDK key: shows its help widget in the dashboard, for your team.    |
+| `GLEAP_API_KEY`                            | no       | A [Gleap](https://gleap.io) project's SDK key: shows its help widget in the dashboard and on the site.   |
 | `MIGRATE_ON_START`                         | no       | Apply migrations at startup (default `true`).                                                            |
 | `FX_RATES_URL`                             | no       | Exchange-rate API used to combine currencies (default: Frankfurter, ECB rates).                          |
 | `GRADIUM_API_KEY`                          | no       | Lets screens say [their own phrases](wall-display.md#voice), synthesized by Gradium.                     |

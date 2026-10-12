@@ -2,6 +2,8 @@ import { LanguageHint, type LanguageOffer } from "@/components/site/language-hin
 import type { LanguageLink } from "@/components/site/language-list";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { SiteSupport } from "@/components/site/site-support";
+import { siteConfig } from "@/lib/site";
 import { formatCount } from "@/lib/site/format";
 import { siteText, siteTexts } from "@/lib/site/i18n";
 import {
@@ -16,8 +18,8 @@ import { siteLinks } from "@/lib/site/rich-text";
 import { shownStars } from "@/server/github";
 
 /**
- * A page of the public site in `language`: skip link, header, the page, footer, and the offer of
- * the visitor's own language. `path` is the page's address in English (`/privacy`), which the
+ * A page of the public site in `language`: skip link, header, the page, footer, the offer of the
+ * visitor's own language, and the help button of instances that have one. `path` is the page's address in English (`/privacy`), which the
  * language switcher finds again in other languages when the page is translated.
  */
 export async function SitePage({
@@ -81,6 +83,7 @@ export async function SitePage({
         languages={languages}
       />
       <LanguageHint current={language} offers={offers} />
+      <SiteSupport text={text.support} language={language} email={siteConfig.supportEmail} />
     </>
   );
 }

@@ -447,7 +447,7 @@ export const nl: DocsText = {
     },
     tracking: {
       title: "Geen advertenties, geen tracking",
-      text: "De site draait geen analytics en laadt geen scripts van derden. Geen advertentie- of trackingcookies, en je gegevens worden nooit verkocht. Ook de app heeft geen account en geen tracking. [Privacybeleid](privacy)",
+      text: "De site draait geen analytics en laadt geen scripts van derden zolang je de hulp niet opent. Geen advertentie- of trackingcookies, en je gegevens worden nooit verkocht. Ook de app heeft geen account en geen tracking. [Privacybeleid](privacy)",
     },
     others: {
       title: "Wat derden te zien krijgen",

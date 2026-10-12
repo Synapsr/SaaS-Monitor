@@ -326,6 +326,10 @@ export const it: SiteText = {
     primary: "Inizia",
     secondary: "Lascia una stella su GitHub",
   },
+  support: {
+    label: "Domande?",
+    action: "Scrivici",
+  },
   footer: {
     license: "Open source con licenza MIT.",
     madeBy: "Realizzato da [Synapsr](synapsr).",

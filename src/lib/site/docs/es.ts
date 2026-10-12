@@ -454,7 +454,7 @@ export const es: DocsText = {
     },
     tracking: {
       title: "Sin anuncios ni rastreo",
-      text: "El sitio no usa analíticas ni carga scripts de terceros. Sin cookies publicitarias ni de rastreo, y tus datos nunca se venden. La app tampoco tiene cuenta ni rastreo. [Política de privacidad](privacy)",
+      text: "El sitio no usa analíticas ni carga scripts de terceros mientras no abras su ayuda. Sin cookies publicitarias ni de rastreo, y tus datos nunca se venden. La app tampoco tiene cuenta ni rastreo. [Política de privacidad](privacy)",
     },
     others: {
       title: "Quién más ve qué",

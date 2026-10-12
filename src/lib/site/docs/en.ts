@@ -453,7 +453,7 @@ export const en = {
     },
     tracking: {
       title: "No ads, no tracking",
-      text: "The site runs no analytics and loads no third-party script. No advertising or tracking cookies, and your data is never sold. The app has no account and no tracking either. [Privacy policy](privacy)",
+      text: "The site runs no analytics, and loads no third-party script until you open its help. No advertising or tracking cookies, and your data is never sold. The app has no account and no tracking either. [Privacy policy](privacy)",
     },
     others: {
       title: "Who else sees what",

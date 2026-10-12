@@ -325,6 +325,12 @@ export const en = {
     primary: "Get started",
     secondary: "Star on GitHub",
   },
+  /** The help button in the corner of every page, on an instance with a help widget. */
+  support: {
+    label: "Questions?",
+    /** Read after the label by screen readers ("Questions? Write to us"): phones only see an icon. */
+    action: "Write to us",
+  },
   footer: {
     license: "Open source under the MIT license.",
     madeBy: "Made by [Synapsr](synapsr).",

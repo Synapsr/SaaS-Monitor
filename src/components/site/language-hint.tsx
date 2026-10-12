@@ -61,6 +61,7 @@ export function LanguageHint({
 
   return (
     <aside
+      data-language-hint
       lang={offer.tag}
       className="animate-rise fixed inset-x-3 bottom-3 z-40 mx-auto flex max-w-md items-center gap-2 rounded-[1.375rem] bg-(--popover) py-1.5 pr-1.5 pl-4 text-sm shadow-(--shadow-popover) sm:bottom-5"
     >

@@ -448,7 +448,7 @@ export const de: DocsText = {
     },
     tracking: {
       title: "Keine Werbung, kein Tracking",
-      text: "Die Website nutzt keine Webanalyse und lädt keine Skripte von Drittanbietern. Keine Werbe- oder Tracking-Cookies, und deine Daten werden nie verkauft. Auch die App kommt ohne Konto und ohne Tracking aus. [Datenschutzerklärung](privacy)",
+      text: "Die Website nutzt keine Webanalyse und lädt keine Skripte von Drittanbietern, solange du die Hilfe nicht öffnest. Keine Werbe- oder Tracking-Cookies, und deine Daten werden nie verkauft. Auch die App kommt ohne Konto und ohne Tracking aus. [Datenschutzerklärung](privacy)",
     },
     others: {
       title: "Wer sonst was sieht",

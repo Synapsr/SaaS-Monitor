@@ -61,7 +61,7 @@ export default function PrivacyPage() {
             "Customer names and email addresses stay off your screens, and their notifications, unless you turn them on.",
             "The app has no account and no tracking. Your screens stay on your device, and it only talks to their instance and, for notifications, to Apple’s, Google’s or Expo’s push services.",
             "No ads, no tracking, no analytics, and we never sell your data.",
-            "If you write to us from the dashboard’s help widget, Gleap handles your name, email address and messages for us.",
+            "If you write to us from our help widget, on this site or in the dashboard, Gleap handles your messages and email address for us, and in the dashboard your name.",
             "Disconnect a Stripe account, and everything imported from it is deleted right away.",
           ]}
         />
@@ -168,16 +168,18 @@ export default function PrivacyPage() {
 
               <Subheading>When you write to us</Subheading>
               <p>
-                Your email address and what your message says. From the dashboard’s help widget, run
-                by Gleap, also your name and account ID, so that we know who is writing, and the
-                screenshot or files you attach. The widget leaves the dashboard’s console and its
+                Your email address and what your message says. From our help widget, run by Gleap,
+                also the screenshot or files you attach, and in the dashboard your name and account
+                ID, so that we know who is writing. The widget leaves the page’s console and its
                 requests to our server out of what it sends.
               </p>
 
               <Subheading>Visits to this site</Subheading>
               <p>
-                We don’t measure them: the site runs no analytics. Its pages and the screens load no
-                third-party script; only the dashboard loads Gleap’s help widget, to write to us.
+                We don’t measure them: the site runs no analytics. The screens load no third-party
+                script, and neither do this site’s pages until you click their help button, which
+                loads Gleap’s widget so that you can write to us. The dashboard loads that widget
+                from the start.
               </p>
             </>
           ),
@@ -389,7 +391,7 @@ export default function PrivacyPage() {
                   {
                     term: <Code>gleap-widget-…</Code>,
                     description:
-                      "Local storage of the dashboard’s help widget (Gleap): your conversations with us, from one visit to the next, and the widget’s settings.",
+                      "Local storage of the help widget (Gleap), in the dashboard, and on this site once you open it: your conversations with us, from one visit to the next, and the widget’s settings.",
                     note: "Until you clear it.",
                   },
                   {
@@ -439,7 +441,7 @@ export default function PrivacyPage() {
                   {
                     term: "Gleap GmbH",
                     description:
-                      "Runs the dashboard’s help widget. It receives your name, email address and account ID, what you write to us there, and the screenshots or files you attach.",
+                      "Runs the help widget of this site and the dashboard. It receives what you write to us there, your email address, the screenshots or files you attach, and from the dashboard your name and account ID.",
                     note: "Am Dorfplatz 3, 6858 Schwarzach, Austria",
                   },
                   {

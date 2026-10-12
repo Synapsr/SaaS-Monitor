@@ -326,6 +326,10 @@ export const fr: SiteText = {
     primary: "Commencer",
     secondary: "Mettre une étoile sur GitHub",
   },
+  support: {
+    label: `Une question${NNBSP}?`,
+    action: "Écrivez-nous",
+  },
   footer: {
     license: "Open source sous licence MIT.",
     madeBy: "Conçu par [Synapsr](synapsr).",

@@ -327,6 +327,10 @@ export const nl: SiteText = {
     primary: "Aan de slag",
     secondary: "Geef een ster op GitHub",
   },
+  support: {
+    label: "Vragen?",
+    action: "Stuur ons een bericht",
+  },
   footer: {
     license: "Open source onder de MIT-licentie.",
     madeBy: "Gemaakt door [Synapsr](synapsr).",

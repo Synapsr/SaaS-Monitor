@@ -15,10 +15,10 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   the wall, customize it, use the apps, check how the numbers are computed, connect safely and
   self-host, each linking to the detailed section of the guides in `docs/`. The header's **Docs**
   leads to them, and they are listed in the sitemap and `llms.txt`.
-- A help widget in the dashboard, for an instance that sets `GLEAP_API_KEY` (a Gleap project's
-  SDK key): people write to its team from there. The site and the screens still load no
-  third-party script, and the widget leaves the dashboard's console and requests out of bug
-  reports.
+- A help widget for an instance that sets `GLEAP_API_KEY` (a Gleap project's SDK key): people
+  write to its team from the dashboard, and from the site's pages through a **Questions?** button,
+  which loads the widget only once clicked. Screens load no third-party script, and the widget
+  leaves the dashboard's console and requests out of bug reports.
 - The server side of the SaaS Monitor app (iOS and Android): a phone opens a screen with its link,
   scanned from the QR code of **Open on your phone** in the screen settings, and its password if
   it has one, then gets notified of what happens, in the screen's language. **Events** gains a

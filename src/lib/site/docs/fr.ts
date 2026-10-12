@@ -440,7 +440,7 @@ export const fr: DocsText = {
     },
     tracking: {
       title: "Sans pub ni pistage",
-      text: "Le site n’utilise aucun outil de mesure d’audience et ne charge aucun script tiers. Aucun cookie publicitaire ou de pistage, et vos données ne sont jamais vendues. L’app n’a ni compte ni pistage non plus. [Politique de confidentialité](privacy)",
+      text: "Le site n’utilise aucun outil de mesure d’audience et ne charge aucun script tiers tant que vous n’ouvrez pas son aide. Aucun cookie publicitaire ou de pistage, et vos données ne sont jamais vendues. L’app n’a ni compte ni pistage non plus. [Politique de confidentialité](privacy)",
     },
     others: {
       title: "Qui d’autre voit quoi",
