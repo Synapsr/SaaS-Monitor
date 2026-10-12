@@ -44,7 +44,7 @@ export default function PrivacyPage() {
   return (
     <LegalDocument
       page="privacy"
-      updated="2026-10-07"
+      updated="2026-10-12"
       lead={
         <>
           What <HostedDomain /> and the {siteConfig.name} app collect, why, who handles it and how
@@ -61,6 +61,7 @@ export default function PrivacyPage() {
             "Customer names and email addresses stay off your screens, and their notifications, unless you turn them on.",
             "The app has no account and no tracking. Your screens stay on your device, and it only talks to their instance and, for notifications, to Apple’s, Google’s or Expo’s push services.",
             "No ads, no tracking, no analytics, and we never sell your data.",
+            "If you write to us from the dashboard’s help widget, Gleap handles your name, email address and messages for us.",
             "Disconnect a Stripe account, and everything imported from it is deleted right away.",
           ]}
         />
@@ -166,11 +167,17 @@ export default function PrivacyPage() {
               </p>
 
               <Subheading>When you write to us</Subheading>
-              <p>Your email address and what your message says.</p>
+              <p>
+                Your email address and what your message says. From the dashboard’s help widget, run
+                by Gleap, also your name and account ID, so that we know who is writing, and the
+                screenshot or files you attach. The widget leaves the dashboard’s console and its
+                requests to our server out of what it sends.
+              </p>
 
               <Subheading>Visits to this site</Subheading>
               <p>
-                We don’t measure them: the site runs no analytics, and loads no third-party script.
+                We don’t measure them: the site runs no analytics. Its pages and the screens load no
+                third-party script; only the dashboard loads Gleap’s help widget, to write to us.
               </p>
             </>
           ),
@@ -380,6 +387,12 @@ export default function PrivacyPage() {
                     note: "400 days. Changing the password makes it useless.",
                   },
                   {
+                    term: <Code>gleap-widget-…</Code>,
+                    description:
+                      "Local storage of the dashboard’s help widget (Gleap): your conversations with us, from one visit to the next, and the widget’s settings.",
+                    note: "Until you clear it.",
+                  },
+                  {
                     term: <Code>theme</Code>,
                     description:
                       "Local storage: the light or dark dashboard you chose, if you chose one. The dashboard may keep other choices of yours there the same way, such as a tip you dismissed.",
@@ -422,6 +435,12 @@ export default function PrivacyPage() {
                     description:
                       "Synthesizes the phrases of screens set to say their own words, on their displays, in the app and in its notifications, and those you preview in the screen editor. It receives the text of each phrase, which can include a customer’s name (on screens that show names), an amount, a plan, a country and a product name.",
                     note: "151 bis rue Saint-Honoré, 75001 Paris, France",
+                  },
+                  {
+                    term: "Gleap GmbH",
+                    description:
+                      "Runs the dashboard’s help widget. It receives your name, email address and account ID, what you write to us there, and the screenshots or files you attach.",
+                    note: "Am Dorfplatz 3, 6858 Schwarzach, Austria",
                   },
                   {
                     term: "Google",
@@ -469,11 +488,13 @@ export default function PrivacyPage() {
           title: "Where it is processed",
           content: (
             <p>
-              Our server and database are in France. Gradium sends each request to its nearest
-              servers, which may be outside the European Union, and Google may process emails
-              outside it, under the European Commission’s standard contractual clauses.
-              Notifications go through the servers of Apple, Google and, for some devices, Expo,
-              which may be in the United States, under the EU–U.S. Data Privacy Framework.
+              Our server and database are in France. Gleap keeps the conversations of its help
+              widget in Frankfurt, Germany, and serves attachments through Cloudflare’s network.
+              Gradium sends each request to its nearest servers, which may be outside the European
+              Union, and Google may process emails outside it, under the European Commission’s
+              standard contractual clauses. Notifications go through the servers of Apple, Google
+              and, for some devices, Expo, which may be in the United States, under the EU–U.S. Data
+              Privacy Framework.
             </p>
           ),
         },
