@@ -17,6 +17,13 @@ export const SOUND_PACK_NAMES: Record<SoundPack, string> = {
   arcade: "Arcade",
 };
 
+/** What each pack sounds like, in a few words, wherever visitors can play it. */
+export const SOUND_PACK_DESCRIPTIONS: Record<SoundPack, string> = {
+  register: "The classic ka-ching: a drawer and a till bell.",
+  chime: "Soft bells for a calm office.",
+  arcade: "8-bit coins and power-ups.",
+};
+
 export interface PlaySoundOptions {
   pack: SoundPack;
   /** 0 to 1. */

@@ -80,7 +80,7 @@ export function FeatureGrid() {
       <CompactFeature
         icon={ShieldCheckIcon}
         title="Honest and private"
-        description="The same MRR as your Stripe dashboard, from a read-only key encrypted at rest. Customer names stay hidden unless you want them."
+        description="MRR as Stripe defines it, from a restricted key encrypted at rest. Customer names stay hidden unless you want them."
       />
     </div>
   );

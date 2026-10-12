@@ -1,29 +1,91 @@
 # Self-hosting
 
-SaaS Monitor is a single Next.js server and a MySQL database. The provided Docker Compose file
-runs both.
+SaaS Monitor is a single Next.js server and a MySQL database. The Docker Compose file runs both,
+with the image published for each release.
 
 ## Quick start with Docker
 
-Requirements: Docker with Compose, and Node.js to run the setup script (or see the manual
-alternative below).
+Requirements: [Docker](https://docs.docker.com/get-started/get-docker/) with Compose, on a
+server, a spare computer or a Raspberry Pi with a 64-bit OS: the image is built for amd64 and
+arm64.
+
+```bash
+curl -fsSL https://saas-monitor.com/install.sh | sh
+cd saas-monitor && docker compose up -d
+```
+
+The [script](../public/install.sh) creates a `saas-monitor` folder holding `compose.yaml` and a
+`.env` with fresh secrets, then stops: it needs no root, starts nothing and touches nothing else.
+It is short, so read it first if you like (`curl -fsSL https://saas-monitor.com/install.sh`), or
+follow [the same steps by hand](#the-same-by-hand). Then open <http://localhost:3000>, create your
+account and connect Stripe. Database migrations run automatically when the app starts.
+
+**Opening it from a TV or another computer?** Set `APP_URL` in `.env` to the address they will
+use, such as `http://192.168.1.20:3000` or `https://monitor.example.com`, and run
+`docker compose up -d` again: screen links, invitation links and sign-in callbacks are built from
+it. The script can also write it for you:
+
+```bash
+curl -fsSL https://saas-monitor.com/install.sh | APP_URL=http://192.168.1.20:3000 sh
+```
+
+> Keep `ENCRYPTION_KEY` safe and never change it: it encrypts the Stripe keys stored in the
+> database. If it is lost, every Stripe account has to be connected again.
+
+### The same, by hand
+
+The script only downloads two files from this repository and fills in the secrets:
+
+```bash
+mkdir saas-monitor && cd saas-monitor
+curl -fsSLO https://raw.githubusercontent.com/Synapsr/SaaS-Monitor/main/compose.yaml
+curl -fsSL https://raw.githubusercontent.com/Synapsr/SaaS-Monitor/main/.env.example -o .env
+for key in AUTH_SECRET ENCRYPTION_KEY MYSQL_PASSWORD MYSQL_ROOT_PASSWORD; do
+  sed -i.bak "s/^$key=\$/$key=$(openssl rand -hex 32)/" .env
+done
+rm .env.bak && chmod 600 .env
+docker compose up -d
+```
+
+Each secret gets its own value from `openssl rand -hex 32`. In a clone of the repository,
+`node scripts/setup.mjs` writes the `.env` the same way.
+
+## The published image
+
+`compose.yaml` runs `ghcr.io/synapsr/saas-monitor`, which each release publishes for amd64 and
+arm64. `SAAS_MONITOR_VERSION` in `.env` picks the version: `latest` by default, or a release such
+as `1.1.0` (or `1.1`, its latest patch) to update on your own terms.
+
+It behaves like a build of your own, with one difference. Static pages, such as the landing page
+at `/`, are rendered when the image is built, and so is the absolute address of their social
+preview image: in the published image, it points to `http://localhost:3000`. Shared in a chat,
+your instance's home page then shows no preview image. Screens, the dashboard and the sign-in
+pages read your `APP_URL` when they are served, as usual. If that preview matters to you,
+[build from source](#build-from-source).
+
+Open screens reload themselves when the version changes: published images are identified by
+their release.
+
+## Build from source
+
+In a clone of the repository, `compose.build.yaml` builds the image from your source instead of
+pulling it:
 
 ```bash
 git clone https://github.com/Synapsr/SaaS-Monitor.git
 cd SaaS-Monitor
-node scripts/setup.mjs      # writes .env with fresh secrets
-docker compose up -d        # builds the image, starts MySQL and the app
+node scripts/setup.mjs                                     # writes .env with fresh secrets
+echo "COMPOSE_FILE=compose.yaml:compose.build.yaml" >> .env
+docker compose up -d                                       # builds the image, then starts it
 ```
 
-Open <http://localhost:3000>, create your account and connect Stripe. Database migrations run
-automatically when the app starts.
+With `COMPOSE_FILE` set, `docker compose up -d` builds the image (from cache when nothing changed)
+under the name `saas-monitor:local`, so that it never passes for a published release. It passes
+two values to the build:
 
-Without Node.js, create the `.env` by hand: `cp .env.example .env`, then fill `AUTH_SECRET`,
-`ENCRYPTION_KEY`, `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` with the output of
-`openssl rand -hex 32` (a different value for each).
-
-> Keep `ENCRYPTION_KEY` safe and never change it: it encrypts the Stripe keys stored in the
-> database. If it is lost, every Stripe account has to be connected again.
+- `APP_URL`, for the social previews of static pages, written into them when the app is built.
+- `BUILD_ID` (optional), which identifies the build: open screens reload themselves when it
+  changes. Leave it empty to get a new one with every build.
 
 ## Configuration
 
@@ -38,6 +100,7 @@ All settings are environment variables, documented in [`.env.example`](../.env.e
 | `MYSQL_PASSWORD`                           | compose  | Password of the bundled database's user.                                                                 |
 | `MYSQL_ROOT_PASSWORD`                      | compose  | Password of its root user, for administration and backups.                                               |
 | `APP_PORT`                                 | no       | Host port published by `compose.yaml` (default `3000`).                                                  |
+| `SAAS_MONITOR_VERSION`                     | no       | Version of the [published image](#the-published-image) (default `latest`), e.g. `1.1.0`.                 |
 | `DISABLE_SIGNUPS`                          | no       | `true` to close registrations; invited people can still join.                                            |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | no       | Enables "Continue with GitHub".                                                                          |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables "Continue with Google".                                                                          |
@@ -49,15 +112,6 @@ All settings are environment variables, documented in [`.env.example`](../.env.e
 
 After your team has signed up, set `DISABLE_SIGNUPS=true` and restart: nobody else can create an
 account on your instance, while invitations keep working.
-
-`compose.yaml` also passes two values to the image build:
-
-- `APP_URL`, because the absolute links of social previews (a screen shared in a chat, the landing
-  page) are written into the pages when the app is built. Rebuild after changing it:
-  `docker compose up -d --build`.
-- `BUILD_ID` (optional), which identifies the build: open screens reload themselves when it
-  changes. Leave it empty to get a new one with every build; the published images use their
-  version number.
 
 ## Notifications
 
@@ -97,7 +151,7 @@ APP_URL=https://monitor.example.com
 APP_PORT=127.0.0.1:3000
 ```
 
-and run `docker compose up -d --build` (the image is rebuilt for `APP_URL`, see above).
+and run `docker compose up -d` again.
 
 Behind a proxy, keep these in mind:
 
@@ -112,11 +166,18 @@ Behind a proxy, keep these in mind:
 ## Updating
 
 ```bash
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
-Open screens notice the new version and reload themselves.
+Open screens notice the new version and reload themselves. With a pinned `SAAS_MONITOR_VERSION`,
+change it first. When you [build from source](#build-from-source), update with
+`git pull && docker compose up -d`.
+
+Installed from a clone with an earlier `compose.yaml`, which built the image? After `git pull`,
+`docker compose up -d` runs the published image of the latest release instead, with the same
+database. If your clone ran changes from `main` that are not released yet, or to keep building
+your own, add the `COMPOSE_FILE` line of [Build from source](#build-from-source) to `.env` first.
 
 ## Backups
 

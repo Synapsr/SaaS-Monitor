@@ -1,7 +1,6 @@
-import { ArrowRightIcon, ArrowUpRightIcon, CheckIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { ModeBadge, SyncStatus } from "@/components/app/accounts/account-status";
-import { CopyField } from "@/components/app/copy-button";
 import { NewScreenButton } from "@/components/app/screens/new-screen-button";
 import { ScreenPreview } from "@/components/app/screens/screen-preview";
 import { TvSetupSteps } from "@/components/app/screens/tv-setup";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/server/screens";
 import type { StripeAccountSummary } from "@/server/stripe/accounts";
+import { ScreenLinkStep } from "./screen-link-step";
 
 type StepState = "done" | "current" | "upcoming";
 
@@ -108,20 +108,7 @@ export function SetupGuide({
         <SetupStep number={3} title="Put it on your TV" state={screen ? "current" : "upcoming"}>
           {screen && url ? (
             <StepCard className="gap-5">
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-pretty text-muted-foreground">
-                  Open this link on the TV. It is private: anyone who has it can see the screen.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <CopyField value={url} label="Screen link" className="sm:flex-1" />
-                  <Button asChild size="lg">
-                    <a href={url} target="_blank" rel="noreferrer">
-                      Open screen
-                      <ArrowUpRightIcon data-icon="inline-end" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
+              <ScreenLinkStep url={url} />
               <TvSetupSteps url={url} />
               <div className="flex justify-end border-t pt-4">
                 <Button asChild variant="ghost">

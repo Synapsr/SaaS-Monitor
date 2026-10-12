@@ -26,6 +26,11 @@ const schema = z
     MIGRATE_ON_START: booleanFlag(true),
     /** Self-hosted instances ask, now and then, for a star on GitHub: `true` never asks. */
     DISABLE_STAR_PROMPT: booleanFlag(false),
+    /**
+     * Screens credit "saas-monitor.com" on their celebrations, unless a screen turns it off. Only
+     * the hosted instance sets it: self-hosted screens carry no one's brand.
+     */
+    SHOW_ATTRIBUTION: booleanFlag(false),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
@@ -113,4 +118,13 @@ let cached: Env | undefined;
  */
 export function env(): Env {
   return (cached ??= parseEnv());
+}
+
+/**
+ * `APP_URL` alone, validated like `env()` does. For what pages rendered at build time need
+ * (absolute URLs in metadata, the sitemap, `llms.txt`): builds have no secrets, so `env()` would
+ * throw there. Docker builds receive APP_URL as a build argument, which may be empty.
+ */
+export function appUrl(): string {
+  return schema.shape.APP_URL.parse(process.env.APP_URL || undefined);
 }

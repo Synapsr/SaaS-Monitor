@@ -8,6 +8,8 @@ coverage
 docs
 *.md
 !README.md
+# Rendered at build time by /changelog and its feed.
+!CHANGELOG.md
 .env*
 !.env.example
 Dockerfile

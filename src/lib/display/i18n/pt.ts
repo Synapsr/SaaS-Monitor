@@ -128,4 +128,9 @@ export const pt: DisplayText = {
     wrongPassword: "Senha incorreta. Tente de novo.",
     tooManyAttempts: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
   },
+  demo: {
+    label: "Demo ao vivo · dados simulados",
+    pitch: (metric) => `Coloque seu próprio ${metric} na parede`,
+    start: "Comece grátis",
+  },
 };

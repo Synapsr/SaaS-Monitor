@@ -127,4 +127,9 @@ export const es: DisplayText = {
     wrongPassword: "Contraseña incorrecta. Inténtalo de nuevo.",
     tooManyAttempts: "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.",
   },
+  demo: {
+    label: "Demo en directo · datos simulados",
+    pitch: (metric) => `Pon tu propio ${metric} en la pared`,
+    start: "Empieza gratis",
+  },
 };

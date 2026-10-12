@@ -57,6 +57,9 @@ export function resolveDisplayState(
         ...state,
         screen: { name: override?.name ?? state.screen.name, settings },
         series: { ...state.series, mrr: seriesInRange(state.series.mrr, settings.chartRange) },
+        // Only the server knows whether it credits the product: the editor can turn the credit
+        // off at once, and back on once saved.
+        attribution: state.attribution && settings.attribution,
       }
     : state;
 

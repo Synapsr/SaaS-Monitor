@@ -156,6 +156,11 @@ export const screenSettingsSchema = z.object({
   /** Confetti on new revenue and a full-screen moment when a milestone is crossed. */
   celebrations: z.boolean().default(true),
   /**
+   * "saas-monitor.com" under moments and milestones, which get filmed and shared. Only servers
+   * that credit the product (`SHOW_ATTRIBUTION`, the hosted one) show it: see `DisplayState`.
+   */
+  attribution: z.boolean().default(true),
+  /**
    * How long the moment of each event stays on screen: long enough to be read from across the
    * room. Shorter when others are waiting.
    */

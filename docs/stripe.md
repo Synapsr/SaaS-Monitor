@@ -1,9 +1,9 @@
 # Connect Stripe
 
 SaaS Monitor reads your Stripe data with a **restricted API key**: a key you create in the Stripe
-Dashboard that can only do what you allow. It never needs your secret key, and it never changes
-anything in your account (the single optional write permission lets it register its own webhook
-endpoint).
+Dashboard that can only do what you allow. It never needs your secret key, and it only reads your
+account, apart from the single optional write permission that lets it register its own webhook
+endpoint.
 
 ## Create the key
 
@@ -48,8 +48,9 @@ are lost.
 
 ## How MRR is computed
 
-SaaS Monitor follows [Stripe's definition of MRR](https://docs.stripe.com/billing/subscriptions/analytics),
-so the number on the wall matches your Stripe Dashboard:
+SaaS Monitor computes MRR [as Stripe defines it](https://docs.stripe.com/billing/subscriptions/analytics),
+so the number on the wall stays close to your Stripe Dashboard (the few differences are listed
+under the limits below):
 
 - Only `active` and `past_due` subscriptions count: trials and `canceled`, `unpaid`, `paused` or
   `incomplete` subscriptions don't.

@@ -2,13 +2,15 @@ import { CopyCode } from "@/components/app/copy-button";
 
 /**
  * Chromium full screen, without popups or update prompts, allowed to play sounds without a click.
+ * Not incognito: a screen's password is remembered in a cookie, which must survive a reboot, and
+ * the crash restore bubble stays hidden after a power cut instead.
  * docs/wall-display.md gives the same command for a Raspberry Pi: keep both identical.
  */
 const KIOSK_FLAGS = [
   "--kiosk",
   "--noerrdialogs",
   "--disable-infobars",
-  "--incognito",
+  "--hide-crash-restore-bubble",
   "--autoplay-policy=no-user-gesture-required",
   "--check-for-update-interval=31536000",
 ];

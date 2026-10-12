@@ -168,6 +168,8 @@ export function demoState(worlds: readonly DemoWorld[], now: Date): DisplayState
     testEvent: null,
     // No server synthesizes the demo's phrases: its voice says recorded ones.
     personalizedVoice: false,
+    // The demo is the product showing itself, wherever it runs.
+    attribution: true,
     warnings: [],
   };
 }

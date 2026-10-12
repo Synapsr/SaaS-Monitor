@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CopyField } from "@/components/app/copy-button";
 import { QrCode } from "@/components/app/screens/qr-code";
 import { TvSetupSteps } from "@/components/app/screens/tv-setup";
+import { WallShareCard } from "@/components/app/wall-share-card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Spinner } from "@/components/ui/spinner";
@@ -28,6 +29,7 @@ export function SharePanel({
   const id = useId();
   const [testing, startTest] = useTransition();
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
+  const [celebrated, setCelebrated] = useState(false);
 
   function sendTest() {
     startTest(async () => {
@@ -40,6 +42,7 @@ export function SharePanel({
               ? `Open copies of this screen celebrate within a few seconds, and ${phones} ${phones === 1 ? "phone was" : "phones were"} notified.`
               : "Open copies of this screen celebrate within a few seconds.",
         });
+        setCelebrated(true);
       } else {
         toast.error(result.error);
       }
@@ -81,6 +84,8 @@ export function SharePanel({
           and notifies the phones that follow it. The easiest way to check the sound on your TV.
         </p>
       </div>
+
+      {celebrated && <WallShareCard />}
 
       <div className="flex items-center gap-4 border-t pt-4">
         <QrCode

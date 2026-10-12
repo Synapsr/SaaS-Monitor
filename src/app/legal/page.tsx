@@ -89,7 +89,7 @@ export default function LegalNoticePage() {
           content: (
             <p>
               {siteConfig.name}’s code is published under the MIT license{" "}
-              <TextLink href={siteConfig.repositoryUrl}>on GitHub</TextLink>. This notice covers
+              <TextLink href={siteConfig.repositoryUrl}>on GitHub</TextLink>. This notice covers{" "}
               <HostedDomain /> only: an instance hosted elsewhere is published by whoever runs it.
             </p>
           ),

@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { env } from "@/env";
 import { BUILD_ID } from "@/lib/build-id";
 import { calendarDay, chartStart, displayCalendar } from "@/lib/display/calendar";
 import { shownEmail } from "@/lib/display/customer";
@@ -127,6 +128,7 @@ export async function getDisplayStateByToken(
     }),
     testEvent: recentTestEvent(screen.testEventAt, now),
     personalizedVoice: speaksOwnPhrases(settings),
+    attribution: settings.attribution && env().SHOW_ATTRIBUTION,
     warnings: displayWarnings(converter.unavailable, accounts),
   };
 }

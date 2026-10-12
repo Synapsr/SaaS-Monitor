@@ -45,6 +45,22 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   shown as a card, plays its sound and is said out loud, each on its own. Payments made for Stripe
   Connect accounts have their own row: they may stay off the feed, which still fills up with the
   account's own activity.
+- The standalone live demo says its data is simulated and invites visitors to put their own MRR
+  on the wall. Shared on X or LinkedIn, a link to it shows a preview card.
+- On saas-monitor.com, moments and milestones credit "saas-monitor.com" in small print, which each
+  screen can turn off. It needs `SHOW_ATTRIBUTION=true`: self-hosted servers never show it.
+- The landing page's TV can be heard: **Hear it** plays the demo's sounds and voice. The sound
+  board plays every voice in its own language, and a FAQ answers what founders ask before
+  connecting Stripe.
+- New pages: Stripe notification sounds, with every sound to download as WAV; comparisons with
+  Baremetrics, ChartMogul, Geckoboard, PingBell and ProfitWell Metrics; this changelog, with an RSS
+  feed; the privacy policy, terms of service and legal notice of saas-monitor.com.
+- A sitemap, structured data, `llms.txt` and an Apple touch icon, for search engines and
+  assistants.
+- After a test celebration, the dashboard offers once to share a photo of the wall or to star the
+  project. The user menu links to GitHub, the docs, the changelog and feedback.
+- Self-hosting without cloning: `compose.yaml` runs the published image (amd64 and arm64),
+  `install.sh` prepares the folder and its secrets, and `compose.build.yaml` builds from source.
 
 - Self-hosted dashboards ask, once in a while, for a star on GitHub: "Maybe later" asks again a
   day later, and starring or "Don't ask again" never asks again. `DISABLE_STAR_PROMPT=true` turns
@@ -57,6 +73,12 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
   still play at once.
 - Sound and voice settings keep to how they sound: which events play moved to **Events**. Screens
   keep the sounds and voice they had chosen.
+- The Raspberry Pi guide sets a screen up with one block of commands.
+
+### Fixed
+
+- A screen protected by a password stays unlocked after its kiosk restarts: the kiosk command no
+  longer opens Chromium in incognito mode, which forgot the password at every reboot.
 
 ## [1.1.0] - 2026-09-29
 
@@ -109,7 +131,7 @@ The first public release.
 ### Stripe
 
 - Read-only restricted keys, encrypted at rest.
-- MRR as Stripe computes it: discounts, trials, cancellations at period end, billing intervals.
+- MRR as Stripe defines it: discounts, trials, cancellations at period end, billing intervals.
 - A resumable import of subscriptions, a year of payments and the last week's new customers,
   then an incremental sync from the Events API: instant with webhooks, otherwise paced within
   Stripe's read allowance.

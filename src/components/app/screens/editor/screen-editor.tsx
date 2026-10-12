@@ -43,12 +43,15 @@ export function ScreenEditor({
   accounts,
   appUrl,
   canPersonalizeVoice,
+  attributionAvailable,
 }: {
   screen: Screen;
   accounts: AccountOption[];
   appUrl: string;
   /** The server has a Gradium API key: voices can say the screen's own phrases. */
   canPersonalizeVoice: boolean;
+  /** The server credits the product on celebrations (`SHOW_ATTRIBUTION`). */
+  attributionAvailable: boolean;
 }) {
   const id = useId();
   // Initialized once: server re-renders after each save must not overwrite what is being typed.
@@ -259,6 +262,7 @@ export function ScreenEditor({
             <LookSettings
               settings={draft.settings}
               metric={draft.settings.metric}
+              attributionAvailable={attributionAvailable}
               onChange={setSettings}
             />
           </SettingsSection>

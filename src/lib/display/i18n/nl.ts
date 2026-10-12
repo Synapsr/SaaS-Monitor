@@ -131,4 +131,9 @@ export const nl: DisplayText = {
     wrongPassword: "Onjuist wachtwoord. Probeer het opnieuw.",
     tooManyAttempts: "Te veel pogingen. Wacht een paar minuten en probeer het dan opnieuw.",
   },
+  demo: {
+    label: "Live-demo · gesimuleerde gegevens",
+    pitch: (metric) => `Hang je eigen ${metric} aan de muur`,
+    start: "Gratis beginnen",
+  },
 };

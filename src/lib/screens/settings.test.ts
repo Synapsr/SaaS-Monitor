@@ -180,6 +180,21 @@ describe("customer emails", () => {
   });
 });
 
+describe("attribution", () => {
+  it("is on by default, for new screens and those saved before it existed", () => {
+    expect(defaultScreenSettings.attribution).toBe(true);
+    expect(parseScreenSettings({ theme: "light" }).attribution).toBe(true);
+  });
+
+  it("can be turned off, and falls back to on without losing the other settings", () => {
+    expect(screenSettingsSchema.parse({ attribution: false }).attribution).toBe(false);
+    expect(parseScreenSettings({ attribution: "no", theme: "light" })).toMatchObject({
+      attribution: true,
+      theme: "light",
+    });
+  });
+});
+
 describe("events", () => {
   it("show everywhere by default, with losses not said out loud", () => {
     expect(defaultScreenSettings.events.connectPayment).toEqual({

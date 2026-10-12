@@ -22,7 +22,10 @@ type ConnectInput = Parameters<typeof connectAccountAction>[0];
 type ConnectResult = Awaited<ReturnType<typeof connectAccountAction>>;
 
 const REASSURANCES = [
-  { Icon: ShieldCheckIcon, text: "Read-only: it can’t charge, refund or change anything." },
+  {
+    Icon: ShieldCheckIcon,
+    text: "Read-only, apart from its own webhook: it can’t charge, refund or change your data.",
+  },
   { Icon: LockIcon, text: "Encrypted at rest (AES-256-GCM). It never leaves the server." },
   { Icon: EyeOffIcon, text: "Never displayed again: only its last characters are shown." },
 ];

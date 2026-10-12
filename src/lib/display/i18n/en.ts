@@ -131,6 +131,15 @@ export const en = {
     wrongPassword: "Wrong password. Try again.",
     tooManyAttempts: "Too many attempts. Wait a few minutes, then try again.",
   },
+  /**
+   * The standalone demo: what it shows is simulated, which a screenshot must never hide, and
+   * visitors are invited to put their own numbers up.
+   */
+  demo: {
+    label: "Live demo · simulated data",
+    pitch: (metric: string) => `Put your own ${metric} on the wall`,
+    start: "Start free",
+  },
 };
 
 export type DisplayText = typeof en;

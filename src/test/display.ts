@@ -70,6 +70,7 @@ export function displayState(overrides: Partial<DisplayState> = {}): DisplayStat
     feed: [],
     testEvent: null,
     personalizedVoice: false,
+    attribution: false,
     warnings: [],
     ...overrides,
   };
