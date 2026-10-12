@@ -26,7 +26,8 @@ export function shareIntentUrl(channel: ShareChannel, text: string = WALL_SHARE_
 /** Where the dashboard sends people who want to help, ask or follow along. */
 export const communityLinks = {
   star: siteConfig.repositoryUrl,
-  docs: siteConfig.docsUrl,
+  /** The site's docs, which every instance serves, like the changelog. */
+  docs: "/docs",
   changelog: "/changelog",
   /** Blank issues are off: the chooser lists the bug report and feature request forms. */
   feedback: `${siteConfig.repositoryUrl}/issues/new/choose`,

@@ -96,6 +96,8 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ### Fixed
 
+- **Docs** in the account menu opens the instance's own docs (`/docs`) rather than the guides on
+  GitHub.
 - A screen protected by a password stays unlocked after its kiosk restarts: the kiosk command no
   longer opens Chromium in incognito mode, which forgot the password at every reboot.
 

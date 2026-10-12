@@ -41,4 +41,8 @@ describe("communityLinks", () => {
     );
     expect(communityLinks.changelog).toBe("/changelog");
   });
+
+  it("opens the docs of the instance itself", () => {
+    expect(communityLinks.docs).toBe("/docs");
+  });
 });
