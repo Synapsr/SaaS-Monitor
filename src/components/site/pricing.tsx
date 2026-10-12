@@ -2,14 +2,20 @@ import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { buttonClass } from "@/components/site/button-styles";
 import { Container, SectionHeading } from "@/components/site/section";
-import { siteConfig } from "@/lib/site";
 import type { SiteText } from "@/lib/site/i18n";
 import { cn } from "@/lib/utils";
 
 type Plan = SiteText["pricing"]["hosted"];
 
 /** What it costs: nothing online during the public beta, nothing ever on your own server. */
-export function Pricing({ text }: { text: SiteText["pricing"] }) {
+export function Pricing({
+  text,
+  selfHosting,
+}: {
+  text: SiteText["pricing"];
+  /** The docs' page on self-hosting, in the page's language. */
+  selfHosting: string;
+}) {
   return (
     <section aria-labelledby="pricing-title" id="pricing" className="pt-24 sm:pt-36">
       <Container>
@@ -32,12 +38,12 @@ export function Pricing({ text }: { text: SiteText["pricing"] }) {
             </Link>
           </PlanCard>
           <PlanCard plan={text.selfHosted}>
-            <a
-              href={siteConfig.selfHostingUrl}
+            <Link
+              href={selfHosting}
               className={buttonClass({ variant: "secondary", size: "lg", className: "w-full" })}
             >
               {text.selfHosted.cta}
-            </a>
+            </Link>
           </PlanCard>
         </div>
       </Container>

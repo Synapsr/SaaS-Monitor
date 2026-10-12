@@ -66,6 +66,7 @@ export async function SitePage({
         demo={demoPath(language)}
         languages={languages}
         stars={stars === null ? null : formatCount(stars, locale)}
+        inDocs={path === "/docs" || path.startsWith("/docs/")}
       />
       <main id="content" tabIndex={-1} className="outline-none">
         {children}

@@ -68,7 +68,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
         embed={demoPath(lang, { preview: "1" })}
         poster={demoPoster(lang)}
       />
-      <ProofBar text={text.proof} stars={stars} />
+      <ProofBar text={text.proof} stars={stars} selfHosting={links["doc-self-hosting"]} />
       <Features text={text.features} locale={locale} />
       <Sounds
         text={text.sounds}
@@ -76,8 +76,8 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
         files={localizedPath(lang, "/stripe-notification-sound")}
       />
       <Apps text={text.apps} />
-      <SetupSteps text={text.steps} />
-      <Pricing text={text.pricing} />
+      <SetupSteps text={text.steps} guide={links["doc-get-started"]} />
+      <Pricing text={text.pricing} selfHosting={links["doc-self-hosting"]} />
       <OpenSource text={text.openSource} stars={stars} links={links} />
       <Questions text={text.faq} links={links} />
       <Closing text={text.closing} stars={stars} />

@@ -1,8 +1,14 @@
+import { ArrowRightIcon } from "lucide-react";
+import Link from "next/link";
+import { textLinkClass } from "@/components/site/button-styles";
 import { Container, SectionHeading } from "@/components/site/section";
 import type { SiteText } from "@/lib/site/i18n";
 
-/** From Stripe to the wall, in three steps along a line, rather than three more cards. */
-export function SetupSteps({ text }: { text: SiteText["steps"] }) {
+/**
+ * From Stripe to the wall, in three steps along a line, rather than three more cards, and the
+ * docs' guide that walks through them.
+ */
+export function SetupSteps({ text, guide }: { text: SiteText["steps"]; guide: string }) {
   return (
     <section aria-labelledby="steps-title" id="how-it-works" className="pt-24 sm:pt-36">
       <Container>
@@ -27,6 +33,15 @@ export function SetupSteps({ text }: { text: SiteText["steps"] }) {
             </li>
           ))}
         </ol>
+        <p className="reveal mt-12">
+          <Link
+            href={guide}
+            className={`${textLinkClass} inline-flex items-center gap-1.5 text-sm`}
+          >
+            {text.guide}
+            <ArrowRightIcon aria-hidden className="size-4" />
+          </Link>
+        </p>
       </Container>
     </section>
   );

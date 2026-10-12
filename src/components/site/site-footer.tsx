@@ -46,6 +46,7 @@ export function SiteFooter({
       title: text.columns.product,
       links: [
         { label: text.links.demo, href: demo },
+        { label: text.links.docs, href: links.docs },
         { label: text.links.sounds, href: sounds },
         { label: text.links.alternatives, href: "/alternatives", english: !english },
         { label: text.links.changelog, href: "/changelog", english: !english },
@@ -55,8 +56,8 @@ export function SiteFooter({
       title: text.columns.openSource,
       links: [
         { label: text.links.github, href: siteConfig.repositoryUrl },
-        { label: text.links.docs, href: siteConfig.docsUrl },
-        { label: text.links.selfHosting, href: siteConfig.selfHostingUrl },
+        { label: text.links.githubDocs, href: siteConfig.docsUrl },
+        { label: text.links.selfHosting, href: links["doc-self-hosting"] },
       ],
     },
     {

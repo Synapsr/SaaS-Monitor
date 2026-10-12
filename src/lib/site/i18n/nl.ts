@@ -191,6 +191,7 @@ export const nl: SiteText = {
   steps: {
     eyebrow: "Instellen",
     title: "In twee minuten aan de muur",
+    guide: "Lees de stap-voor-stap-handleiding",
     items: [
       {
         title: "Koppel Stripe",
@@ -338,6 +339,7 @@ export const nl: SiteText = {
       alternatives: "Alternatieven",
       changelog: "Wijzigingen",
       docs: "Docs",
+      githubDocs: "Docs op GitHub",
       github: "GitHub",
       selfHosting: "Zelf hosten",
       privacy: "Privacy",

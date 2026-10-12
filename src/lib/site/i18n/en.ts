@@ -190,6 +190,7 @@ export const en = {
   steps: {
     eyebrow: "Setup",
     title: "On the wall in two minutes",
+    guide: "Read the step-by-step guide",
     items: [
       {
         title: "Connect Stripe",
@@ -336,6 +337,7 @@ export const en = {
       alternatives: "Alternatives",
       changelog: "Changelog",
       docs: "Docs",
+      githubDocs: "Docs on GitHub",
       github: "GitHub",
       selfHosting: "Self-hosting",
       privacy: "Privacy",

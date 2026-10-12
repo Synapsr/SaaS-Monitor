@@ -8,6 +8,7 @@ import { MobileMenu, type MenuLink } from "@/components/site/mobile-menu";
 import { siteConfig } from "@/lib/site";
 import type { SiteText } from "@/lib/site/i18n";
 import type { SiteLanguage } from "@/lib/site/languages";
+import { localizedPath } from "@/lib/site/paths";
 import { cn } from "@/lib/utils";
 
 const navLinkClass =
@@ -24,19 +25,30 @@ export interface SiteHeaderProps {
   languages: LanguageLink[];
   /** The repository's stars, when GitHub said. */
   stars: string | null;
+  /** Whether the page is one of the docs: their link is lit. */
+  inDocs?: boolean;
 }
 
 /**
  * Sticky, on frosted glass. Wide screens show the sections and the language menu; phones fold
  * them into a menu. Both open as popovers: no script for the language menu.
  */
-export function SiteHeader({ language, text, home, demo, languages, stars }: SiteHeaderProps) {
+export function SiteHeader({
+  language,
+  text,
+  home,
+  demo,
+  languages,
+  stars,
+  inDocs = false,
+}: SiteHeaderProps) {
+  const docs = localizedPath(language, "/docs");
   const sections: MenuLink[] = [
     { label: text.demo, href: demo },
     { label: text.features, href: `${home}#features` },
     { label: text.apps, href: `${home}#apps` },
     { label: text.pricing, href: `${home}#pricing` },
-    { label: text.docs, href: siteConfig.docsUrl },
+    { label: text.docs, href: docs },
   ];
 
   return (
@@ -54,7 +66,12 @@ export function SiteHeader({ language, text, home, demo, languages, stars }: Sit
         <nav aria-label={text.main} className="ml-4 hidden items-center text-sm lg:flex">
           {sections.map(({ label, href }) =>
             href.startsWith("/") ? (
-              <Link key={href} href={href} className={navLinkClass}>
+              <Link
+                key={href}
+                href={href}
+                aria-current={inDocs && href === docs ? "page" : undefined}
+                className={cn(navLinkClass, "aria-[current=page]:text-(--ink)")}
+              >
                 {label}
               </Link>
             ) : (

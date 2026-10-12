@@ -189,6 +189,7 @@ export const de: SiteText = {
   steps: {
     eyebrow: "Einrichtung",
     title: "In zwei Minuten an der Wand",
+    guide: "Zur Schritt-für-Schritt-Anleitung",
     items: [
       {
         title: "Stripe verbinden",
@@ -336,6 +337,7 @@ export const de: SiteText = {
       alternatives: "Alternativen",
       changelog: "Changelog",
       docs: "Doku",
+      githubDocs: "Doku auf GitHub",
       github: "GitHub",
       selfHosting: "Self-Hosting",
       privacy: "Datenschutz",

@@ -189,6 +189,7 @@ export const es: SiteText = {
   steps: {
     eyebrow: "Configuración",
     title: "En la pared en dos minutos",
+    guide: "Leer la guía paso a paso",
     items: [
       {
         title: "Conecta Stripe",
@@ -335,6 +336,7 @@ export const es: SiteText = {
       alternatives: "Alternativas",
       changelog: "Novedades",
       docs: "Documentación",
+      githubDocs: "Documentación en GitHub",
       github: "GitHub",
       selfHosting: "Autoalojamiento",
       privacy: "Privacidad",

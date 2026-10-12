@@ -6,10 +6,19 @@ import type { SiteText } from "@/lib/site/i18n";
  * What can be checked rather than claimed: the stars the repository really has (when GitHub
  * says), its license, where it runs, its languages, and what it doesn't do.
  */
-export function ProofBar({ text, stars }: { text: SiteText["proof"]; stars: string | null }) {
+export function ProofBar({
+  text,
+  stars,
+  selfHosting,
+}: {
+  text: SiteText["proof"];
+  stars: string | null;
+  /** The docs' page on self-hosting, in the page's language. */
+  selfHosting: string;
+}) {
   const facts = [
     { icon: ScaleIcon, label: text.license, href: siteConfig.licenseUrl },
-    { icon: ContainerIcon, label: text.selfHost, href: siteConfig.selfHostingUrl },
+    { icon: ContainerIcon, label: text.selfHost, href: selfHosting },
     { icon: LanguagesIcon, label: text.languages },
     { icon: EyeOffIcon, label: text.privacy },
   ];
