@@ -8,7 +8,7 @@ import { formatMoney, minorUnitDigits, toMinorUnits } from "@/lib/money";
 import type { ScreenSettings } from "@/lib/screens/settings";
 import { EVENT_VARIABLES, type Phrase } from "./announcements";
 import { chooseSpeech, defaultPhrases, type PhraseValues } from "./phrases";
-import { speaksLanguage, type VoiceId, type VoiceLanguage } from "./voices";
+import { speaksLanguage, type VoiceLanguage } from "./voices";
 
 /** What a voice says about a moment, and how a screen's settings choose it. */
 
@@ -37,11 +37,6 @@ function momentPhrase(moment: Moment, event: ScreenEvent): Phrase {
     if (reason === "paused") return "pause";
   }
   return event;
-}
-
-/** Where the recorded clip of a phrase is served from (`scripts/generate-voices.ts`). */
-export function recordedClipUrl(voiceId: VoiceId, phrase: Phrase): string {
-  return `/voices/${voiceId}/${phrase}.mp3`;
 }
 
 /** Amounts as a voice reads them: exact rather than compact, and cents only when there are some. */

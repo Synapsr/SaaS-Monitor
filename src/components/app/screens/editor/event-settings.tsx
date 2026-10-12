@@ -14,7 +14,7 @@ import { SCREEN_EVENTS, type Channel, type ScreenEvent } from "@/lib/display/eve
 import { recurringMetric } from "@/lib/display/metric";
 import type { Metric, ScreenSettings, SoundPack } from "@/lib/screens/settings";
 import { playSound, unlockAudio, type SoundEvent } from "@/lib/sounds";
-import { recordedClipUrl } from "@/lib/voice/moment-speech";
+import { recordedClipUrl } from "@/lib/voice/clips";
 import { recordedClip, speak } from "@/lib/voice/player";
 import type { Voice } from "@/lib/voice/voices";
 import { cn } from "@/lib/utils";

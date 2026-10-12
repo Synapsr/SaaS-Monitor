@@ -1,6 +1,6 @@
-import { soundClipUrl } from "@/lib/display/moment-audio";
-import { SOUND_PACKS, type SoundPack } from "@/lib/screens/settings";
+import { SOUND_PACKS, type SoundPack } from "@/lib/screens/options";
 import { SOUND_PACK_NAMES, type SoundEvent } from "@/lib/sounds";
+import { soundClipUrl } from "@/lib/sounds/clips";
 
 /**
  * The sounds of every pack as WAV files, to download from `/stripe-notification-sound`. Screens

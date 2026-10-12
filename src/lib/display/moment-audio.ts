@@ -64,11 +64,6 @@ export function momentAudio(
   return audio.sound || audio.voice ? audio : null;
 }
 
-/** Where an instance serves a sound, rendered by `scripts/generate-sounds.ts`. */
-export function soundClipUrl(pack: SoundPack, event: SoundEvent): string {
-  return `/sounds/${pack}/${event}.wav`;
-}
-
 /** Where a screen's server says a moment in the screen's own words (`AnnouncementRequest`). */
 export function announcementUrl(token: string): string {
   return `/api/screens/${encodeURIComponent(token)}/announcement`;

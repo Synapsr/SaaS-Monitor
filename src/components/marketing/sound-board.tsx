@@ -4,7 +4,7 @@ import { PlayIcon } from "lucide-react";
 import { useState } from "react";
 import { VoiceBoard } from "@/components/marketing/voice-board";
 import { SOUND_EVENT_LABELS, SOUND_EVENTS } from "@/lib/marketing/sound-files";
-import { SOUND_PACKS, type SoundPack } from "@/lib/screens/settings";
+import { SOUND_PACKS, type SoundPack } from "@/lib/screens/options";
 import {
   playSound,
   SOUND_PACK_DESCRIPTIONS,

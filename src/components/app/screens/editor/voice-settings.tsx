@@ -11,7 +11,7 @@ import { recurringMetric } from "@/lib/display/metric";
 import type { Language, Metric, ScreenSettings } from "@/lib/screens/settings";
 import { unlockAudio } from "@/lib/sounds";
 import type { Phrase } from "@/lib/voice/announcements";
-import { recordedClipUrl } from "@/lib/voice/moment-speech";
+import { recordedClipUrl } from "@/lib/voice/clips";
 import { defaultPhrases, RECORDED_PHRASES } from "@/lib/voice/phrases";
 import { recordedClip, speak } from "@/lib/voice/player";
 import { screenVoice, voicesOf, type Voice } from "@/lib/voice/voices";

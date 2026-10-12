@@ -13,7 +13,7 @@ import {
   type Metric,
   type SoundPack,
   type Theme,
-} from "@/lib/screens/settings";
+} from "@/lib/screens/options";
 import { VOICE_IDS, type VoiceId } from "@/lib/voice/voices";
 
 /** What a visitor can change on the demo screen, through its query string. */

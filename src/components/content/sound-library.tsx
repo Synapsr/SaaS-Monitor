@@ -3,7 +3,7 @@
 import { DownloadIcon, PlayIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SOUND_EVENT_LABELS, SOUND_EVENTS, soundFile } from "@/lib/marketing/sound-files";
-import { SOUND_PACKS, type SoundPack } from "@/lib/screens/settings";
+import { SOUND_PACKS, type SoundPack } from "@/lib/screens/options";
 import {
   playSound,
   SOUND_PACK_DESCRIPTIONS,

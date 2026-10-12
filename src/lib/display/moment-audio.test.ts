@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Moment } from "@/lib/display/moments";
 import { defaultScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
+import { soundClipUrl } from "@/lib/sounds/clips";
 import { feedItem } from "@/test/display";
-import { announcementUrl, momentAudio, soundClipUrl, type AudioSettings } from "./moment-audio";
+import { announcementUrl, momentAudio, type AudioSettings } from "./moment-audio";
 
 const payment: Moment = {
   id: "payment:1",

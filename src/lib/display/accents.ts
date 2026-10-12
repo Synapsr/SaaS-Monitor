@@ -1,5 +1,5 @@
 import { contrastRatio, hexToOklch, mixHex, oklchToHex, type Oklch } from "@/lib/display/color";
-import { isCustomAccent, type Accent, type PresetAccent, type Theme } from "@/lib/screens/settings";
+import { isCustomAccent, type Accent, type PresetAccent, type Theme } from "@/lib/screens/options";
 
 /** The colors a screen draws its accent with, on one theme. */
 export interface AccentPalette {

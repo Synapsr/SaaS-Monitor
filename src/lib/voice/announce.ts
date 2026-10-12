@@ -1,7 +1,7 @@
 import { momentAudio } from "@/lib/display/moment-audio";
 import type { Moment } from "@/lib/display/moments";
 import type { DisplayState } from "@/lib/display/types";
-import { recordedClipUrl } from "./moment-speech";
+import { recordedClipUrl } from "./clips";
 import { decodeSpeech, decodesOpus, recordedClip, speak } from "./player";
 import type { AnnouncementRequest } from "./request";
 

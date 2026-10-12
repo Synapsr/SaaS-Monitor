@@ -6,7 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { unlockAudio } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
 import type { Phrase } from "@/lib/voice/announcements";
-import { recordedClipUrl } from "@/lib/voice/moment-speech";
+import { recordedClipUrl } from "@/lib/voice/clips";
 import { RECORDED_PHRASES } from "@/lib/voice/phrases";
 import { recordedClip, speak } from "@/lib/voice/player";
 import { VOICE_LANGUAGES, voicesOf, type Voice, type VoiceLanguage } from "@/lib/voice/voices";

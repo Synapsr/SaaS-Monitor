@@ -4,13 +4,8 @@ import type { Moment } from "@/lib/display/moments";
 import type { DisplayState } from "@/lib/display/types";
 import { defaultScreenSettings, type ScreenSettings } from "@/lib/screens/settings";
 import { displayState, feedItem } from "@/test/display";
-import {
-  momentSpeech,
-  momentText,
-  previewValues,
-  recordedClipUrl,
-  spokenMoney,
-} from "./moment-speech";
+import { recordedClipUrl } from "./clips";
+import { momentSpeech, momentText, previewValues, spokenMoney } from "./moment-speech";
 
 function screen(
   voice: Partial<ScreenSettings["voice"]> = {},
