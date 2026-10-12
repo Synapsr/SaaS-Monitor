@@ -4,6 +4,8 @@
  * inline code and links); anything else stays plain text.
  */
 
+import { siteConfig } from "@/lib/site";
+
 export type Inline =
   | { type: "text"; text: string }
   | { type: "code"; text: string }
@@ -107,9 +109,17 @@ export function parseChangelog(markdown: string): Changelog {
   return { intro, releases };
 }
 
-/** Links go to the web or within the site: never `javascript:` and the like. */
+/**
+ * Links go to the web or within the site: never `javascript:` and the like. Paths of the
+ * repository (`docs/stripe.md#instant-updates`), written for readers on GitHub, go to their page
+ * there.
+ */
 function safeHref(href: string): string | null {
-  return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? href : null;
+  if (/^(https?:\/\/|mailto:|\/|#)/i.test(href)) return href;
+  if (/^[\w.-]+(\/[\w.-]+)*(#[\w-]+)?$/.test(href)) {
+    return `${siteConfig.repositoryUrl}/blob/main/${href}`;
+  }
+  return null;
 }
 
 /** `**bold**`, `` `code` ``, `[text](url)` and `[text]` or `[text][ref]` with a reference. */

@@ -71,6 +71,13 @@ describe("parseInline", () => {
       },
       { type: "text", text: " and [2.0.0]" },
     ]);
+    expect(parseInline("[instant updates](docs/stripe.md#instant-updates)")).toEqual([
+      {
+        type: "link",
+        href: "https://github.com/Synapsr/SaaS-Monitor/blob/main/docs/stripe.md#instant-updates",
+        children: [{ type: "text", text: "instant updates" }],
+      },
+    ]);
     expect(parseInline("[click](javascript:alert(1))")).toEqual([
       { type: "text", text: "[click](javascript:alert(1))" },
     ]);
