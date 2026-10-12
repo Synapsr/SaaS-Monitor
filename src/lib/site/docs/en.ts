@@ -71,7 +71,7 @@ export const en = {
       title: "Four steps",
       account: {
         title: "Create your free account",
-        text: "Sign up on saas-monitor.com: it’s free during the public beta. You get a workspace, where you can invite your team later.",
+        text: "Sign up on saas-monitor.com with Google, GitHub or your email: it’s free during the public beta. You get a workspace, where you can invite your team later.",
       },
       connect: {
         title: "Connect Stripe with a read-only key",

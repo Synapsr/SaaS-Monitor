@@ -64,7 +64,7 @@ export const nl: DocsText = {
       title: "Vier stappen",
       account: {
         title: "Maak je gratis account aan",
-        text: "Meld je aan op saas-monitor.com: tijdens de openbare bèta is het gratis. Je krijgt een werkruimte, waar je later je team voor kunt uitnodigen.",
+        text: "Meld je aan op saas-monitor.com met Google, GitHub of je e-mailadres: tijdens de openbare bèta is het gratis. Je krijgt een werkruimte, waar je later je team voor kunt uitnodigen.",
       },
       connect: {
         title: "Koppel Stripe met alleen leesrechten",

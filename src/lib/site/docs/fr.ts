@@ -66,7 +66,7 @@ export const fr: DocsText = {
       title: "Quatre étapes",
       account: {
         title: "Créez votre compte gratuit",
-        text: `Inscrivez-vous sur saas-monitor.com${NNBSP}: c’est gratuit pendant la bêta publique. Vous obtenez un espace de travail, où vous pourrez inviter votre équipe plus tard.`,
+        text: `Inscrivez-vous sur saas-monitor.com avec Google, GitHub ou votre e-mail${NNBSP}: c’est gratuit pendant la bêta publique. Vous obtenez un espace de travail, où vous pourrez inviter votre équipe plus tard.`,
       },
       connect: {
         title: "Connectez Stripe avec une clé en lecture seule",
