@@ -38,7 +38,7 @@ final class Windows {
       return
     }
     let view = SettingsView(
-      library: app.library, preferences: app.preferences,
+      library: app.library, monitor: app.monitor, preferences: app.preferences,
       onAdd: { [weak self] in self?.showAddScreen() },
       onRemove: { [weak self] screen in self?.app.remove(screen) })
     let window = window(title: "SaaS Monitor settings", content: view)
@@ -48,8 +48,12 @@ final class Windows {
 
   private func window(title: String, content: some View) -> NSWindow {
     let window = NSWindow(contentViewController: NSHostingController(rootView: content))
+    // Titled for the Window menu and VoiceOver, but drawn without a bar: the content says it.
     window.title = title
-    window.styleMask = [.titled, .closable]
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
+    window.styleMask = [.titled, .closable, .fullSizeContentView]
+    window.isMovableByWindowBackground = true
     window.isReleasedWhenClosed = false
     // Centered once SwiftUI has sized it.
     window.layoutIfNeeded()

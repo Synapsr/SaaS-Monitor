@@ -29,11 +29,9 @@ struct AddScreenView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
       HStack(alignment: .top, spacing: 14) {
-        PulseMark()
-          .stroke(ScreenStyle.notch.glow, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-          .frame(width: 30, height: 22)
-          .frame(width: 48, height: 48)
-          .background(Color(hex: "#0a0a0a"), in: .rect(cornerRadius: 11))
+        Image(nsImage: NSApp.applicationIconImage)
+          .resizable()
+          .frame(width: 54, height: 54)
         VStack(alignment: .leading, spacing: 4) {
           Text("Add a screen")
             .font(.title2.weight(.semibold))
@@ -84,7 +82,9 @@ struct AddScreenView: View {
           .disabled(adding || text.trimmingCharacters(in: .whitespaces).isEmpty)
       }
     }
-    .padding(24)
+    .padding(.horizontal, 24)
+    .padding(.top, 26)
+    .padding(.bottom, 22)
     .frame(width: 480)
     .onAppear(perform: prefill)
   }
