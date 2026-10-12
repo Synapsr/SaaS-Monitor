@@ -7,21 +7,25 @@ import type { NextConfig } from "next";
 const buildId = process.env.BUILD_ID || Date.now().toString(36);
 
 /**
- * Nothing is loaded from other sites except social sign-in avatars. Inline scripts and styles
- * stay allowed for Next.js hydration; the policy is off in development, where hot reloading
- * needs `eval`.
+ * Nothing is loaded from other sites except social sign-in avatars, and, on the dashboard, Gleap's
+ * help widget (`GLEAP_API_KEY`): its API, live messages, frames and media. One image serves every
+ * instance, built before its settings are known, so the dashboard allows Gleap whether or not it
+ * is set. Inline scripts and styles stay allowed for Next.js hydration; the policy is off in
+ * development, where hot reloading needs `eval`.
  */
-function contentSecurityPolicy(frameAncestors: string) {
+function contentSecurityPolicy(frameAncestors: string, { support = false } = {}) {
+  const gleap = support ? " https://*.gleap.io" : "";
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://avatars.githubusercontent.com https://*.googleusercontent.com",
-    "font-src 'self' data:",
-    "connect-src 'self'",
+    `script-src 'self' 'unsafe-inline'${gleap}`,
+    `style-src 'self' 'unsafe-inline'${gleap}`,
+    `img-src 'self' data: blob: https://avatars.githubusercontent.com https://*.googleusercontent.com${gleap}`,
+    `font-src 'self' data:${gleap}`,
+    `connect-src 'self'${support ? " https://*.gleap.io wss://*.gleap.io" : ""}`,
+    ...(support ? [`media-src 'self'${gleap}`] : []),
     // Confetti is drawn by a worker created from a blob.
     "worker-src 'self' blob:",
-    "frame-src 'self'",
+    `frame-src 'self'${gleap}`,
     `frame-ancestors ${frameAncestors}`,
     "object-src 'none'",
     "base-uri 'self'",
@@ -47,11 +51,25 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // The app must not be framed by other sites (clickjacking).
       {
-        source: "/((?!d/).*)",
+        source: "/((?!d/|app/|app$).*)",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           ...(isProduction
             ? [{ key: "Content-Security-Policy", value: contentSecurityPolicy("'self'") }]
+            : []),
+        ],
+      },
+      {
+        source: "/app/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          ...(isProduction
+            ? [
+                {
+                  key: "Content-Security-Policy",
+                  value: contentSecurityPolicy("'self'", { support: true }),
+                },
+              ]
             : []),
         ],
       },

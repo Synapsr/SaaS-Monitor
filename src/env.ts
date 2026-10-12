@@ -35,6 +35,11 @@ const schema = z
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    /**
+     * A Gleap project's SDK key: the dashboard then shows its help widget, for people to reach the
+     * instance's team (the hosted service's support). The key is public: browsers read it.
+     */
+    GLEAP_API_KEY: z.string().optional(),
     FX_RATES_URL: z
       .url()
       .default("https://api.frankfurter.dev/v1")
