@@ -4,8 +4,8 @@ export const de: SiteText = {
   meta: {
     title: "SaaS Monitor · Open-Source Stripe-MRR-Dashboard für den Büro-TV",
     description:
-      "Dein Stripe-MRR live auf dem Fernseher im Büro, mit einem Sound für jeden Verkauf. Open Source: in der Beta gratis gehostet, selbst gehostet für immer gratis.",
-    imageAlt: "SaaS Monitor: dein MRR, live an der Wand",
+      "Dein Stripe-MRR, ARR und jede Zahlung live auf dem Fernseher im Büro, dem Handy und der Uhr. Open Source: in der Beta gratis gehostet oder selbst gehostet.",
+    imageAlt: "SaaS Monitor: Sieh dein SaaS wachsen – live",
     imageGrowth: (percent) => `${percent} in 30 Tagen`,
   },
   nav: {
@@ -30,8 +30,8 @@ export const de: SiteText = {
   },
   hero: {
     badge: "Open Source · Kostenlos in der öffentlichen Beta",
-    title: { start: "Dein MRR, ", highlight: "live", end: " an der Wand." },
-    lead: "SaaS Monitor macht aus deinem Stripe-Konto ein Live-Dashboard für den Fernseher im Büro. Hör jeden Verkauf reinkommen, sieh deinen MRR steigen und feiere jeden Meilenstein mit deinem Team.",
+    title: { start: "Sieh dein SaaS wachsen – ", highlight: "live", end: "." },
+    lead: "SaaS Monitor macht aus deinem Stripe-Konto Live-Zahlen: MRR oder ARR, den Umsatz des Tages und jede Zahlung, mit einem Sound für jeden Verkauf. Auf dem Fernseher im Büro, auf deinem Handy und an deinem Handgelenk.",
     primary: "Kostenlos loslegen",
     secondary: "Live-Demo öffnen",
     points: [

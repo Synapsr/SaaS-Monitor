@@ -4,8 +4,8 @@ export const nl: SiteText = {
   meta: {
     title: "SaaS Monitor · Open-source Stripe MRR-dashboard voor de kantoor-tv",
     description:
-      "Je MRR uit Stripe live op de kantoor-tv, met een geluid bij elke verkoop. Open source: gratis gehost tijdens de bèta, of voorgoed op je eigen server.",
-    imageAlt: "SaaS Monitor: je MRR, live aan de muur",
+      "Je MRR, ARR en elke betaling uit Stripe live op de kantoor-tv, je telefoon en je horloge. Open source: gratis tijdens de bèta, of op je eigen server.",
+    imageAlt: "SaaS Monitor: zie je SaaS groeien, live",
     imageGrowth: (percent) => `${percent} in 30 dagen`,
   },
   nav: {
@@ -30,8 +30,8 @@ export const nl: SiteText = {
   },
   hero: {
     badge: "Open source · Gratis tijdens de openbare bèta",
-    title: { start: "Je MRR, ", highlight: "live", end: " aan de muur." },
-    lead: "SaaS Monitor maakt van je Stripe-account een live dashboard voor de kantoor-tv. Hoor elke verkoop binnenkomen, zie je MRR stijgen en vier elke mijlpaal met je team.",
+    title: { start: "Zie je SaaS groeien, ", highlight: "live", end: "." },
+    lead: "SaaS Monitor maakt van je Stripe-account live cijfers: MRR of ARR, de omzet van vandaag en elke betaling, met een geluid bij elke verkoop. Op de kantoor-tv, op je telefoon en om je pols.",
     primary: "Gratis beginnen",
     secondary: "Open de live-demo",
     points: [

@@ -9,8 +9,8 @@ export const en = {
     title: "SaaS Monitor · Open-source Stripe MRR dashboard for your office TV",
     /** For search results and social previews: under 160 characters. */
     description:
-      "Your Stripe MRR, live on the office TV, with a sound for every sale. Open source: hosted for free during the beta, or self-hosted for good.",
-    imageAlt: "SaaS Monitor: your MRR, live on the wall",
+      "Your Stripe MRR, ARR and every payment, live on the office TV, your phone and your watch. Open source: free during the beta, or self-hosted for good.",
+    imageAlt: "SaaS Monitor: watch your SaaS grow, live",
     /** Under the demo’s MRR, on the social preview. */
     imageGrowth: (percent: string) => `${percent} in 30 days`,
   },
@@ -37,8 +37,8 @@ export const en = {
   },
   hero: {
     badge: "Open source · Free during the public beta",
-    title: { start: "Your MRR, ", highlight: "live", end: " on the wall." },
-    lead: "SaaS Monitor turns your Stripe account into a live dashboard for the office TV. Hear every sale land, watch your MRR climb and celebrate each milestone with your team.",
+    title: { start: "Watch your SaaS grow, ", highlight: "live", end: "." },
+    lead: "SaaS Monitor turns your Stripe account into live numbers: MRR or ARR, today’s revenue and every payment, with a sound for each sale. On the office TV, on your phone and on your wrist.",
     primary: "Get started, it’s free",
     secondary: "Open the live demo",
     points: ["Free during the beta", "Free forever self-hosted", "Read-only Stripe key"],

@@ -3,7 +3,7 @@ const hostedUrl = "https://saas-monitor.com";
 
 export const siteConfig = {
   name: "SaaS Monitor",
-  tagline: "Your MRR, live on the wall.",
+  tagline: "Watch your SaaS grow, live.",
   /** What the product is, in the words people search with: the landing page's title. */
   headline: "Open-source Stripe dashboard for your office TV",
   /** For search results and social previews: keep it under 160 characters. */

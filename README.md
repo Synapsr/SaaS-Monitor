@@ -4,7 +4,7 @@
 
 # SaaS Monitor
 
-**Your MRR, live on the wall.**
+**Watch your SaaS grow, live.**
 
 Open-source Stripe dashboard for your office TV: hear every sale, and watch your MRR climb where
 the whole team can see it.

@@ -6,8 +6,8 @@ const NNBSP = " ";
 export const fr: SiteText = {
   meta: {
     title: "SaaS Monitor · Tableau de bord MRR Stripe open source pour la TV du bureau",
-    description: `Votre MRR Stripe en direct sur la TV du bureau, avec un son à chaque vente. Open source${NNBSP}: hébergé gratuitement pendant la bêta, ou auto-hébergé pour toujours.`,
-    imageAlt: `SaaS Monitor${NNBSP}: votre MRR, en direct au mur`,
+    description: `Votre MRR, votre ARR et chaque paiement Stripe en direct sur la TV du bureau, votre téléphone et votre montre. Open source${NNBSP}: gratuit en bêta, ou auto-hébergé.`,
+    imageAlt: `SaaS Monitor${NNBSP}: regardez votre SaaS grandir, en direct`,
     imageGrowth: (percent: string) => `${percent} en 30 jours`,
   },
   nav: {
@@ -32,8 +32,8 @@ export const fr: SiteText = {
   },
   hero: {
     badge: "Open source · Gratuit pendant la bêta publique",
-    title: { start: "Votre MRR, ", highlight: "en direct", end: " au mur." },
-    lead: "SaaS Monitor transforme votre compte Stripe en tableau de bord en direct pour la TV du bureau. Entendez tomber chaque vente, regardez votre MRR grimper et fêtez chaque palier avec votre équipe.",
+    title: { start: "Regardez votre SaaS grandir, ", highlight: "en direct", end: "." },
+    lead: `SaaS Monitor transforme votre compte Stripe en chiffres en direct${NNBSP}: MRR ou ARR, revenus du jour et chaque paiement, avec un son à chaque vente. Sur la TV du bureau, sur votre téléphone et à votre poignet.`,
     primary: "Commencer, c’est gratuit",
     secondary: "Ouvrir la démo en direct",
     points: [
