@@ -61,8 +61,11 @@ final class Windows {
     return window
   }
 
+  /// In front of the app in use: opened from the notch, which never takes the focus, the app
+  /// isn't active, and macOS no longer lets it push itself forward.
   private func show(_ window: NSWindow) {
+    window.orderFrontRegardless()
+    window.makeKey()
     NSApp.activate()
-    window.makeKeyAndOrderFront(nil)
   }
 }
