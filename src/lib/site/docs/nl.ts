@@ -23,7 +23,7 @@ export const nl: DocsText = {
       text: "De volledige handleidingen, met elke optie, elk commando en elke limiet.",
     },
     cta: {
-      title: "Zet vandaag nog je eigen MRR aan de muur",
+      title: "Zie vandaag nog je eigen cijfers live",
       text: "Gratis tijdens de openbare bèta. Koppel Stripe met een sleutel met alleen leesrechten, en je scherm staat in ongeveer twee minuten klaar.",
       primary: "Gratis beginnen",
       secondary: "Open de live-demo",
@@ -35,7 +35,7 @@ export const nl: DocsText = {
       description:
         "Korte handleidingen voor SaaS Monitor: koppel Stripe met alleen leesrechten, zet je MRR op een tv, maak het je eigen, gebruik de apps of host het zelf.",
     },
-    title: "Je MRR aan de muur, in twee minuten",
+    title: "In twee minuten aan de slag",
     lead: "Korte handleidingen die je elk in een minuut of twee leest: zet SaaS Monitor op, maak het je eigen en zie waarom je erop kunt vertrouwen. Alle technische details staan op GitHub.",
     start: "Begin hier",
     read: "Lees de handleiding",

@@ -30,7 +30,7 @@ export const en = {
       text: "The full guides, with every option, command and limit.",
     },
     cta: {
-      title: "See your own MRR on the wall today",
+      title: "See your own numbers live today",
       text: "Free during the public beta. Connect Stripe with a read-only key, and your screen is ready in about two minutes.",
       primary: "Get started free",
       secondary: "Open the live demo",
@@ -42,7 +42,7 @@ export const en = {
       description:
         "Short guides to SaaS Monitor: connect Stripe with a read-only key, put your MRR on a TV, make it yours, get the apps, or host it yourself.",
     },
-    title: "Your MRR on the wall, in two minutes",
+    title: "Up and running in two minutes",
     lead: "Short guides that each read in a minute or two: set SaaS Monitor up, make it yours, and see why you can trust it. Every technical detail is on GitHub.",
     start: "Start here",
     read: "Read the guide",

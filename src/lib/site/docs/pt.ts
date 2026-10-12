@@ -23,7 +23,7 @@ export const pt: DocsText = {
       text: "Os guias completos, com cada opção, comando e limite.",
     },
     cta: {
-      title: "Veja o seu MRR na parede ainda hoje",
+      title: "Veja seus próprios números ao vivo ainda hoje",
       text: "Grátis durante o beta público. Conecte o Stripe com uma chave somente leitura, e sua tela fica pronta em cerca de dois minutos.",
       primary: "Comece grátis",
       secondary: "Abrir a demo ao vivo",
@@ -35,7 +35,7 @@ export const pt: DocsText = {
       description:
         "Guias curtos do SaaS Monitor: conecte o Stripe com uma chave somente leitura, coloque seu MRR na TV, personalize, baixe os apps ou hospede você mesmo.",
     },
-    title: "Seu MRR na parede, em dois minutos",
+    title: "Funcionando em dois minutos",
     lead: "Guias curtos, que se leem em um ou dois minutos cada: configure o SaaS Monitor, deixe-o com a sua cara e veja por que você pode confiar nele. Todos os detalhes técnicos estão no GitHub.",
     start: "Comece por aqui",
     read: "Ler o guia",
