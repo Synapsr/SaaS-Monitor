@@ -5,12 +5,11 @@ import { formatAmount, formatPercent, percentChange } from "@/contract/display/f
 import { recurringMetric, type RecurringMetric } from "@/contract/display/metric";
 import type { DisplayMetrics } from "@/contract/display/types";
 import { formatMoney } from "@/contract/money";
-import { useDisplay } from "@/display/context";
+import { useDisplay, useStillDisplay } from "@/display/context";
 import { moneyParts } from "@/display/money-parts";
 import { RadialGlow } from "@/display/radial-glow";
 import { DisplayText } from "@/display/text";
 import { useTween } from "@/display/use-tween";
-import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { TrendingDownIcon, TrendingUpIcon } from "@/ui/icons";
 
 interface HeroProps {
@@ -81,9 +80,9 @@ function HeroNumber({
 }) {
   const { locale } = useDisplay().locale;
   const { scale } = useDisplay();
-  const reducedMotion = useReducedMotion();
+  const still = useStillDisplay();
   const [width, setWidth] = useState(0);
-  const shown = useTween(value, 1400, !reducedMotion);
+  const shown = useTween(value, 1400, !still);
   const parts = moneyParts(Math.round(shown), currency, locale);
   const characters = formatMoney(value, currency, { locale }).length;
   const size = Math.min(maxSize * scale, width > 0 ? width / (characters * 0.56) : maxSize * scale);

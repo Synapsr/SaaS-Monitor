@@ -32,10 +32,12 @@ export function DisplayText({
   maxFontSizeMultiplier,
   ...props
 }: DisplayTextProps) {
-  const { palette, scale, layout } = useDisplay();
+  const { palette, scale, layout, still } = useDisplay();
   const fontSize = size * scale;
   return (
     <Text
+      // An image keeps its layout: whoever sees it never chose this device's text size.
+      allowFontScaling={!still}
       maxFontSizeMultiplier={maxFontSizeMultiplier ?? (layout === "wall" ? 1.15 : 1.6)}
       style={[
         {

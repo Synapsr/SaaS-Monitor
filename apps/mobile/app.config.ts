@@ -31,6 +31,8 @@ const config: ExpoConfig = {
       // Self-hosted instances on a local network (http://192.168.1.20:3000).
       NSLocalNetworkUsageDescription:
         "SaaS Monitor connects to the screens of SaaS Monitor instances on your local network.",
+      // Images of screens saved to Photos; the app never reads the library.
+      NSPhotoLibraryAddUsageDescription: "SaaS Monitor adds the images of your screens you save to Photos.",
     },
     entitlements: {
       "com.apple.security.application-groups": [APP_GROUP],
@@ -49,12 +51,21 @@ const config: ExpoConfig = {
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,
-    // Declared by Expo's template (drawing over other apps) and by expo-secure-store (biometrics):
-    // the app neither draws over other apps nor locks its keychain items behind biometrics.
+    // Declared by Expo's template (drawing over other apps), by expo-secure-store (biometrics) and
+    // by expo-media-library and expo-screen-capture (reading photos): the app neither draws over
+    // other apps nor locks its keychain items behind biometrics, and it only adds images to the
+    // gallery, which Android 11 and later allow without a permission. Screenshots are detected
+    // without reading photos too, from Android 14 (DETECT_SCREEN_CAPTURE).
     blockedPermissions: [
       "android.permission.SYSTEM_ALERT_WINDOW",
       "android.permission.USE_BIOMETRIC",
       "android.permission.USE_FINGERPRINT",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.READ_MEDIA_IMAGES",
+      "android.permission.READ_MEDIA_VIDEO",
+      "android.permission.READ_MEDIA_AUDIO",
+      "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+      "android.permission.ACCESS_MEDIA_LOCATION",
     ],
   },
   plugins: [

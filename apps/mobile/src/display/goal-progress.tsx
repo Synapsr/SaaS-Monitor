@@ -6,9 +6,8 @@ import type { RecurringMetric } from "@/contract/display/metric";
 import type { GoalProgress as Progress } from "@/contract/display/milestones";
 import { formatEta } from "@/contract/display/time";
 import { formatMoney } from "@/contract/money";
-import { useDisplay } from "@/display/context";
+import { useDisplay, useStillDisplay } from "@/display/context";
 import { DisplayText } from "@/display/text";
-import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 interface GoalProgressProps {
   /** Measured in the screen's metric, like its goal. */
@@ -68,13 +67,15 @@ interface BarProps {
 
 /** The track, filling up from the accent's deep shade to its glow, its end lit. */
 function Bar({ progress, label, percent, height, colors }: BarProps) {
-  const reducedMotion = useReducedMotion();
-  const width = useSharedValue(0);
+  const { still: image } = useDisplay();
+  const still = useStillDisplay();
+  // An image is drawn at once: its bar starts filled.
+  const width = useSharedValue(image ? progress : 0);
   useEffect(() => {
-    width.value = reducedMotion
+    width.value = still
       ? progress
       : withTiming(progress, { duration: 1800, easing: Easing.out(Easing.cubic) });
-  }, [progress, reducedMotion, width]);
+  }, [progress, still, width]);
   const fill = useAnimatedStyle(() => ({ width: `${width.value * 100}%` }));
   const knob = height * 1.7;
 

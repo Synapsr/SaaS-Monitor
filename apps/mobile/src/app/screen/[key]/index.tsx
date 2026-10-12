@@ -14,7 +14,8 @@ import { rememberState, removeScreen, unlockSavedScreen } from "@/screens/action
 import { instanceLabel } from "@/screens/link";
 import { useScreen, useScreens } from "@/screens/store";
 import { displayName } from "@/screens/types";
-import { Link2OffIcon, TvIcon, WifiOffIcon } from "@/ui/icons";
+import { setShareRequest, type ShareRequest } from "@/share/requests";
+import { Link2OffIcon, ShareIcon, TvIcon, WifiOffIcon } from "@/ui/icons";
 
 /** A screen of the device, live: portrait like a page, landscape like the wall. */
 export default function ScreenRoute() {
@@ -58,10 +59,16 @@ export default function ScreenRoute() {
 
   const theme = state?.screen.settings.theme ?? screen.appearance?.theme ?? "dark";
   const openSettings = () => router.push({ pathname: "/screen/[key]/settings", params: { key: screen.key } });
+  const share = (request: Omit<ShareRequest, "at">) => {
+    // Once: a second touch while the sheet rises would open another.
+    if (!focused) return;
+    setShareRequest(screen.key, request);
+    router.push({ pathname: "/screen/[key]/share", params: { key: screen.key } });
+  };
 
   return (
     <ScreenFrame theme={theme} onBack={back} onSettings={openSettings}>
-      {({ layout, scale, leading, trailing }) => {
+      {({ layout, scale, leading, trailing, button }) => {
         const shell = (children: React.ReactNode) => (
           <ScreenShell
             appearance={screen.appearance}
@@ -112,6 +119,11 @@ export default function ScreenRoute() {
             onRefresh={refresh}
             footer={layout === "phone" && <TvHint />}
             audio={focused ? screen : null}
+            sharing={{
+              onShare: share,
+              button: (onPress) => button({ icon: ShareIcon, label: "Share as an image", onPress }),
+              offerOnScreenshot: focused,
+            }}
           />
         );
       }}

@@ -22,10 +22,11 @@ import { countryFlag, countryName } from "@/contract/display/format";
 import type { RecurringMetric } from "@/contract/display/metric";
 import { formatFeedTime } from "@/contract/display/time";
 import type { DisplayWarning, FeedItem } from "@/contract/display/types";
-import { useDisplay } from "@/display/context";
+import { useDisplay, useStillDisplay } from "@/display/context";
 import { KindIcon } from "@/display/kind-icon";
 import { DisplayText } from "@/display/text";
 import { useNow } from "@/display/use-now";
+import { Shareable } from "@/share/shareable";
 import { InfoIcon } from "@/ui/icons";
 
 /** More than a wall can show: the rest fades out at the bottom. */
@@ -41,7 +42,10 @@ interface LiveFeedProps {
   warnings: DisplayWarning[];
 }
 
-/** The latest activity, newest first: what just arrived glows for a moment. */
+/**
+ * The latest activity, newest first: what just arrived glows for a moment. Touch and hold an event
+ * to share it.
+ */
 export function LiveFeed({ feed, recurring, currency, timeZone, showAccount, warnings }: LiveFeedProps) {
   const { locale: displayLocale, palette, scale, layout } = useDisplay();
   const { text } = displayLocale;
@@ -132,6 +136,7 @@ interface FeedRowProps {
 function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived }: FeedRowProps) {
   const { locale: displayLocale, palette, scale, layout } = useDisplay();
   const { language, locale, text } = displayLocale;
+  const still = useStillDisplay();
   const wall = layout === "wall";
   const amount = itemAmount(item, currency, recurring, locale);
   const original = itemOriginalAmount(item, recurring, locale);
@@ -151,56 +156,61 @@ function FeedRow({ item, recurring, currency, relativeTime, showAccount, arrived
 
   return (
     <Animated.View
-      entering={arrived ? FadeInUp.springify().damping(18) : FadeIn.duration(300)}
-      layout={LinearTransition.springify().damping(20)}
-      accessible
-      accessibilityLabel={[headline, kind !== headline ? kind : null, customer, item.planName, country, relativeTime]
-        .filter(Boolean)
-        .join(", ")}
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: (wall ? 10 : 12) * scale,
-        paddingHorizontal: (wall ? 8 : 10) * scale,
-        paddingVertical: (wall ? 6 : 9) * scale,
-        borderRadius: 14 * scale,
-      }}
+      entering={still ? undefined : arrived ? FadeInUp.springify().damping(18) : FadeIn.duration(300)}
+      layout={still ? undefined : LinearTransition.springify().damping(20)}
     >
-      {arrived && <ArrivalGlow color={palette.glowWash} />}
-      <KindIcon item={item} size={wall ? 30 : 40} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 * scale }}>
-          <DisplayText
-            size={headlineSize}
-            weight="600"
-            tone={isGoodNews(item.kind) ? "ink" : "ink2"}
-            tabular
-            numberOfLines={1}
-            style={{ flexShrink: 1 }}
-          >
-            {headline}
-            {amount !== null && item.kind !== "payment" && (
-              <DisplayText size={small} weight="500" tone="ink3">
-                {` ${recurring.label}`}
+      <Shareable subject={{ kind: "item", item }}>
+        <View
+          accessible
+          accessibilityLabel={[headline, kind !== headline ? kind : null, customer, item.planName, country, relativeTime]
+            .filter(Boolean)
+            .join(", ")}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: (wall ? 10 : 12) * scale,
+            paddingHorizontal: (wall ? 8 : 10) * scale,
+            paddingVertical: (wall ? 6 : 9) * scale,
+            borderRadius: 14 * scale,
+          }}
+        >
+          {arrived && <ArrivalGlow color={palette.glowWash} />}
+          <KindIcon item={item} size={wall ? 30 : 40} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 * scale }}>
+              <DisplayText
+                size={headlineSize}
+                weight="600"
+                tone={isGoodNews(item.kind) ? "ink" : "ink2"}
+                tabular
+                numberOfLines={1}
+                style={{ flexShrink: 1 }}
+              >
+                {headline}
+                {amount !== null && item.kind !== "payment" && (
+                  <DisplayText size={small} weight="500" tone="ink3">
+                    {` ${recurring.label}`}
+                  </DisplayText>
+                )}
+                {original && (
+                  <DisplayText size={small} tone="ink3">
+                    {`  ${original}`}
+                  </DisplayText>
+                )}
+              </DisplayText>
+              <DisplayText size={small} tone="ink3" numberOfLines={1} style={{ flexShrink: 0, maxWidth: "45%" }}>
+                {showAccount ? `${item.accountName} · ${relativeTime}` : relativeTime}
+              </DisplayText>
+            </View>
+            {(flag || line) && (
+              <DisplayText size={wall ? 11 : 14} tone="ink2" numberOfLines={1}>
+                {flag ? `${flag}  ` : ""}
+                {line}
               </DisplayText>
             )}
-            {original && (
-              <DisplayText size={small} tone="ink3">
-                {`  ${original}`}
-              </DisplayText>
-            )}
-          </DisplayText>
-          <DisplayText size={small} tone="ink3" numberOfLines={1} style={{ flexShrink: 0, maxWidth: "45%" }}>
-            {showAccount ? `${item.accountName} · ${relativeTime}` : relativeTime}
-          </DisplayText>
+          </View>
         </View>
-        {(flag || line) && (
-          <DisplayText size={wall ? 11 : 14} tone="ink2" numberOfLines={1}>
-            {flag ? `${flag}  ` : ""}
-            {line}
-          </DisplayText>
-        )}
-      </View>
+      </Shareable>
     </Animated.View>
   );
 }
