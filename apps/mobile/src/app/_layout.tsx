@@ -62,6 +62,15 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="screen/[key]/share"
+          options={{
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.92],
+            sheetGrabberVisible: true,
+            headerShown: false,
+          }}
+        />
         <Stack.Screen name="demo" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ title: "Settings", presentation: "modal" }} />
         <Stack.Screen

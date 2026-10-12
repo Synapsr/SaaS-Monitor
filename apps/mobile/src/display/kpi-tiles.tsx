@@ -8,6 +8,8 @@ import type { DisplayMetrics } from "@/contract/display/types";
 import { formatMoney } from "@/contract/money";
 import { useDisplay } from "@/display/context";
 import { DisplayText } from "@/display/text";
+import { Shareable } from "@/share/shareable";
+import type { TileKey } from "@/share/subjects";
 
 interface KpiTilesProps {
   metrics: DisplayMetrics;
@@ -16,10 +18,15 @@ interface KpiTilesProps {
   currency: string;
   timeZone: string;
   now: number;
+  /** One of them alone, for an image of it. */
+  only?: TileKey;
 }
 
-/** The four numbers worth a glance: today, this month, customers and net new MRR (or ARR). */
-export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTilesProps) {
+/**
+ * The four numbers worth a glance: today, this month, customers and net new MRR (or ARR). Touch
+ * and hold one to share it.
+ */
+export function KpiTiles({ metrics, recurring, currency, timeZone, now, only }: KpiTilesProps) {
   const { locale: displayLocale, scale, layout } = useDisplay();
   const { locale, text } = displayLocale;
   const { revenue, thisMonth } = metrics;
@@ -38,39 +45,42 @@ export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTil
       .filter(Boolean)
       .join(" · ") || text.tiles.paying;
 
-  const tiles = [
-    <Tile
-      key="today"
-      label={text.tiles.revenueToday}
-      value={formatMoney(revenue.today, currency, { locale })}
-      details={text.tiles.yesterday(amount(revenue.yesterday))}
-    />,
-    <Tile
-      key="month"
-      label={text.tiles.thisMonth}
-      value={formatMoney(revenue.monthToDate, currency, { locale })}
-      details={
+  const contents: Record<TileKey, TileProps> = {
+    today: {
+      label: text.tiles.revenueToday,
+      value: formatMoney(revenue.today, currency, { locale }),
+      details: text.tiles.yesterday(amount(revenue.yesterday)),
+    },
+    month: {
+      label: text.tiles.thisMonth,
+      value: formatMoney(revenue.monthToDate, currency, { locale }),
+      details:
         monthChange === null ? (
           text.tiles.versusAmount(amount(0), previousMonth)
         ) : (
           <Change ratio={monthChange}>{text.tiles.versus(previousMonth)}</Change>
-        )
-      }
-    />,
-    <Tile
-      key="customers"
-      label={text.tiles.customers}
-      value={metrics.activeCustomers.toLocaleString(locale)}
-      details={customers}
-    />,
-    <Tile
-      key="net"
-      label={text.tiles.netNew(recurring.label)}
-      value={formatMoney(net, currency, { signed: true, locale })}
+        ),
+    },
+    customers: {
+      label: text.tiles.customers,
+      value: metrics.activeCustomers.toLocaleString(locale),
+      details: customers,
+    },
+    net: {
+      label: text.tiles.netNew(recurring.label),
+      value: formatMoney(net, currency, { signed: true, locale }),
       // The words carry the signs: amounts twelve times larger in ARR still fit the tile.
-      details={text.tiles.gainedLost(amount(gained), amount(Math.abs(lost)))}
-    />,
-  ];
+      details: text.tiles.gainedLost(amount(gained), amount(Math.abs(lost))),
+    },
+  };
+
+  if (only) return <Tile {...contents[only]} />;
+  const tiles = TILES.map((key) => (
+    // Each takes its share of the row; the tile fills it, as tall as the tallest.
+    <Shareable key={key} subject={{ kind: "tile", tile: key }} style={{ flex: 1, minWidth: 0 }}>
+      <Tile {...contents[key]} />
+    </Shareable>
+  ));
 
   const gap = (layout === "wall" ? 8 : 10) * scale;
   if (layout === "wall") {
@@ -84,7 +94,15 @@ export function KpiTiles({ metrics, recurring, currency, timeZone, now }: KpiTil
   );
 }
 
-function Tile({ label, value, details }: { label: string; value: string; details: ReactNode }) {
+const TILES: readonly TileKey[] = ["today", "month", "customers", "net"];
+
+interface TileProps {
+  label: string;
+  value: string;
+  details: ReactNode;
+}
+
+function Tile({ label, value, details }: TileProps) {
   const { palette, scale, layout } = useDisplay();
   const [width, setWidth] = useState(0);
   const wall = layout === "wall";
@@ -96,8 +114,7 @@ function Tile({ label, value, details }: { label: string; value: string; details
       accessible
       accessibilityLabel={`${label}: ${value}`}
       style={{
-        flex: 1,
-        minWidth: 0,
+        flexGrow: 1,
         gap: (wall ? 2 : 4) * scale,
         paddingHorizontal: (wall ? 12 : 16) * scale,
         paddingVertical: (wall ? 10 : 14) * scale,

@@ -10,10 +10,9 @@ import Animated, {
 import { TOTAL } from "@/contract/display/rotation";
 import { formatClock } from "@/contract/display/time";
 import type { DisplayAccount } from "@/contract/display/types";
-import { useDisplay } from "@/display/context";
+import { useDisplay, useStillDisplay } from "@/display/context";
 import { DisplayText } from "@/display/text";
 import { useNow } from "@/display/use-now";
-import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { LogoPulse } from "@/ui/icons";
 
 /** Where a screen rotating between its accounts stands. */
@@ -161,16 +160,16 @@ function TurnProgress({ seconds }: { seconds: number }) {
 
 function LiveIndicator({ online, label }: { online: boolean; label: string }) {
   const { palette, scale, layout } = useDisplay();
-  const reducedMotion = useReducedMotion();
+  const still = useStillDisplay();
   const ping = useSharedValue(0);
   useEffect(() => {
     ping.value =
-      online && !reducedMotion
+      online && !still
         ? withRepeat(withTiming(1, { duration: 2600, easing: Easing.bezier(0, 0, 0.2, 1) }), -1, false)
         : 0;
-  }, [online, reducedMotion, ping]);
+  }, [online, still, ping]);
   const ring = useAnimatedStyle(() => ({
-    opacity: online && !reducedMotion ? 0.55 * (1 - Math.min(1, ping.value / 0.8)) : 0,
+    opacity: online && !still ? 0.55 * (1 - Math.min(1, ping.value / 0.8)) : 0,
     transform: [{ scale: 1 + ping.value * 1.6 }],
   }));
   const dot = 8 * scale;

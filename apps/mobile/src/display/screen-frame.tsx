@@ -6,10 +6,16 @@ import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import type { DisplayLayout } from "@/display/context";
 import { displayLayout, displayScale } from "@/display/scale";
 import { IconButton } from "@/ui/button";
-import { ChevronLeftIcon, EllipsisIcon } from "@/ui/icons";
+import { ChevronLeftIcon, EllipsisIcon, type LucideIcon } from "@/ui/icons";
 
 /** Controls of the wall layout fade away when nobody touches the screen. */
 const CONTROLS_IDLE_MS = 5_000;
+
+interface FrameButton {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+}
 
 interface FrameControls {
   layout: DisplayLayout;
@@ -17,6 +23,8 @@ interface FrameControls {
   /** Back and settings buttons for the screen's top bar. */
   leading: ReactNode;
   trailing: ReactNode;
+  /** Another button of the top bar, like them. */
+  button: (button: FrameButton) => ReactNode;
 }
 
 interface ScreenFrameProps {
@@ -61,21 +69,18 @@ export function ScreenFrame({ theme, onBack, onSettings, children }: ScreenFrame
   const size = (wall ? 30 : 36) * Math.min(scale, 1.4);
   // Portrait always shows them: only TV mode is watched from afar.
   const visible = !wall || controlsVisible;
-  const leading = (
+  const button = ({ icon, label, onPress }: FrameButton) => (
     <Fading visible={visible}>
-      <IconButton icon={ChevronLeftIcon} label="Back" color={ink} background={fill} size={size} onPress={onBack} />
+      <IconButton icon={icon} label={label} color={ink} background={fill} size={size} onPress={onPress} />
     </Fading>
   );
-  const trailing = onSettings ? (
-    <Fading visible={visible}>
-      <IconButton icon={EllipsisIcon} label="Screen settings" color={ink} background={fill} size={size} onPress={onSettings} />
-    </Fading>
-  ) : null;
+  const leading = button({ icon: ChevronLeftIcon, label: "Back", onPress: onBack });
+  const trailing = onSettings ? button({ icon: EllipsisIcon, label: "Screen settings", onPress: onSettings }) : null;
 
   return (
     <View style={{ flex: 1 }} onTouchStart={reveal}>
       <StatusBar hidden={wall} style={theme === "light" ? "dark" : "light"} animated />
-      {children({ layout, scale, leading, trailing })}
+      {children({ layout, scale, leading, trailing, button })}
     </View>
   );
 }

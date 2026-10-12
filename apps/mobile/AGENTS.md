@@ -36,6 +36,10 @@ instance's demo instead.
   moments of the screen on display with its sound and voice, when the device asks for it
   (Settings, "Play sounds and voices"), like notification sounds: the ring/silent switch silences
   them, and they mix with other audio. Android plays them in the app only.
+- `src/share/` — images of a screen or of one of its parts, to copy, save or send: touch and hold
+  a number, the chart, an event or a moment, or use the top bar's share button (also offered
+  after a screenshot). They are drawn offscreen like the screen, in its language and colors, still,
+  dated and signed "Powered by SaaS Monitor"; customer names stay out unless asked for.
 - `src/contract/` — the web app's display contract (`DisplayState`…), copied from `../SaaS-Monitor`
   by `scripts/sync-contract.mjs`: never edited by hand.
 - `modules/screen-bridge/` — local Expo module handing the app's screens to widgets and watches.

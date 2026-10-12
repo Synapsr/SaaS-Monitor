@@ -3,6 +3,9 @@
  * of them.
  */
 import type { LucideIcon, LucideProps } from "lucide-react-native";
+import ShareIos from "lucide-react-native/icons/share";
+import ShareAndroid from "lucide-react-native/icons/share-2";
+import { Platform } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 export { default as ArrowDownRightIcon } from "lucide-react-native/icons/arrow-down-right";
@@ -20,9 +23,12 @@ export { default as CircleDollarSignIcon } from "lucide-react-native/icons/circl
 export { default as CirclePauseIcon } from "lucide-react-native/icons/circle-pause";
 export { default as ClipboardPasteIcon } from "lucide-react-native/icons/clipboard-paste";
 export { default as CodeIcon } from "lucide-react-native/icons/code";
+export { default as CopyIcon } from "lucide-react-native/icons/copy";
 export { default as CreditCardXIcon } from "lucide-react-native/icons/credit-card-x";
+export { default as DownloadIcon } from "lucide-react-native/icons/download";
 export { default as EllipsisIcon } from "lucide-react-native/icons/ellipsis";
 export { default as ExternalLinkIcon } from "lucide-react-native/icons/external-link";
+export { default as ImageIcon } from "lucide-react-native/icons/image";
 export { default as InfoIcon } from "lucide-react-native/icons/info";
 export { default as Link2OffIcon } from "lucide-react-native/icons/link-2-off";
 export { default as LockIcon } from "lucide-react-native/icons/lock";
@@ -45,6 +51,9 @@ export { default as WifiOffIcon } from "lucide-react-native/icons/wifi-off";
 export { default as XIcon } from "lucide-react-native/icons/x";
 
 export type { LucideIcon, LucideProps };
+
+/** Each platform's own share symbol: a box and its arrow on iOS, three linked dots on Android. */
+export const ShareIcon = Platform.OS === "ios" ? ShareIos : ShareAndroid;
 
 /**
  * A payment made for one of the account's Stripe Connect accounts: the payment's dollar, with an

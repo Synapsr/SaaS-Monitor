@@ -17,9 +17,9 @@ import { formatChartDay } from "@/contract/display/time";
 import type { SeriesPoint } from "@/contract/display/types";
 import { formatMoney } from "@/contract/money";
 import type { ChartRange } from "@/contract/screens/settings";
-import { useDisplay } from "@/display/context";
+import { useDisplay, useStillDisplay } from "@/display/context";
 import { DisplayText } from "@/display/text";
-import { useReducedMotion } from "@/lib/use-reduced-motion";
+import { useHoldToShare } from "@/share/shareable";
 import { TrendingDownIcon, TrendingUpIcon } from "@/ui/icons";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -38,7 +38,7 @@ interface MrrChartProps {
 
 /**
  * MRR (or ARR) over the chart range: a soft area, the live end glowing, and the next goal as a
- * horizon. Touching the curve reads the value of a day.
+ * horizon. Touching the curve reads the value of a day; holding it still shares the chart.
  */
 export function MrrChart({ series: mrrSeries, recurring, currency, range, target, plotHeight }: MrrChartProps) {
   const { locale: displayLocale, palette, scale, layout } = useDisplay();
@@ -132,7 +132,7 @@ interface PlotProps {
 function Plot({ series, title, currency, target, width: fullWidth, height, fontSize }: PlotProps) {
   const { locale: displayLocale, palette, scale } = useDisplay();
   const { locale, text } = displayLocale;
-  const reducedMotion = useReducedMotion();
+  const still = useStillDisplay();
   const id = useId().replace(/[^a-z0-9]/gi, "");
   const [touched, setTouched] = useState<number | null>(null);
   const dot = 4.2 * scale;
@@ -154,24 +154,24 @@ function Plot({ series, title, currency, target, width: fullWidth, height, fontS
   // The curve draws itself from the left, behind a view that widens (an SVG clip path isn't
   // redrawn on Android as it changes); then its live end starts to pulse.
   const [drawn, setDrawn] = useState(false);
-  const revealed = drawn || reducedMotion;
+  const revealed = drawn || still;
   const reveal = useSharedValue(0);
   useEffect(() => {
-    if (reducedMotion) return;
+    if (still) return;
     reveal.value = withTiming(1, { duration: 1600, easing: Easing.bezier(0.22, 1, 0.36, 1) }, (finished) => {
       if (finished) scheduleOnRN(setDrawn, true);
     });
-  }, [reveal, reducedMotion]);
+  }, [reveal, still]);
   const revealStyle = useAnimatedStyle(() => ({ width: reveal.value * width }));
 
   const ping = useSharedValue(0);
   useEffect(() => {
-    if (!revealed || reducedMotion) return;
+    if (!revealed || still) return;
     ping.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.bezier(0, 0, 0.2, 1) }), -1, false);
-  }, [ping, revealed, reducedMotion]);
+  }, [ping, revealed, still]);
   const pingProps = useAnimatedProps(() => ({
     r: dot * (1 + ping.value * 1.6),
-    opacity: reducedMotion ? 0 : 0.55 * (1 - Math.min(1, ping.value / 0.8)),
+    opacity: still ? 0 : 0.55 * (1 - Math.min(1, ping.value / 0.8)),
   }));
 
   const start = chart.points[0];
@@ -185,6 +185,7 @@ function Plot({ series, title, currency, target, width: fullWidth, height, fontS
   // The crosshair snaps to the nearest point: readers aim at a date, not at a thin line.
   const onTouch = (event: GestureResponderEvent) =>
     setTouched(nearestPoint(chart, event.nativeEvent.locationX));
+  const hold = useHoldToShare({ kind: "chart" }, () => setTouched(null));
   const point = touched === null ? null : { ...chart.points[touched], day: series[touched].date };
   const endX = chart.x(end.date);
   const endY = chart.y(end.value);
@@ -196,10 +197,22 @@ function Plot({ series, title, currency, target, width: fullWidth, height, fontS
       accessibilityRole="image"
       accessibilityLabel={summary}
       onStartShouldSetResponder={() => true}
-      onResponderGrant={onTouch}
-      onResponderMove={onTouch}
-      onResponderRelease={() => setTouched(null)}
-      onResponderTerminate={() => setTouched(null)}
+      onResponderGrant={(event) => {
+        onTouch(event);
+        hold.start(event);
+      }}
+      onResponderMove={(event) => {
+        onTouch(event);
+        hold.move(event);
+      }}
+      onResponderRelease={() => {
+        hold.release();
+        setTouched(null);
+      }}
+      onResponderTerminate={() => {
+        hold.release();
+        setTouched(null);
+      }}
     >
       <Svg width={width} height={height} style={{ position: "absolute" }}>
         {chart.yTicks.map((tick) => (
