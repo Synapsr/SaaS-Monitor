@@ -61,7 +61,10 @@ export function MobileMenu({
       </nav>
       <div className="mx-3 my-2 h-px bg-(--hairline)" />
       <p className="px-4 pt-2 pb-1 text-xs text-(--ink-3)">{languageLabel}</p>
-      <LanguageList languages={languages} className="grid grid-cols-2" />
+      <LanguageList
+        languages={languages}
+        className="grid grid-cols-2 [&_a]:rounded-2xl [&_a]:px-4"
+      />
       <div className="mt-2 grid grid-cols-2 gap-2 p-2">
         <Link
           href={signIn.href}

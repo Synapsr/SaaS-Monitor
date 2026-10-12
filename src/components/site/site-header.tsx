@@ -11,7 +11,7 @@ import type { SiteLanguage } from "@/lib/site/languages";
 import { cn } from "@/lib/utils";
 
 const navLinkClass =
-  "rounded-full px-3 py-2 whitespace-nowrap text-(--ink-2) transition-colors duration-150 hover:text-(--ink) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--glow)";
+  "rounded-full px-3 py-2.5 whitespace-nowrap text-(--ink-2) transition-colors duration-150 hover:text-(--ink) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--glow)";
 
 export interface SiteHeaderProps {
   language: SiteLanguage;
@@ -95,7 +95,7 @@ export function SiteHeader({ language, text, home, demo, languages, stars }: Sit
           <div
             id="site-language-menu"
             popover="auto"
-            className="menu-anchored w-56 rounded-2xl bg-(--popover) p-1.5 text-sm text-(--ink) shadow-(--shadow-popover) [position-anchor:--site-language]"
+            className="menu-anchored w-56 rounded-[1.125rem] bg-(--popover) p-1.5 text-sm text-(--ink) shadow-(--shadow-popover) [position-anchor:--site-language]"
           >
             <LanguageList languages={languages} />
           </div>
