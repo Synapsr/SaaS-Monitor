@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./wall-palette.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -105,6 +106,31 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+}
+
+/*
+ * A screen in miniature, in the list of screens (`ScreenSnapshot`): the wall's palette
+ * (wall-palette.css) and the few surfaces of `d/display.css` it draws with, at the same values.
+ */
+.wall-snapshot {
+  --hairline: rgb(255 255 255 / 0.075);
+  --fill: rgb(255 255 255 / 0.06);
+  --glow-wash: color-mix(in oklab, var(--glow) 14%, transparent);
+  --warn: #fcd34d;
+  --warn-ink: #fde68a;
+
+  background: var(--screen);
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.wall-snapshot[data-theme="light"] {
+  --hairline: rgb(12 14 20 / 0.08);
+  --fill: rgb(12 14 20 / 0.05);
+  --warn: #f59e0b;
+  --warn-ink: #b45309;
+
+  color-scheme: light;
 }
 
 @layer base {

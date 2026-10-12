@@ -2,8 +2,7 @@ import { MonitorIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/app/page-header";
 import { NewScreenButton } from "@/components/app/screens/new-screen-button";
-import { ScreenCard } from "@/components/app/screens/screen-card";
-import { screenUrl } from "@/components/app/screens/screen-url";
+import { ScreenList } from "@/components/app/screens/screen-list";
 import {
   Empty,
   EmptyContent,
@@ -13,6 +12,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { env } from "@/env";
+import { loadDisplayStates } from "@/server/display/previews";
 import { listScreens } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
 
@@ -31,15 +31,7 @@ export default async function ScreensPage() {
         actions={screens.length > 0 && <NewScreenButton />}
       />
       {screens.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {screens.map((screen) => (
-            <ScreenCard
-              key={screen.id}
-              screen={screen}
-              url={screenUrl(APP_URL, screen.publicToken)}
-            />
-          ))}
-        </div>
+        <ScreenList screens={screens} states={loadDisplayStates(screens)} appUrl={APP_URL} />
       ) : (
         <Empty className="border py-16">
           <EmptyHeader>

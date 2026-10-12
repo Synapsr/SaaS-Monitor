@@ -7,6 +7,12 @@ import { ModeBadge } from "@/components/app/accounts/account-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { AccountOption } from "@/server/screens";
 
+/**
+ * Where the list of screens sends a screen without an account (`/app/screens/<id>#accounts`),
+ * below the sticky header.
+ */
+const ANCHOR = "accounts";
+
 /** Which Stripe accounts the screen adds up. */
 export function AccountPicker({
   accounts,
@@ -21,7 +27,7 @@ export function AccountPicker({
 
   if (accounts.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p id={ANCHOR} className="scroll-mt-32 text-sm text-muted-foreground">
         No Stripe account yet.{" "}
         <Link
           href="/app/accounts/new"
@@ -47,7 +53,12 @@ export function AccountPicker({
   }
 
   return (
-    <div role="group" aria-labelledby={`${id}-label`} className="flex flex-col gap-2">
+    <div
+      id={ANCHOR}
+      role="group"
+      aria-labelledby={`${id}-label`}
+      className="flex scroll-mt-32 flex-col gap-2"
+    >
       <p id={`${id}-label`} className="text-sm font-medium">
         Stripe accounts
       </p>

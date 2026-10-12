@@ -87,6 +87,12 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 - Sound and voice settings keep to how they sound: which events play moved to **Events**. Screens
   keep the sounds and voice they had chosen.
 - The Raspberry Pi guide sets a screen up with one block of commands.
+- The list of screens, and the home page, show each screen as its wall does right now: its MRR or
+  ARR, its growth over 30 days, its curve and its latest event, in its theme, colors and language,
+  or what it waits for (a Stripe account, its first import, a failing key). Its language and
+  sound show when they set it apart, test data and passwords too. **Open**, **Copy link**, its QR
+  code and **Edit** are one click away, and the whole card opens its settings. A single screen
+  spreads out, its link and QR code in sight.
 
 ### Fixed
 

@@ -1,11 +1,13 @@
 /*
- * The wall display's palette, shared by the public site (`site.css`), which stages its live demo.
- * The accent (`--glow…`) is emerald, the brand color, until a screen sets its own
- * (`src/lib/display/accents.ts`, whose backgrounds match these). What stylesheets cannot reach (the logo, the social image, the
- * browser theme) uses `BRAND_COLORS` (src/lib/brand.ts).
+ * The wall display's palette, shared by the public site (`site.css`), which stages its live demo,
+ * and by the dashboard's snapshots of screens (`globals.css`). The accent (`--glow…`) is emerald,
+ * the brand color, until a screen sets its own (`src/lib/display/accents.ts`, whose backgrounds
+ * match these). What stylesheets cannot reach (the logo, the social image, the browser theme)
+ * uses `BRAND_COLORS` (src/lib/brand.ts).
  */
 .display,
-.landing {
+.landing,
+.wall-snapshot {
   --glow: #34d399;
   --glow-ink: #6ee7b7;
   --glow-deep: #059669;
@@ -18,7 +20,8 @@
 }
 
 /* Screens may be light, for bright rooms. Inks pass WCAG AA here too. */
-.display[data-theme="light"] {
+.display[data-theme="light"],
+.wall-snapshot[data-theme="light"] {
   --screen: #f4f5f7;
   --ink: #0b0d10;
   --ink-2: #4a505a;

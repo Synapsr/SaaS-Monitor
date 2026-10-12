@@ -7,7 +7,7 @@ import { SetupGuide } from "@/components/app/home/setup-guide";
 import { PageHeader } from "@/components/app/page-header";
 import { PageSection } from "@/components/app/page-section";
 import { NewScreenButton } from "@/components/app/screens/new-screen-button";
-import { ScreenCard } from "@/components/app/screens/screen-card";
+import { ScreenList } from "@/components/app/screens/screen-list";
 import { screenUrl } from "@/components/app/screens/screen-url";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { env } from "@/env";
+import { loadDisplayStates } from "@/server/display/previews";
 import { listScreens } from "@/server/screens";
 import { requireWorkspace } from "@/server/session";
 import { listStripeAccountSummaries } from "@/server/stripe/accounts";
@@ -75,15 +76,7 @@ export default async function HomePage({ searchParams }: PageProps<"/app">) {
           }
         >
           {screens.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {screens.map((screen) => (
-                <ScreenCard
-                  key={screen.id}
-                  screen={screen}
-                  url={screenUrl(APP_URL, screen.publicToken)}
-                />
-              ))}
-            </div>
+            <ScreenList screens={screens} states={loadDisplayStates(screens)} appUrl={APP_URL} />
           ) : (
             <Empty className="border">
               <EmptyHeader>
