@@ -40,14 +40,14 @@ SaaS founders and small teams who bill with Stripe and want their revenue visibl
 - Security: Stripe keys are encrypted at rest (AES-256-GCM) and never leave the server; customer names and emails stay off screens unless allowed.
 - Updates arrive instantly through Stripe webhooks, or by polling within Stripe's read allowance.
 - Several Stripe accounts can share one screen, added up in one currency or taking turns.
-- Screens speak ${SITE_LANGUAGES.map((language) => LANGUAGE_NAMES[language]).join(", ")}; voices speak English, French, German, Spanish and Portuguese. Three sound packs: cash register, chime, arcade.
+- Screens speak English, French, German, Spanish, Italian, Portuguese (Brazil) and Dutch, with local number and date formats; voices speak English, French, German, Spanish and Portuguese. Three sound packs: cash register, chime, arcade.
 - Mobile app: SaaS Monitor for iPhone, iPad, Apple Watch, Android and Wear OS opens any screen (hosted or self-hosted) with its link or QR code, notifies each payment, new subscriber, upgrade and milestone, has widgets and watch complications, and shares any number as an image. No account, no tracking. Status: ${appStatus}.
 - No ads, no analytics, no tracking on the site.
 - Stripe only for now: no Paddle, Lemon Squeezy or Polar yet.
 
 ## How it compares
 
-${siteConfig.name} does not replace analytics tools: it puts the numbers on a screen that stays on, with sound. Keep ${others.slice(0, -1).join(", ")} or ${others.at(-1)} for deeper analysis; see [Alternatives](${page("/alternatives")}).
+${siteConfig.name} does not replace subscription analytics such as Baremetrics or ChartMogul, which it runs beside: it puts the numbers on a screen that stays on, with sound. Side-by-side comparisons with ${others.slice(0, -1).join(", ")} and ${others.at(-1)}: [Alternatives](${page("/alternatives")}).
 
 ## Try it
 
