@@ -392,7 +392,7 @@ export default function PrivacyPage() {
                     term: <Code>gleap-widget-…</Code>,
                     description:
                       "Local storage of the help widget (Gleap), in the dashboard, and on this site once you open it: your conversations with us, from one visit to the next, and the widget’s settings.",
-                    note: "Until you clear it.",
+                    note: "Until you sign out or clear it.",
                   },
                   {
                     term: <Code>theme</Code>,

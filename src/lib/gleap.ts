@@ -39,3 +39,19 @@ export function startGleap(
   );
   return started;
 }
+
+/**
+ * Forgets who was writing, at sign-out: the site and the dashboard share the widget's session, so
+ * on a shared computer the next visitor would otherwise find the last one's conversations.
+ */
+export function forgetGleapUser(): void {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("gleap-widget-session")) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage may be off, in which case the widget kept nothing.
+  }
+  // Running on this page, it also holds the session in memory.
+  void started?.then((gleap) => gleap.clearIdentity());
+}

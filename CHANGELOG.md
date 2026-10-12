@@ -18,7 +18,8 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 - A help widget for an instance that sets `GLEAP_API_KEY` (a Gleap project's SDK key): people
   write to its team from the dashboard, and from the site's pages through a **Questions?** button,
   which loads the widget only once clicked. Screens load no third-party script, and the widget
-  leaves the dashboard's console and requests out of bug reports.
+  leaves the dashboard's console and requests out of bug reports. Signing out forgets who was
+  writing, so that the next person on a shared computer starts anew.
 - The server side of the SaaS Monitor app (iOS and Android): a phone opens a screen with its link,
   scanned from the QR code of **Open on your phone** in the screen settings, and its password if
   it has one, then gets notified of what happens, in the screen's language. **Events** gains a
