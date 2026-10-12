@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { apps, siteConfig } from "@/lib/site";
-import { faqPage, homeJsonLd, serializeJsonLd } from "./structured-data";
+import {
+  breadcrumbList,
+  faqPage,
+  homeJsonLd,
+  howTo,
+  serializeJsonLd,
+  techArticle,
+} from "./structured-data";
 
 function graphOf(data: ReturnType<typeof homeJsonLd>) {
   return data["@graph"] as Record<string, unknown>[];
@@ -97,6 +104,79 @@ describe("faqPage", () => {
         },
       ],
     });
+  });
+});
+
+describe("techArticle", () => {
+  it("describes a page of the docs in its language, by the maker of the application", () => {
+    expect(
+      techArticle({
+        language: "fr",
+        path: "/docs/numbers",
+        title: "Des chiffres fiables",
+        description: "Le MRR comme Stripe le définit.",
+        image: "/images/demo/fr.webp",
+      }),
+    ).toMatchObject({
+      "@type": "TechArticle",
+      headline: "Des chiffres fiables",
+      url: "https://saas-monitor.com/fr/docs/numbers",
+      inLanguage: "fr",
+      image: "https://saas-monitor.com/images/demo/fr.webp",
+      about: { "@id": "https://saas-monitor.com/#software" },
+      publisher: { "@id": "https://saas-monitor.com/#organization" },
+    });
+  });
+});
+
+describe("breadcrumbList", () => {
+  it("lists the way from the home page, with absolute addresses in the page's language", () => {
+    expect(
+      breadcrumbList("de", [
+        { name: "SaaS Monitor", path: "/" },
+        { name: "Doku", path: "/docs" },
+      ]),
+    ).toEqual({
+      "@type": "BreadcrumbList",
+      "@id": "https://saas-monitor.com/de/docs#breadcrumb",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "SaaS Monitor",
+          item: "https://saas-monitor.com/de",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Doku",
+          item: "https://saas-monitor.com/de/docs",
+        },
+      ],
+    });
+  });
+});
+
+describe("howTo", () => {
+  it("numbers the steps, in plain text, each linked to its anchor", () => {
+    const data = howTo({
+      language: "en",
+      path: "/docs/get-started",
+      name: "Get started",
+      description: "Four steps.",
+      totalTime: "PT2M",
+      steps: [{ name: "Connect Stripe", text: "Click **Create key**.", anchor: "step-1" }],
+    });
+    expect(data).toMatchObject({ "@type": "HowTo", totalTime: "PT2M", inLanguage: "en" });
+    expect(data.step).toEqual([
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Connect Stripe",
+        text: "Click Create key.",
+        url: "https://saas-monitor.com/docs/get-started#step-1",
+      },
+    ]);
   });
 });
 

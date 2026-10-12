@@ -13,6 +13,11 @@ describe("siteRoute", () => {
       kind: "page",
       rewrite: "/en/alternatives/geckoboard",
     });
+    expect(siteRoute("/docs")).toEqual({ kind: "page", rewrite: "/en/docs" });
+    expect(siteRoute("/docs/get-started")).toEqual({
+      kind: "page",
+      rewrite: "/en/docs/get-started",
+    });
   });
 
   it("answers unknown addresses from the site, for its 404 page", () => {
@@ -22,6 +27,7 @@ describe("siteRoute", () => {
   it("serves other languages under their prefix", () => {
     expect(siteRoute("/fr")).toEqual({ kind: "page", rewrite: null });
     expect(siteRoute("/pt/stripe-notification-sound")).toEqual({ kind: "page", rewrite: null });
+    expect(siteRoute("/fr/docs/self-hosting")).toEqual({ kind: "page", rewrite: null });
   });
 
   it("redirects English addresses with a prefix to those without", () => {
@@ -31,6 +37,7 @@ describe("siteRoute", () => {
       kind: "redirect",
       pathname: "/stripe-notification-sound",
     });
+    expect(siteRoute("/en/docs/numbers")).toEqual({ kind: "redirect", pathname: "/docs/numbers" });
   });
 
   it("leaves the product, the API and the build alone", () => {
@@ -65,6 +72,7 @@ describe("siteRoute", () => {
       "/fr/opengraph-image",
       "/changelog/rss.xml",
       "/images/screen.webp",
+      "/images/docs/editor.webp",
     ]) {
       expect(siteRoute(path), path).toEqual({ kind: "other" });
     }

@@ -15,6 +15,16 @@ describe("parseRichText", () => {
     ]);
   });
 
+  it("sets code apart", () => {
+    expect(parseRichText("Set `APP_URL` in `.env`.")).toEqual([
+      { type: "text", text: "Set " },
+      { type: "code", text: "APP_URL" },
+      { type: "text", text: " in " },
+      { type: "code", text: ".env" },
+      { type: "text", text: "." },
+    ]);
+  });
+
   it("keeps a text without markup whole", () => {
     expect(parseRichText("Just words.")).toEqual([{ type: "text", text: "Just words." }]);
   });
@@ -25,6 +35,16 @@ describe("plainText", () => {
     expect(plainText("Revoke it any time. [See every permission](permissions)")).toBe(
       "Revoke it any time. See every permission",
     );
+  });
+});
+
+describe("siteLinks", () => {
+  it("leads to the docs in the page's language", () => {
+    const links = siteLinks("fr");
+    expect(links.docs).toBe("/fr/docs");
+    expect(links["doc-get-started"]).toBe("/fr/docs/get-started");
+    expect(links.permissions).toBe("/fr/docs/get-started#permissions");
+    expect(siteLinks("en").mrr).toBe("/docs/numbers#mrr");
   });
 });
 

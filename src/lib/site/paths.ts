@@ -1,4 +1,5 @@
 import { siteConfig } from "@/lib/site";
+import { DOCS_PATHS, type DocsPath } from "@/lib/site/docs/pages";
 import {
   DEFAULT_LANGUAGE,
   LANGUAGE_TAGS,
@@ -7,12 +8,17 @@ import {
 } from "@/lib/site/languages";
 
 /**
- * The pages of the site in every language. The others (legal pages, changelog, comparisons) are
- * in English only: they keep their address, and take no part in `hreflang`.
+ * The pages of the site in every language: the home page, the notification sounds and the docs.
+ * The others (legal pages, changelog, comparisons) are in English only: they keep their address,
+ * and take no part in `hreflang`.
  */
-export const TRANSLATED_PATHS = ["/", "/stripe-notification-sound"] as const;
+export type TranslatedPath = "/" | "/stripe-notification-sound" | DocsPath;
 
-export type TranslatedPath = (typeof TRANSLATED_PATHS)[number];
+export const TRANSLATED_PATHS: readonly TranslatedPath[] = [
+  "/",
+  "/stripe-notification-sound",
+  ...DOCS_PATHS,
+];
 
 export function isTranslatedPath(path: string): path is TranslatedPath {
   return TRANSLATED_PATHS.some((translated) => translated === path);

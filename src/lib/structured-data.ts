@@ -46,7 +46,7 @@ function softwareApplication(language: SiteLanguage, description: string) {
     license: siteConfig.licenseUrl,
     sameAs: [siteConfig.repositoryUrl],
     releaseNotes: canonicalUrl("en", "/changelog"),
-    softwareHelp: { "@type": "CreativeWork", url: siteConfig.docsUrl },
+    softwareHelp: { "@type": "CreativeWork", url: canonicalUrl(language, "/docs") },
     author: { "@id": ORGANIZATION_ID },
     creator: { "@id": ORGANIZATION_ID },
     publisher: { "@id": ORGANIZATION_ID },
@@ -131,6 +131,102 @@ export function homeJsonLd({
       ...mobileApplications(appDescription),
       faqPage(language, "/", questions),
     ],
+  };
+}
+
+/** Who publishes the site, for the graphs of the pages beside the home page. */
+export function publisher() {
+  return organization();
+}
+
+/**
+ * A page of the docs: an article about the application, in the page's language, published by its
+ * maker. `image` is a picture of what it explains, on the site.
+ */
+export function techArticle({
+  language,
+  path,
+  title,
+  description,
+  image,
+}: {
+  language: SiteLanguage;
+  path: `/${string}`;
+  title: string;
+  description: string;
+  /** On the site: `/images/demo/en.webp`. */
+  image?: string;
+}) {
+  const url = canonicalUrl(language, path);
+  return {
+    "@type": "TechArticle",
+    "@id": `${url}#article`,
+    headline: title,
+    description,
+    url,
+    mainEntityOfPage: url,
+    inLanguage: LANGUAGE_TAGS[language],
+    ...(image && { image: `${siteConfig.hostedUrl}${image}` }),
+    isPartOf: { "@type": "WebSite", "@id": `${HOME}#website`, name: siteConfig.name, url: HOME },
+    about: { "@type": "SoftwareApplication", "@id": SOFTWARE_ID, name: siteConfig.name },
+    author: { "@id": ORGANIZATION_ID },
+    publisher: { "@id": ORGANIZATION_ID },
+  };
+}
+
+/** Where a page sits on the site, from the home page down, each step in the page's language. */
+export function breadcrumbList(
+  language: SiteLanguage,
+  steps: readonly { name: string; path: `/${string}` }[],
+) {
+  const last = steps.at(-1);
+  return {
+    "@type": "BreadcrumbList",
+    ...(last && { "@id": `${canonicalUrl(language, last.path)}#breadcrumb` }),
+    itemListElement: steps.map(({ name, path }, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name,
+      item: canonicalUrl(language, path),
+    })),
+  };
+}
+
+/**
+ * Steps to follow, as a page lays them out: each one has an anchor on the page (`#step-1`).
+ * `totalTime` is an ISO 8601 duration, such as `PT2M`.
+ */
+export function howTo({
+  language,
+  path,
+  name,
+  description,
+  totalTime,
+  steps,
+}: {
+  language: SiteLanguage;
+  path: `/${string}`;
+  name: string;
+  description: string;
+  totalTime?: string;
+  /** Texts with the site's markup, which structured data leaves out. */
+  steps: readonly { name: string; text: string; anchor: string }[];
+}) {
+  const url = canonicalUrl(language, path);
+  return {
+    "@type": "HowTo",
+    "@id": `${url}#how-to`,
+    name,
+    description,
+    inLanguage: LANGUAGE_TAGS[language],
+    ...(totalTime && { totalTime }),
+    step: steps.map((step, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: step.name,
+      text: plainText(step.text),
+      url: `${url}#${step.anchor}`,
+    })),
   };
 }
 
