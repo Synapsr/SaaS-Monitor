@@ -329,6 +329,7 @@ export const it: SiteText = {
   footer: {
     license: "Open source con licenza MIT.",
     madeBy: "Realizzato da [Synapsr](synapsr).",
+    help: "Domande? Scrivici a [support@saas-monitor.com](support).",
     trademark:
       "Stripe è un marchio di Stripe, Inc. SaaS Monitor non è affiliato a Stripe, né approvato da Stripe.",
     columns: { product: "Prodotto", openSource: "Open source", legal: "Legale" },

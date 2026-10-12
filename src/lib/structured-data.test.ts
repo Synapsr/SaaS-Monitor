@@ -26,7 +26,7 @@ const home = (language: "en" | "fr" = "en") =>
   });
 
 describe("homeJsonLd", () => {
-  it("describes a free, open-source business application made by Synapsr", () => {
+  it("describes a free, open-source business application made by Synapsr, and its support", () => {
     const data = home();
     expect(data["@context"]).toBe("https://schema.org");
     expect(nodeOf(data, "SoftwareApplication")).toMatchObject({
@@ -49,6 +49,11 @@ describe("homeJsonLd", () => {
       name: "Synapsr",
       url: "https://synapsr.io",
       sameAs: ["https://github.com/Synapsr"],
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "support@saas-monitor.com",
+      },
     });
   });
 

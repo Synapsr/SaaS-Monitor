@@ -330,6 +330,7 @@ export const nl: SiteText = {
   footer: {
     license: "Open source onder de MIT-licentie.",
     madeBy: "Gemaakt door [Synapsr](synapsr).",
+    help: "Vragen? Mail ons op [support@saas-monitor.com](support).",
     trademark:
       "Stripe is een handelsmerk van Stripe, Inc. SaaS Monitor is niet verbonden aan of goedgekeurd door Stripe.",
     columns: { product: "Product", openSource: "Open source", legal: "Juridisch" },

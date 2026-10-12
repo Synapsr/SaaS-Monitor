@@ -80,6 +80,7 @@ ${SITE_LANGUAGES.filter((language) => language !== "en")
 
 - [Source code on GitHub](${siteConfig.repositoryUrl}): MIT license.
 - [Changelog](${page("/changelog")})
+- Support: ${siteConfig.supportEmail}
 - Made by [${siteConfig.maker.name}](${siteConfig.maker.url}), which also makes [Louez](${siteConfig.maker.githubUrl}/Louez) and [Hovod](${siteConfig.maker.githubUrl}/Hovod), open source too.
 `;
 }

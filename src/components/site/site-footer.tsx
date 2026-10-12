@@ -83,6 +83,9 @@ export function SiteFooter({
           <p>
             <RichText text={text.madeBy} links={links} />
           </p>
+          <p>
+            <RichText text={text.help} links={links} />
+          </p>
         </div>
 
         <nav

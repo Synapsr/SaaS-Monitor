@@ -63,5 +63,6 @@ export function siteLinks(language: SiteLanguage): Record<string, string> {
     sounds: localizedPath(language, "/stripe-notification-sound"),
     apps: `${localizedPath(language, "/")}#apps`,
     synapsr: siteConfig.maker.url,
+    support: `mailto:${siteConfig.supportEmail}`,
   };
 }

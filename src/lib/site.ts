@@ -10,6 +10,11 @@ export const siteConfig = {
   description:
     "Your Stripe MRR, live on the office TV or a Raspberry Pi, with a sound for every sale. Open source: hosted for you, or self-hosted for free.",
   repositoryUrl,
+  /**
+   * Where people write for help with the project and its hosted service. Privacy and legal
+   * matters go to `LEGAL_EMAIL` (`src/lib/legal.ts`), on the legal pages.
+   */
+  supportEmail: "support@saas-monitor.com",
   /** The instance run by the project, free during the public beta. */
   hostedUrl,
   licenseUrl: `${repositoryUrl}/blob/main/LICENSE`,

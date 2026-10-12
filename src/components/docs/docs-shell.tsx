@@ -18,6 +18,7 @@ import {
 import type { SiteText } from "@/lib/site/i18n";
 import type { SiteLanguage } from "@/lib/site/languages";
 import { demoPath, localizedPath } from "@/lib/site/paths";
+import { siteLinks } from "@/lib/site/rich-text";
 import { cn } from "@/lib/utils";
 
 export interface TocEntry {
@@ -164,6 +165,10 @@ export function DocsShell({
             {cta ?? (
               <DocsCta language={language} text={text.common.cta} points={site.hero.points} />
             )}
+
+            <p className="mt-6 text-sm text-(--ink-3)">
+              <RichText text={site.footer.help} links={siteLinks(language)} />
+            </p>
 
             <PageLinks
               label={text.common.docs}

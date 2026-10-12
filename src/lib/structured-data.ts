@@ -27,6 +27,11 @@ function organization() {
     name: siteConfig.maker.name,
     url: siteConfig.maker.url,
     sameAs: [siteConfig.maker.githubUrl],
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: siteConfig.supportEmail,
+    },
   };
 }
 

@@ -328,6 +328,8 @@ export const en = {
   footer: {
     license: "Open source under the MIT license.",
     madeBy: "Made by [Synapsr](synapsr).",
+    /** Where to write for help, in the footer and at the end of every docs page. */
+    help: "Questions? Write to [support@saas-monitor.com](support).",
     trademark:
       "Stripe is a trademark of Stripe, Inc. SaaS Monitor is not affiliated with or endorsed by Stripe.",
     columns: { product: "Product", openSource: "Open source", legal: "Legal" },
