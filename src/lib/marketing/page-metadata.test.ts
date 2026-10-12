@@ -1,6 +1,6 @@
 import type { ResolvedMetadata, ResolvingMetadata } from "next";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { contentMetadata, siteUrl } from "./page-metadata";
+import { sitePageMetadata, siteUrl } from "./page-metadata";
 
 const image = { url: "https://saas-monitor.example/opengraph-image?1a2b3c" };
 
@@ -8,9 +8,9 @@ function parentWith(openGraph: unknown): ResolvingMetadata {
   return Promise.resolve({ openGraph } as ResolvedMetadata);
 }
 
-describe("contentMetadata", () => {
-  it("sets the title, description, canonical URL and social preview of the page", async () => {
-    const metadata = await contentMetadata(
+describe("sitePageMetadata", () => {
+  it("sets the title, description, canonical URL and social preview of an English page", async () => {
+    const metadata = await sitePageMetadata(
       {
         title: "Changelog",
         description: "What changed.",
@@ -23,7 +23,7 @@ describe("contentMetadata", () => {
       title: "Changelog",
       description: "What changed.",
       alternates: {
-        canonical: "/changelog",
+        canonical: "https://saas-monitor.com/changelog",
         types: { "application/rss+xml": "/changelog/rss.xml" },
       },
       openGraph: {
@@ -31,19 +31,47 @@ describe("contentMetadata", () => {
         siteName: "SaaS Monitor",
         title: "Changelog",
         description: "What changed.",
-        url: "/changelog",
+        url: "https://saas-monitor.com/changelog",
+        locale: "en_US",
         images: [image],
       },
     });
   });
 
-  it("does without a parent image", async () => {
-    const metadata = await contentMetadata(
-      { title: "Alternatives", description: "Compared.", path: "/alternatives" },
+  it("links a translated page to its other languages", async () => {
+    const metadata = await sitePageMetadata(
+      {
+        title: "Son des notifications Stripe",
+        description: "Comment le changer.",
+        path: "/stripe-notification-sound",
+        language: "fr",
+      },
       parentWith(null),
     );
+    expect(metadata.alternates?.canonical).toBe(
+      "https://saas-monitor.com/fr/stripe-notification-sound",
+    );
+    expect(metadata.alternates?.languages).toMatchObject({
+      en: "https://saas-monitor.com/stripe-notification-sound",
+      "pt-BR": "https://saas-monitor.com/pt/stripe-notification-sound",
+      "x-default": "https://saas-monitor.com/stripe-notification-sound",
+    });
+    expect(metadata.openGraph).toMatchObject({
+      locale: "fr_FR",
+      url: "https://saas-monitor.com/fr/stripe-notification-sound",
+    });
+    expect(metadata.openGraph?.alternateLocale).toHaveLength(6);
+    expect(metadata.openGraph?.alternateLocale).not.toContain("fr_FR");
+  });
+
+  it("keeps the home page's title whole", async () => {
+    const metadata = await sitePageMetadata(
+      { title: "SaaS Monitor · Home", absoluteTitle: true, description: "…", path: "/" },
+      parentWith(null),
+    );
+    expect(metadata.title).toEqual({ absolute: "SaaS Monitor · Home" });
+    expect(metadata.alternates?.canonical).toBe("https://saas-monitor.com/");
     expect(metadata.openGraph).not.toHaveProperty("images");
-    expect(metadata.alternates).toEqual({ canonical: "/alternatives" });
   });
 });
 

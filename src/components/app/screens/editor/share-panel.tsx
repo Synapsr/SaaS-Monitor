@@ -3,7 +3,10 @@
 import { ArrowUpRightIcon, ChevronRightIcon, PartyPopperIcon, RefreshCwIcon } from "lucide-react";
 import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { regenerateScreenLinkAction, sendTestCelebrationAction } from "@/app/app/screens/actions";
+import {
+  regenerateScreenLinkAction,
+  sendTestCelebrationAction,
+} from "@/app/(product)/app/screens/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { CopyField } from "@/components/app/copy-button";
 import { QrCode } from "@/components/app/screens/qr-code";

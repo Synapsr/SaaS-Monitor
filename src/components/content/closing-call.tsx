@@ -9,18 +9,22 @@ export function ClosingCall({
   actions: React.ReactNode;
 }) {
   return (
-    <section className="relative mx-auto max-w-6xl px-5 pt-28 pb-20 text-center sm:px-6">
+    <section className="relative isolate mx-auto max-w-6xl px-5 pt-28 pb-12 text-center sm:px-6 sm:pt-36">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(40%_50%_at_50%_65%,color-mix(in_oklab,var(--glow)_12%,transparent),transparent_75%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(40%_50%_at_50%_65%,var(--glow-wash),transparent_75%)]"
       />
-      <h2 className="relative mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-        {title}
-      </h2>
-      {children && (
-        <p className="relative mx-auto mt-4 max-w-xl text-pretty text-(--ink-2)">{children}</p>
-      )}
-      <div className="relative mt-8 flex flex-wrap justify-center gap-3">{actions}</div>
+      <div className="reveal">
+        <h2 className="text-title mx-auto max-w-2xl font-semibold text-balance">{title}</h2>
+        {children && (
+          <p className="mx-auto mt-5 max-w-xl leading-relaxed text-pretty text-(--ink-2)">
+            {children}
+          </p>
+        )}
+        <div className="mt-9 flex flex-col items-stretch justify-center gap-3 min-[440px]:flex-row min-[440px]:flex-wrap min-[440px]:items-center">
+          {actions}
+        </div>
+      </div>
     </section>
   );
 }

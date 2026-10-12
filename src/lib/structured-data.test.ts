@@ -1,27 +1,93 @@
-import { describe, expect, it } from "vitest";
-import { siteConfig } from "@/lib/site";
-import { serializeJsonLd, softwareApplicationJsonLd } from "./structured-data";
+import { afterEach, describe, expect, it } from "vitest";
+import { apps, siteConfig } from "@/lib/site";
+import { faqPage, homeJsonLd, serializeJsonLd } from "./structured-data";
 
-describe("softwareApplicationJsonLd", () => {
-  const data = softwareApplicationJsonLd("https://saas-monitor.com");
+function graphOf(data: ReturnType<typeof homeJsonLd>) {
+  return data["@graph"] as Record<string, unknown>[];
+}
 
-  it("describes a free, open-source business application", () => {
-    expect(data).toMatchObject({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+function nodeOf(data: ReturnType<typeof homeJsonLd>, type: string) {
+  return graphOf(data).find((node) => node["@type"] === type);
+}
+
+const home = (language: "en" | "fr" = "en") =>
+  homeJsonLd({
+    language,
+    description: "Your MRR on the wall.",
+    appDescription: "The app.",
+    questions: [{ question: "Safe?", answer: ["Yes. [See every permission](permissions)"] }],
+  });
+
+describe("homeJsonLd", () => {
+  it("describes a free, open-source business application published by Lumy.Media", () => {
+    const data = home();
+    expect(data["@context"]).toBe("https://schema.org");
+    expect(nodeOf(data, "SoftwareApplication")).toMatchObject({
       name: siteConfig.name,
       url: "https://saas-monitor.com/",
       applicationCategory: "BusinessApplication",
-      operatingSystem: "Web, Docker, Raspberry Pi",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       license: siteConfig.licenseUrl,
       sameAs: [siteConfig.repositoryUrl],
-      author: { "@type": "Organization", name: "Lumy.Media SAS" },
+      releaseNotes: "https://saas-monitor.com/changelog",
+      publisher: { "@id": "https://saas-monitor.com/#organization" },
+    });
+    expect(nodeOf(data, "Organization")).toMatchObject({ name: "Lumy.Media SAS" });
+    expect(JSON.stringify(data)).not.toContain('Synapsr"');
+  });
+
+  it("links the open-source code to the application", () => {
+    expect(nodeOf(home(), "SoftwareSourceCode")).toMatchObject({
+      codeRepository: siteConfig.repositoryUrl,
+      targetProduct: { "@id": "https://saas-monitor.com/#software" },
     });
   });
 
-  it("links pages of this app with absolute URLs", () => {
-    expect(data.releaseNotes).toBe("https://saas-monitor.com/changelog");
+  it("points to the page's own language", () => {
+    expect(nodeOf(home("fr"), "SoftwareApplication")).toMatchObject({
+      url: "https://saas-monitor.com/fr",
+    });
+    expect(nodeOf(home("fr"), "FAQPage")).toMatchObject({ inLanguage: "fr" });
+  });
+
+  describe("mobile apps", () => {
+    const live = { appStore: apps.appStore.live, googlePlay: apps.googlePlay.live };
+    afterEach(() => {
+      apps.appStore.live = live.appStore;
+      apps.googlePlay.live = live.googlePlay;
+    });
+
+    it("are described only once a store lists them", () => {
+      apps.appStore.live = false;
+      apps.googlePlay.live = false;
+      expect(nodeOf(home(), "MobileApplication")).toBeUndefined();
+
+      apps.appStore.live = true;
+      const listed = graphOf(home()).filter((node) => node["@type"] === "MobileApplication");
+      expect(listed).toEqual([
+        expect.objectContaining({
+          installUrl: apps.appStore.url,
+          operatingSystem: "iOS, iPadOS, watchOS",
+        }),
+      ]);
+    });
+  });
+});
+
+describe("faqPage", () => {
+  it("answers in plain text, as visitors read the answers", () => {
+    expect(
+      faqPage("en", "/", [{ question: "Q?", answer: ["One.", "Two, [linked](mrr)."] }]),
+    ).toMatchObject({
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Q?",
+          acceptedAnswer: { "@type": "Answer", text: "One.\n\nTwo, linked." },
+        },
+      ],
+    });
   });
 });
 

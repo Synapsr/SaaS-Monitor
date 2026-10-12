@@ -6,6 +6,8 @@
 **/.next
 coverage
 docs
+# Rendered at build time into /llms-full.txt.
+!docs/*.md
 *.md
 !README.md
 # Rendered at build time by /changelog and its feed.

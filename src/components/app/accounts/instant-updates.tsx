@@ -3,7 +3,10 @@
 import { ArrowUpRightIcon, ChevronRightIcon, ClockIcon, ZapIcon } from "lucide-react";
 import { startTransition, useActionState, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { enableInstantUpdatesAction, saveWebhookSecretAction } from "@/app/app/accounts/actions";
+import {
+  enableInstantUpdatesAction,
+  saveWebhookSecretAction,
+} from "@/app/(product)/app/accounts/actions";
 import { CopyCode, CopyField } from "@/components/app/copy-button";
 import { SecretInput } from "@/components/secret-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

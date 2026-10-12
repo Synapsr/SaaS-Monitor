@@ -4,12 +4,12 @@ import { ChangelogBlocks } from "@/components/content/changelog-blocks";
 import { ContentPage, PageIntro } from "@/components/content/content-page";
 import { SourceLink } from "@/components/content/source-link";
 import type { Release } from "@/lib/marketing/changelog";
-import { contentMetadata } from "@/lib/marketing/page-metadata";
+import { sitePageMetadata } from "@/lib/marketing/page-metadata";
 import { siteConfig } from "@/lib/site";
 import { readChangelog } from "@/server/changelog";
 
-export function generateMetadata(_: PageProps<"/changelog">, parent: ResolvingMetadata) {
-  return contentMetadata(
+export function generateMetadata(_: PageProps<"/[lang]/changelog">, parent: ResolvingMetadata) {
+  return sitePageMetadata(
     {
       title: "Changelog",
       description: `New features and fixes in each release of ${siteConfig.name}, the open-source Stripe dashboard for your office TV.`,
@@ -23,13 +23,13 @@ export function generateMetadata(_: PageProps<"/changelog">, parent: ResolvingMe
 export default async function ChangelogPage() {
   const { releases } = await readChangelog();
   return (
-    <ContentPage>
+    <ContentPage path="/changelog">
       <PageIntro eyebrow="Changelog" title="What's new in SaaS Monitor">
         <p>
           Every release, newest first. On your own server,{" "}
           <a
             href={`${siteConfig.selfHostingUrl}#updating`}
-            className="text-(--ink) underline decoration-white/25 underline-offset-4 hover:decoration-current"
+            className="text-(--ink) underline decoration-(--ink-3)/40 underline-offset-4 hover:decoration-current"
           >
             updating
           </a>{" "}
@@ -61,7 +61,7 @@ function ReleaseEntry({ release }: { release: Release }) {
   return (
     <li
       id={release.anchor}
-      className="grid scroll-mt-20 gap-4 border-t border-white/[0.06] py-10 md:grid-cols-[14rem_1fr] md:gap-10"
+      className="grid scroll-mt-20 gap-4 border-t border-(--hairline) py-10 md:grid-cols-[14rem_1fr] md:gap-10"
     >
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold tracking-tight">

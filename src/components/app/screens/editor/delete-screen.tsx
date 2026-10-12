@@ -2,7 +2,7 @@
 
 import { Trash2Icon } from "lucide-react";
 import { useState } from "react";
-import { deleteScreenAction } from "@/app/app/screens/actions";
+import { deleteScreenAction } from "@/app/(product)/app/screens/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Button } from "@/components/ui/button";
 

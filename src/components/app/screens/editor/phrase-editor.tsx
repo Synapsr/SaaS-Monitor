@@ -3,7 +3,7 @@
 import { PlusIcon, XIcon } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { previewPhraseAction } from "@/app/app/screens/actions";
+import { previewPhraseAction } from "@/app/(product)/app/screens/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

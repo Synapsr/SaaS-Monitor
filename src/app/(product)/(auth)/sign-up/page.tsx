@@ -14,7 +14,8 @@ import { getInvitationPreview } from "@/server/members";
 import { getSession } from "@/server/session";
 import { enabledSocialProviders } from "@/server/social-providers";
 
-export const metadata: Metadata = { title: "Create your account" };
+// Reachable by anyone, worth finding by no one: search results lead to the site instead.
+export const metadata: Metadata = { title: "Create your account", robots: { index: false } };
 
 /** Signing up from an invitation link: the invitation decides which email address to use. */
 async function pendingInvitation(next: string) {

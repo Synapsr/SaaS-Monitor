@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { acceptInvitationAction } from "@/app/invite/[id]/actions";
+import { acceptInvitationAction } from "@/app/(product)/invite/[id]/actions";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";

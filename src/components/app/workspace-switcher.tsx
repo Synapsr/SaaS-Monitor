@@ -3,7 +3,7 @@
 import { CheckIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { switchWorkspaceAction } from "@/app/app/actions";
+import { switchWorkspaceAction } from "@/app/(product)/app/actions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

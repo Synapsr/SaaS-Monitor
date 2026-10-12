@@ -36,7 +36,7 @@ export function EmailLink({ email }: { email: string }) {
 /** A cookie's or a setting's name, as the browser or the code spells it. */
 export function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.85em] break-words text-(--ink)">
+    <code className="rounded bg-(--surface-raised) px-1.5 py-0.5 font-mono text-[0.85em] break-words text-(--ink)">
       {children}
     </code>
   );
@@ -67,7 +67,7 @@ export function FactList({ facts, className }: { facts: Fact[]; className?: stri
   return (
     <dl
       className={cn(
-        "divide-y divide-white/[0.06] rounded-xl bg-white/[0.02] text-sm ring-1 ring-white/[0.08]",
+        "divide-y divide-(--hairline) rounded-xl bg-(--surface) text-sm shadow-(--edge)",
         className,
       )}
     >
@@ -90,7 +90,7 @@ export function FactList({ facts, className }: { facts: Fact[]; className?: stri
 /** What to remember from a page, before its details. */
 export function LegalSummary({ title, points }: { title: string; points: React.ReactNode[] }) {
   return (
-    <div className="rounded-2xl bg-white/[0.03] p-6 ring-1 ring-white/[0.08]">
+    <div className="rounded-2xl bg-(--surface) p-6 shadow-(--edge)">
       <h2 className="font-medium">{title}</h2>
       <ul className="mt-4 flex flex-col gap-3 text-sm leading-6 text-(--ink-2)">
         {points.map((point, index) => (

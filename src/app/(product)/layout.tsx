@@ -5,7 +5,7 @@ import { Providers } from "@/components/providers";
 import { appUrl } from "@/env";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
-import "./globals.css";
+import "@/app/globals.css";
 
 export function generateMetadata(): Metadata {
   return {
@@ -19,7 +19,8 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+/** The product: the dashboard, sign-in and invitations, and the wall displays. In English. */
+export default function ProductLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"

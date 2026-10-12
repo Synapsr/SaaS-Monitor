@@ -3,12 +3,13 @@ import { LegalDocument } from "@/components/legal/legal-document";
 import { EmailLink, FactList, HostedDomain, TextLink } from "@/components/legal/legal-prose";
 import { host, postalAddress, publisher, supervisoryAuthority } from "@/lib/legal";
 import { siteConfig } from "@/lib/site";
+import { canonicalUrl } from "@/lib/site/paths";
 
 export const metadata: Metadata = {
   title: "Legal notice",
   description:
     "Who publishes and hosts saas-monitor.com, with the French mentions légales the law requires.",
-  alternates: { canonical: "/legal" },
+  alternates: { canonical: canonicalUrl("en", "/legal") },
 };
 
 export default function LegalNoticePage() {

@@ -1,20 +1,19 @@
 import type { MetadataRoute } from "next";
 import { appUrl } from "@/env";
-import { absoluteUrl } from "@/lib/site";
+import { ALTERNATIVES } from "@/lib/marketing/alternatives";
+import { sitemapEntries } from "@/lib/site/sitemap";
 
-/** The public pages worth finding in search engines. Screens and the dashboard are private. */
-const PUBLIC_PAGES = [
-  "/",
-  "/stripe-notification-sound",
-  "/alternatives",
-  "/changelog",
-  "/privacy",
-  "/terms",
-  "/legal",
-  "/sign-up",
-] as const;
-
+/**
+ * The public pages worth finding in search engines, each translated one in every language with
+ * its alternates. Screens, the dashboard and the auth pages are left out.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = appUrl();
-  return PUBLIC_PAGES.map((path) => ({ url: absoluteUrl(base, path) }));
+  return sitemapEntries(appUrl(), [
+    "/alternatives",
+    ...ALTERNATIVES.map(({ slug }) => `/alternatives/${slug}` as const),
+    "/changelog",
+    "/privacy",
+    "/terms",
+    "/legal",
+  ]);
 }

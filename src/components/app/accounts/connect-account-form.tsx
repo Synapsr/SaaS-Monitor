@@ -8,7 +8,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { startTransition, useActionState, useId, useState } from "react";
-import { connectAccountAction } from "@/app/app/accounts/actions";
+import { connectAccountAction } from "@/app/(product)/app/accounts/actions";
 import { SecretInput } from "@/components/secret-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";

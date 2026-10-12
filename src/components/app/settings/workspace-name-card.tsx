@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useId, useState } from "react";
 import { toast } from "sonner";
-import { renameWorkspaceAction } from "@/app/app/settings/actions";
+import { renameWorkspaceAction } from "@/app/(product)/app/settings/actions";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";

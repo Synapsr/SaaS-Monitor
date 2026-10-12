@@ -12,11 +12,12 @@ import {
 } from "@/components/legal/legal-prose";
 import { host, LEGAL_EMAIL, postalAddress, publisher, supervisoryAuthority } from "@/lib/legal";
 import { siteConfig } from "@/lib/site";
+import { canonicalUrl } from "@/lib/site/paths";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
   description: `What ${siteConfig.name} collects when you use saas-monitor.com or its app, why, who handles it and how long it is kept.`,
-  alternates: { canonical: "/privacy" },
+  alternates: { canonical: canonicalUrl("en", "/privacy") },
 };
 
 /*

@@ -15,12 +15,12 @@ import { SourceLink } from "./source-link";
  */
 export function ComparisonTable({ alternative }: { alternative: Alternative }) {
   return (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-white/[0.08]">
+    <div className="overflow-hidden rounded-2xl shadow-(--edge)">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">
           {alternative.name} and {siteConfig.name} compared
         </caption>
-        <thead className="hidden bg-white/[0.03] md:table-header-group">
+        <thead className="hidden bg-(--surface) md:table-header-group">
           <tr>
             <th scope="col" className="w-44 px-5 py-4 font-medium text-(--ink-3)">
               <span className="sr-only">Topic</span>
@@ -36,7 +36,7 @@ export function ComparisonTable({ alternative }: { alternative: Alternative }) {
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.06]">
+        <tbody className="divide-y divide-(--hairline)">
           {alternative.rows.map((row) => (
             <Row key={row.topic} row={row} name={alternative.name} />
           ))}
@@ -96,8 +96,8 @@ function PickList({
     <article
       className={
         highlight
-          ? "rounded-2xl bg-(--glow)/[0.04] p-5 ring-1 ring-(--glow)/20 sm:p-6"
-          : "rounded-2xl bg-white/[0.03] p-5 ring-1 ring-white/[0.08] sm:p-6"
+          ? "rounded-2xl bg-(--glow)/[0.04] p-5 shadow-(--edge-glow) sm:p-6"
+          : "rounded-2xl bg-(--surface) p-5 shadow-(--edge) sm:p-6"
       }
     >
       <h3 className="font-medium">{title}</h3>
@@ -128,7 +128,7 @@ export function SourcesNote({ names, sources }: { names: string; sources: string
         current ones, and{" "}
         <a
           href={`${siteConfig.repositoryUrl}/issues`}
-          className="underline decoration-white/20 underline-offset-2 hover:text-(--ink)"
+          className="underline decoration-(--ink-3)/40 underline-offset-2 hover:text-(--ink)"
         >
           open an issue
         </a>{" "}
@@ -152,10 +152,10 @@ export function SourcesNote({ names, sources }: { names: string; sources: string
 /** Every tool the site compares, with what it is and what it costs: the index of comparisons. */
 export function AlternativesTable({ alternatives }: { alternatives: readonly Alternative[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl ring-1 ring-white/[0.08]">
+    <div className="overflow-hidden rounded-2xl shadow-(--edge)">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">Tools compared with {siteConfig.name}</caption>
-        <thead className="hidden bg-white/[0.03] md:table-header-group">
+        <thead className="hidden bg-(--surface) md:table-header-group">
           <tr>
             <th scope="col" className="w-48 px-5 py-4 font-medium text-(--ink-3)">
               Tool
@@ -168,7 +168,7 @@ export function AlternativesTable({ alternatives }: { alternatives: readonly Alt
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.06]">
+        <tbody className="divide-y divide-(--hairline)">
           <tr className="flex flex-col gap-2 bg-(--glow)/[0.04] px-5 py-4 md:table-row md:p-0">
             <th scope="row" className="font-medium md:px-5 md:py-4 md:align-top">
               <span className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export function AlternativesTable({ alternatives }: { alternatives: readonly Alt
               <th scope="row" className="font-medium md:px-5 md:py-4 md:align-top">
                 <Link
                   href={`/alternatives/${alternative.slug}`}
-                  className="underline decoration-white/20 underline-offset-4 hover:decoration-current"
+                  className="underline decoration-(--ink-3)/40 underline-offset-4 hover:decoration-current"
                 >
                   {alternative.name}
                 </Link>

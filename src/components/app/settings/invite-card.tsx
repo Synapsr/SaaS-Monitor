@@ -3,7 +3,7 @@
 import { CircleCheckIcon, SendIcon } from "lucide-react";
 import { startTransition, useActionState, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { inviteMemberAction, revokeInvitationAction } from "@/app/app/settings/actions";
+import { inviteMemberAction, revokeInvitationAction } from "@/app/(product)/app/settings/actions";
 import { CopyButton, CopyField } from "@/components/app/copy-button";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";

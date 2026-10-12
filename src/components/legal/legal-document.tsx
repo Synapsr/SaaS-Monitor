@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { LandingFooter } from "@/components/marketing/landing-footer";
-import { LandingHeader } from "@/components/marketing/landing-header";
+import { SitePage } from "@/components/site/site-page";
 import { formatLegalDate, LEGAL_PAGES, type LegalPageId } from "@/lib/legal";
 import { cn } from "@/lib/utils";
-import "@/app/landing.css";
 
 export interface LegalSection {
   /** The section's anchor, linked from the table of contents. */
@@ -33,12 +31,11 @@ export function LegalDocument({
   summary?: React.ReactNode;
   sections: LegalSection[];
 }) {
-  const title = LEGAL_PAGES.find(({ id }) => id === page)?.title;
+  const legalPage = LEGAL_PAGES.find(({ id }) => id === page);
 
   return (
-    <div className="landing dark min-h-svh">
-      <LandingHeader />
-      <main className="mx-auto max-w-6xl px-5 pt-12 pb-24 sm:px-6 sm:pt-16">
+    <SitePage language="en" path={legalPage?.href ?? "/"}>
+      <div className="mx-auto max-w-6xl px-5 pt-12 pb-8 sm:px-6 sm:pt-16">
         <div className="grid gap-10 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-16">
           <aside>
             <div className="flex flex-col gap-8 lg:sticky lg:top-24">
@@ -50,7 +47,7 @@ export function LegalDocument({
           <article className="max-w-2xl min-w-0">
             <header>
               <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-                {title}
+                {legalPage?.title}
               </h1>
               <p className="mt-4 text-lg text-pretty text-(--ink-2)">{lead}</p>
               <p className="mt-4 text-sm text-(--ink-3)">
@@ -61,7 +58,7 @@ export function LegalDocument({
             {/* Phones have no room for the side column: the contents come after the title. */}
             <TableOfContents
               sections={sections}
-              className="mt-8 rounded-xl p-4 ring-1 ring-white/[0.08] lg:hidden"
+              className="mt-8 rounded-2xl p-4 shadow-(--edge) lg:hidden"
             />
 
             {summary && <div className="mt-10">{summary}</div>}
@@ -84,9 +81,8 @@ export function LegalDocument({
             </div>
           </article>
         </div>
-      </main>
-      <LandingFooter />
-    </div>
+      </div>
+    </SitePage>
   );
 }
 
@@ -103,7 +99,7 @@ function LegalPagesNav({ current }: { current: LegalPageId }) {
               className={cn(
                 "block rounded-lg px-3 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-(--glow)",
                 id === current
-                  ? "bg-white/[0.06] font-medium text-(--ink)"
+                  ? "bg-(--surface-raised) font-medium text-(--ink)"
                   : "text-(--ink-2) hover:text-(--ink)",
               )}
             >

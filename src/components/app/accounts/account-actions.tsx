@@ -7,7 +7,7 @@ import {
   disconnectAccountAction,
   reimportAccountAction,
   renameAccountAction,
-} from "@/app/app/accounts/actions";
+} from "@/app/(product)/app/accounts/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {

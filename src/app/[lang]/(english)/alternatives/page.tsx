@@ -2,14 +2,14 @@ import { ArrowRightIcon, PlayIcon } from "lucide-react";
 import type { ResolvingMetadata } from "next";
 import Link from "next/link";
 import { ClosingCall } from "@/components/content/closing-call";
+import { buttonClass } from "@/components/site/button-styles";
 import { AlternativesTable, SourcesNote } from "@/components/content/comparison";
 import { ContentPage, ContentSection, PageIntro } from "@/components/content/content-page";
-import { Button } from "@/components/ui/button";
 import { ALTERNATIVES } from "@/lib/marketing/alternatives";
-import { contentMetadata } from "@/lib/marketing/page-metadata";
+import { sitePageMetadata } from "@/lib/marketing/page-metadata";
 
-export function generateMetadata(_: PageProps<"/alternatives">, parent: ResolvingMetadata) {
-  return contentMetadata(
+export function generateMetadata(_: PageProps<"/[lang]/alternatives">, parent: ResolvingMetadata) {
+  return sitePageMetadata(
     {
       title: "Alternatives: SaaS Monitor compared",
       description:
@@ -24,28 +24,24 @@ export default function AlternativesPage() {
   const names = ALTERNATIVES.map((alternative) => alternative.name);
   const others = `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
   return (
-    <ContentPage>
+    <ContentPage path="/alternatives">
       <PageIntro
         eyebrow="Alternatives"
         title="A screen for the wall, next to the tools you already use"
         actions={
           <>
-            <Button
-              asChild
-              size="lg"
-              className="h-11 bg-(--ink) px-5 text-(--screen) hover:bg-white"
+            <Link href="/d/demo" prefetch={false} className={buttonClass({ size: "lg" })}>
+              <PlayIcon aria-hidden className="fill-current" />
+              Open the live demo
+            </Link>
+            <Link
+              href="/sign-up"
+              prefetch={false}
+              className={buttonClass({ variant: "secondary", size: "lg" })}
             >
-              <Link href="/d/demo">
-                <PlayIcon data-icon="inline-start" className="fill-current" />
-                Open the live demo
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 px-5">
-              <Link href="/sign-up">
-                Get started
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
-            </Button>
+              Get started
+              <ArrowRightIcon aria-hidden />
+            </Link>
           </>
         }
       >
@@ -71,7 +67,7 @@ export default function AlternativesPage() {
             <li key={alternative.slug}>
               <Link
                 href={`/alternatives/${alternative.slug}`}
-                className="group flex h-full flex-col gap-3 rounded-2xl bg-white/[0.03] p-5 ring-1 ring-white/[0.08] transition-colors outline-none hover:bg-white/[0.05] focus-visible:ring-2 focus-visible:ring-(--glow) sm:p-6"
+                className="group flex h-full flex-col gap-3 rounded-3xl bg-(--surface) p-5 shadow-(--edge) transition-[background-color,box-shadow] duration-150 outline-none hover:bg-(--surface-raised) hover:shadow-(--edge-hover) focus-visible:ring-2 focus-visible:ring-(--glow) sm:p-6"
               >
                 <span className="text-xs text-(--ink-3)">{alternative.kind}</span>
                 <span className="font-medium text-balance">
@@ -97,19 +93,17 @@ export default function AlternativesPage() {
         title="See it on a screen before you choose"
         actions={
           <>
-            <Button
-              asChild
-              size="lg"
-              className="h-11 bg-(--ink) px-5 text-(--screen) hover:bg-white"
+            <Link href="/d/demo" prefetch={false} className={buttonClass({ size: "lg" })}>
+              <PlayIcon aria-hidden className="fill-current" />
+              Open the live demo
+            </Link>
+            <Link
+              href="/stripe-notification-sound"
+              prefetch={false}
+              className={buttonClass({ variant: "secondary", size: "lg" })}
             >
-              <Link href="/d/demo">
-                <PlayIcon data-icon="inline-start" className="fill-current" />
-                Open the live demo
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 px-5">
-              <Link href="/stripe-notification-sound">Hear the sounds</Link>
-            </Button>
+              Hear the sounds
+            </Link>
           </>
         }
       >

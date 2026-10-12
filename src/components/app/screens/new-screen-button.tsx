@@ -2,7 +2,7 @@
 
 import { PlusIcon } from "lucide-react";
 import { startTransition, useActionState, useId, useState } from "react";
-import { createScreenAction } from "@/app/app/screens/actions";
+import { createScreenAction } from "@/app/(product)/app/screens/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

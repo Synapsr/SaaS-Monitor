@@ -3,13 +3,13 @@ import type { ResolvingMetadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClosingCall } from "@/components/content/closing-call";
+import { buttonClass } from "@/components/site/button-styles";
 import { ComparisonTable, PickWhich, SourcesNote } from "@/components/content/comparison";
 import { ContentPage, ContentSection, PageIntro } from "@/components/content/content-page";
-import { Faq } from "@/components/marketing/faq";
+import { Faq } from "@/components/site/faq";
 import { SourceLink } from "@/components/content/source-link";
-import { Button } from "@/components/ui/button";
 import { ALTERNATIVES, alternativeBySlug, sourcesOf } from "@/lib/marketing/alternatives";
-import { contentMetadata } from "@/lib/marketing/page-metadata";
+import { sitePageMetadata } from "@/lib/marketing/page-metadata";
 
 /** Every comparison is written in `src/lib/marketing/alternatives.ts`: other slugs are a 404. */
 export const dynamicParams = false;
@@ -19,12 +19,12 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata(
-  { params }: PageProps<"/alternatives/[slug]">,
+  { params }: PageProps<"/[lang]/alternatives/[slug]">,
   parent: ResolvingMetadata,
 ) {
   const alternative = alternativeBySlug((await params).slug);
   if (!alternative) notFound();
-  return contentMetadata(
+  return sitePageMetadata(
     {
       title: alternative.title,
       description: alternative.description,
@@ -34,34 +34,32 @@ export async function generateMetadata(
   );
 }
 
-export default async function AlternativePage({ params }: PageProps<"/alternatives/[slug]">) {
+export default async function AlternativePage({
+  params,
+}: PageProps<"/[lang]/alternatives/[slug]">) {
   const alternative = alternativeBySlug((await params).slug);
   if (!alternative) notFound();
   const others = ALTERNATIVES.filter((other) => other.slug !== alternative.slug);
 
   return (
-    <ContentPage>
+    <ContentPage path={`/alternatives/${alternative.slug}`}>
       <PageIntro
         eyebrow={`${alternative.name} alternative`}
         title={alternative.headline}
         actions={
           <>
-            <Button
-              asChild
-              size="lg"
-              className="h-11 bg-(--ink) px-5 text-(--screen) hover:bg-white"
+            <Link href="/d/demo" prefetch={false} className={buttonClass({ size: "lg" })}>
+              <PlayIcon aria-hidden className="fill-current" />
+              Open the live demo
+            </Link>
+            <Link
+              href="/sign-up"
+              prefetch={false}
+              className={buttonClass({ variant: "secondary", size: "lg" })}
             >
-              <Link href="/d/demo">
-                <PlayIcon data-icon="inline-start" className="fill-current" />
-                Open the live demo
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 px-5">
-              <Link href="/sign-up">
-                Get started
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
-            </Button>
+              Get started
+              <ArrowRightIcon aria-hidden />
+            </Link>
           </>
         }
       >
@@ -88,7 +86,10 @@ export default async function AlternativePage({ params }: PageProps<"/alternativ
       </ContentSection>
 
       <ContentSection id="questions" title="Questions">
-        <Faq items={alternative.faq} />
+        <Faq
+          items={alternative.faq.map(({ question, answer }) => ({ question, answer: [answer] }))}
+          links={{}}
+        />
       </ContentSection>
 
       <ContentSection id="more" title="Other comparisons">
@@ -97,7 +98,7 @@ export default async function AlternativePage({ params }: PageProps<"/alternativ
             <li key={other.slug}>
               <Link
                 href={`/alternatives/${other.slug}`}
-                className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-(--ink-2) ring-1 ring-white/10 transition-colors outline-none hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow)"
+                className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-(--ink-2) shadow-(--edge) transition-[color,box-shadow] duration-150 outline-none hover:text-(--ink) hover:shadow-(--edge-hover) focus-visible:ring-2 focus-visible:ring-(--glow)"
               >
                 {other.name}
               </Link>
@@ -106,7 +107,7 @@ export default async function AlternativePage({ params }: PageProps<"/alternativ
           <li>
             <Link
               href="/alternatives"
-              className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-(--ink-2) ring-1 ring-white/10 transition-colors outline-none hover:text-(--ink) focus-visible:ring-2 focus-visible:ring-(--glow)"
+              className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-(--ink-2) shadow-(--edge) transition-[color,box-shadow] duration-150 outline-none hover:text-(--ink) hover:shadow-(--edge-hover) focus-visible:ring-2 focus-visible:ring-(--glow)"
             >
               All at a glance
             </Link>
@@ -118,19 +119,17 @@ export default async function AlternativePage({ params }: PageProps<"/alternativ
         title="Hear a sale land"
         actions={
           <>
-            <Button
-              asChild
-              size="lg"
-              className="h-11 bg-(--ink) px-5 text-(--screen) hover:bg-white"
+            <Link href="/d/demo" prefetch={false} className={buttonClass({ size: "lg" })}>
+              <PlayIcon aria-hidden className="fill-current" />
+              Open the live demo
+            </Link>
+            <Link
+              href="/sign-up"
+              prefetch={false}
+              className={buttonClass({ variant: "secondary", size: "lg" })}
             >
-              <Link href="/d/demo">
-                <PlayIcon data-icon="inline-start" className="fill-current" />
-                Open the live demo
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 px-5">
-              <Link href="/sign-up">Get started</Link>
-            </Button>
+              Get started
+            </Link>
           </>
         }
       >

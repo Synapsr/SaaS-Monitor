@@ -3,7 +3,7 @@
 import { KeyRoundIcon, LockIcon } from "lucide-react";
 import { startTransition, useActionState, useId, useState } from "react";
 import { toast } from "sonner";
-import { setScreenPasswordAction } from "@/app/app/screens/actions";
+import { setScreenPasswordAction } from "@/app/(product)/app/screens/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { SecretInput } from "@/components/secret-input";
 import { Button } from "@/components/ui/button";

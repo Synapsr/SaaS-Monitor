@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { saveScreenAction } from "@/app/app/screens/actions";
+import { saveScreenAction } from "@/app/(product)/app/screens/actions";
 import { BackLink } from "@/components/app/back-link";
 import { ScreenPreview } from "@/components/app/screens/screen-preview";
 import { screenUrl } from "@/components/app/screens/screen-url";

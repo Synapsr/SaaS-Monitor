@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { leaveWorkspaceAction, removeMemberAction } from "@/app/app/settings/actions";
+import { leaveWorkspaceAction, removeMemberAction } from "@/app/(product)/app/settings/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Button } from "@/components/ui/button";
 

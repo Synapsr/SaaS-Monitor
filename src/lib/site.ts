@@ -19,6 +19,25 @@ export const siteConfig = {
   wallDisplayDocsUrl: `${repositoryUrl}/blob/main/docs/wall-display.md`,
 } as const;
 
+export interface StoreApp {
+  /** Its page in the store. */
+  url: string;
+  /**
+   * Whether the store lists it. Until then, the site says it is coming without linking to it;
+   * once it does, the site links to it and describes it in its structured data.
+   */
+  live: boolean;
+}
+
+/** The SaaS Monitor app (iPhone, iPad, Apple Watch; Android, Wear OS), in its two stores. */
+export const apps: { appStore: StoreApp; googlePlay: StoreApp } = {
+  appStore: { url: "https://apps.apple.com/app/id6820038376", live: false },
+  googlePlay: {
+    url: "https://play.google.com/store/apps/details?id=com.saasmonitor.app",
+    live: false,
+  },
+};
+
 /** Whether an instance at `appUrl` is the project's own, rather than a self-hosted one. */
 export function isHostedInstance(appUrl: string): boolean {
   return new URL(appUrl).host === new URL(hostedUrl).host;

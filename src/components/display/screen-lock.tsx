@@ -2,7 +2,7 @@
 
 import { LockIcon } from "lucide-react";
 import { useActionState, useId, type CSSProperties } from "react";
-import { unlockScreenAction } from "@/app/d/[token]/actions";
+import { unlockScreenAction } from "@/app/(product)/d/[token]/actions";
 import { ScreenMessage } from "@/components/display/screen-message";
 import { LogoPulse } from "@/components/logo";
 import { accentPalette, accentVariables } from "@/lib/display/accents";

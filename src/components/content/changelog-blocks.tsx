@@ -47,7 +47,7 @@ function InlineNodes({ nodes }: { nodes: Inline[] }) {
         return (
           <code
             key={index}
-            className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[0.85em] text-(--ink)"
+            className="rounded bg-(--surface-raised) px-1 py-0.5 font-mono text-[0.85em] text-(--ink)"
           >
             {node.text}
           </code>
@@ -63,7 +63,7 @@ function InlineNodes({ nodes }: { nodes: Inline[] }) {
           <a
             key={index}
             href={node.href}
-            className="text-(--ink) underline decoration-white/25 underline-offset-2 hover:decoration-current"
+            className="text-(--ink) underline decoration-(--ink-3)/40 underline-offset-2 hover:decoration-current"
           >
             <InlineNodes nodes={node.children} />
           </a>

@@ -1,79 +1,86 @@
-import type { Metadata } from "next";
-import { FeatureGrid } from "@/components/marketing/feature-grid";
-import { FinalCallToAction } from "@/components/marketing/final-call-to-action";
-import { LandingFooter } from "@/components/marketing/landing-footer";
-import { LandingHeader } from "@/components/marketing/landing-header";
-import { LandingFaq } from "@/components/marketing/landing-faq";
-import { LandingHero } from "@/components/marketing/landing-hero";
-import { LandingSection } from "@/components/marketing/landing-section";
-import { MakerNote } from "@/components/marketing/maker-note";
-import { Pricing } from "@/components/marketing/pricing";
-import { SelfHost } from "@/components/marketing/self-host";
-import { SetupSteps } from "@/components/marketing/setup-steps";
-import { SoundBoard } from "@/components/marketing/sound-board";
-import { appUrl } from "@/env";
-import { siteConfig } from "@/lib/site";
-import { serializeJsonLd, softwareApplicationJsonLd } from "@/lib/structured-data";
-import "./landing.css";
+import type { ResolvingMetadata } from "next";
+import { notFound } from "next/navigation";
+import { Apps } from "@/components/site/apps";
+import { Closing } from "@/components/site/closing";
+import { Features } from "@/components/site/features";
+import { Hero } from "@/components/site/hero";
+import { JsonLd } from "@/components/site/json-ld";
+import { OpenSource } from "@/components/site/open-source";
+import { Pricing } from "@/components/site/pricing";
+import { ProofBar } from "@/components/site/proof-bar";
+import { Questions } from "@/components/site/questions";
+import { SetupSteps } from "@/components/site/setup-steps";
+import { SitePage } from "@/components/site/site-page";
+import { Sounds } from "@/components/site/sounds";
+import { sitePageMetadata } from "@/lib/marketing/page-metadata";
+import { formatCount, regionName } from "@/lib/site/format";
+import { siteText } from "@/lib/site/i18n";
+import { INTL_LOCALES, isSiteLanguage } from "@/lib/site/languages";
+import { demoPath, demoPoster, localizedPath } from "@/lib/site/paths";
+import { siteLinks } from "@/lib/site/rich-text";
+import { homeJsonLd } from "@/lib/structured-data";
+import { repositoryStars } from "@/server/github";
 
-export const metadata: Metadata = {
-  title: { absolute: `${siteConfig.name} · ${siteConfig.headline}` },
-  alternates: { canonical: "/" },
-  // Replaces the layout's Open Graph fields rather than adding to them: repeat them.
-  openGraph: { type: "website", siteName: siteConfig.name, url: "/" },
-};
+/** The star count is GitHub's, fetched again at most every hour. */
+export const revalidate = 3600;
 
-export default function LandingPage() {
+export async function generateMetadata(
+  { params }: PageProps<"/[lang]">,
+  parent: ResolvingMetadata,
+) {
+  const { lang } = await params;
+  if (!isSiteLanguage(lang)) notFound();
+  const { meta } = siteText(lang);
+  return sitePageMetadata(
+    {
+      title: meta.title,
+      absoluteTitle: true,
+      description: meta.description,
+      path: "/",
+      language: lang,
+    },
+    parent,
+  );
+}
+
+export default async function HomePage({ params }: PageProps<"/[lang]">) {
+  const { lang } = await params;
+  if (!isSiteLanguage(lang)) notFound();
+  const text = siteText(lang);
+  const locale = INTL_LOCALES[lang];
+  const links = siteLinks(lang);
+  const count = await repositoryStars();
+  const stars = count === null ? null : formatCount(count, locale);
+
   return (
-    <div className="landing dark min-h-svh">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(softwareApplicationJsonLd(appUrl())) }}
+    <SitePage language={lang} path="/">
+      <JsonLd
+        data={homeJsonLd({
+          language: lang,
+          description: text.meta.description,
+          appDescription: text.apps.lead,
+          questions: text.faq.items,
+        })}
       />
-      <LandingHeader />
-      <main>
-        <LandingHero />
-
-        <LandingSection
-          id="features"
-          title="Built to keep you going"
-          description="Building a SaaS is a long game. Seeing it grow, sale after sale, is what keeps founders shipping."
-        >
-          <FeatureGrid />
-        </LandingSection>
-
-        <LandingSection
-          id="sounds"
-          title="Hear what a sale sounds like"
-          description="Three sound packs, synthesized right in the browser: nothing to install. Add a voice that says what just happened, in five languages. Pick per screen, or keep the meeting room silent."
-        >
-          <SoundBoard />
-        </LandingSection>
-
-        <LandingSection id="how-it-works" title="On the wall in two minutes">
-          <SetupSteps />
-        </LandingSection>
-
-        <LandingSection
-          id="pricing"
-          title="Free while in beta. Free forever on your own server."
-          description={`${siteConfig.name} is in public beta: the hosted version is free while it lasts. Self-hosted, it stays free for good.`}
-        >
-          <Pricing />
-        </LandingSection>
-
-        <SelfHost />
-
-        <LandingSection id="faq" title="Frequently asked questions">
-          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-16">
-            <LandingFaq />
-            <MakerNote />
-          </div>
-        </LandingSection>
-
-        <FinalCallToAction />
-      </main>
-      <LandingFooter />
-    </div>
+      <Hero
+        text={text}
+        demo={demoPath(lang)}
+        embed={demoPath(lang, { preview: "1" })}
+        poster={demoPoster(lang)}
+      />
+      <ProofBar text={text.proof} stars={stars} />
+      <Features text={text.features} locale={locale} />
+      <Sounds
+        text={text.sounds}
+        locale={locale}
+        files={localizedPath(lang, "/stripe-notification-sound")}
+      />
+      <Apps text={text.apps} />
+      <SetupSteps text={text.steps} />
+      <Pricing text={text.pricing} />
+      <OpenSource text={text.openSource} stars={stars} links={links} />
+      <Questions text={text.faq} country={regionName("FR", locale)} links={links} />
+      <Closing text={text.closing} stars={stars} />
+    </SitePage>
   );
 }

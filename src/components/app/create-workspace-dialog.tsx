@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useId } from "react";
-import { createWorkspaceAction } from "@/app/app/actions";
+import { createWorkspaceAction } from "@/app/(product)/app/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

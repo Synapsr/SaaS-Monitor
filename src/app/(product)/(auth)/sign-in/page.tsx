@@ -11,7 +11,8 @@ import { isHostedInstance, siteConfig } from "@/lib/site";
 import { getSession } from "@/server/session";
 import { enabledSocialProviders } from "@/server/social-providers";
 
-export const metadata: Metadata = { title: "Sign in" };
+// Reachable by anyone, worth finding by no one: search results lead to the site instead.
+export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   const { next: nextParam, error } = await searchParams;

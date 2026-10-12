@@ -1,0 +1,245 @@
+/*
+ * The public site's stylesheet: the landing page, its translations and the pages beside it. A
+ * Tailwind build of its own, from the site's files only, so that visitors don't download the
+ * dashboard's styles (`globals.css`). It stages the live demo on the wall display's palette.
+ */
+@import "tailwindcss" source(none);
+@import "./wall-palette.css";
+
+@source "../components/site";
+@source "../components/content";
+@source "../components/legal";
+@source "../components/logo.tsx";
+@source "../components/brand-icons.tsx";
+@source "../components/display-frame.tsx";
+@source "./[lang]";
+@source "./global-not-found.tsx";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Code samples only: a system face rather than a font file of its own. */
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* The type scale, fluid between phones and wide screens. */
+  --text-hero: clamp(2.75rem, 1.35rem + 5.6vw, 5.75rem);
+  --text-hero--line-height: 0.98;
+  --text-hero--letter-spacing: -0.045em;
+  --text-title: clamp(2.125rem, 1.5rem + 2.4vw, 3.375rem);
+  --text-title--line-height: 1.04;
+  --text-title--letter-spacing: -0.038em;
+  --text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-lead--line-height: 1.6;
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.16em;
+
+  --ease-out-soft: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Entrances of the first screen, staggered with `animation-delay`. */
+  --animate-rise: rise 0.9s var(--ease-out-soft) both;
+  --animate-rise-slow: rise 1.2s var(--ease-out-soft) both;
+  --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
+}
+
+/* Outside `@theme`, which only writes keyframes its utilities use: details below use `rise` too. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.landing {
+  background: var(--screen);
+  color: var(--ink);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans);
+
+  /* What the primary button lights up to on hover. */
+  --ink-bright: #ffffff;
+
+  /* Surfaces on the near-black, and their edges: rings of shadow rather than borders. */
+  --surface: rgb(255 255 255 / 0.028);
+  --surface-raised: rgb(255 255 255 / 0.05);
+  --surface-hover: rgb(255 255 255 / 0.08);
+  --hairline: rgb(255 255 255 / 0.07);
+  --shadow-primary: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 10px 30px -12px rgb(244 245 247 / 0.45);
+  /* Menus, above everything. */
+  --popover: #121418;
+  --shadow-popover:
+    0 0 0 1px rgb(255 255 255 / 0.1), 0 24px 60px -12px rgb(0 0 0 / 0.8),
+    0 8px 20px -8px rgb(0 0 0 / 0.6);
+  /* A frame for screens: the TV's bezel, the phone's glass. */
+  --bezel-top: #2a2c31;
+  --bezel-bottom: #0d0e11;
+  --shadow-device: 0 60px 140px -40px rgb(0 0 0 / 0.95), 0 0 0 1px rgb(255 255 255 / 0.09);
+  --edge: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --edge-hover: 0 0 0 1px rgb(255 255 255 / 0.14);
+  --edge-glow:
+    0 0 0 1px color-mix(in oklab, var(--glow) 45%, transparent),
+    0 0 32px -8px color-mix(in oklab, var(--glow) 40%, transparent);
+  --image-outline: rgb(255 255 255 / 0.1);
+  /* The emerald light the page is lit with. */
+  --glow-wash: color-mix(in oklab, var(--glow) 14%, transparent);
+  --glow-faint: color-mix(in oklab, var(--glow) 7%, transparent);
+  /* The dots of the screens' backdrop, as the store images draw it. */
+  --dots: radial-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px);
+}
+
+/* Section anchors land below the sticky header. */
+.landing [id] {
+  scroll-margin-top: 5rem;
+}
+
+.landing ::selection {
+  background: color-mix(in oklab, var(--glow) 35%, transparent);
+  color: var(--ink);
+}
+
+/*
+ * Blocks rise into view as they are scrolled to, where the browser ties animations to scrolling:
+ * elsewhere, and for visitors who prefer less motion, they simply stand there.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .landing .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+/* Curves draw themselves as they come into view (`pathLength="1"`). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .landing .draw {
+      stroke-dasharray: 1;
+      animation: draw linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 50%;
+    }
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The bars of a sound playing. */
+@keyframes equalizer {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing *,
+  .landing *::before,
+  .landing *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Menus open in place (the Popover API): a short fade and slide, also on the way out. */
+.landing [popover] {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transition-property: opacity, transform, overlay, display;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out-soft);
+  transition-behavior: allow-discrete;
+}
+
+.landing [popover]:popover-open {
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .landing [popover]:popover-open {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+/*
+ * The language menu hangs under its button where browsers anchor popovers to an element, and
+ * under the header's right end elsewhere.
+ */
+.landing .menu-anchored {
+  position: fixed;
+  inset: 4.25rem 1rem auto auto;
+  margin: 0;
+}
+
+@supports (anchor-name: --a) {
+  .landing .menu-anchored {
+    inset: anchor(bottom) anchor(right) auto auto;
+    margin-top: 0.5rem;
+  }
+}
+
+/* The phone menu: a sheet under the header, over a dimmed page. */
+.landing .menu-sheet {
+  position: fixed;
+  inset: 4.5rem 0.75rem auto;
+  width: auto;
+  max-height: calc(100dvh - 5.5rem);
+  overflow-y: auto;
+  margin: 0;
+}
+
+.landing [popover]::backdrop {
+  background: transparent;
+  transition-property: background-color, overlay, display;
+  transition-duration: 160ms;
+  transition-behavior: allow-discrete;
+}
+
+.landing .menu-sheet:popover-open::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+@starting-style {
+  .landing .menu-sheet:popover-open::backdrop {
+    background: transparent;
+  }
+}
+
+/* Folded answers open with their content easing in. */
+.landing details[open] > :not(summary) {
+  animation: rise 0.4s var(--ease-out-soft);
+}

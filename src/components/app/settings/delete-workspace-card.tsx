@@ -2,7 +2,7 @@
 
 import { Trash2Icon } from "lucide-react";
 import { useId, useState } from "react";
-import { deleteWorkspaceAction } from "@/app/app/settings/actions";
+import { deleteWorkspaceAction } from "@/app/(product)/app/settings/actions";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

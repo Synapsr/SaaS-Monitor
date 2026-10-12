@@ -1,92 +1,13 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { ImageResponse } from "next/og";
-import { BRAND_COLORS, LOGO_PULSE_PATH } from "@/lib/brand";
-import { siteConfig } from "@/lib/site";
+import { SOCIAL_IMAGE_SIZE, socialImage } from "@/components/site/social-image";
+import { siteText } from "@/lib/site/i18n";
 
-export const alt = `${siteConfig.name}: ${siteConfig.tagline}`;
-export const size = { width: 1200, height: 630 };
+const text = siteText("en");
+
+export const alt = text.meta.imageAlt;
+export const size = SOCIAL_IMAGE_SIZE;
 export const contentType = "image/png";
 
-const { glow: GLOW, screen: SCREEN, ink: INK, tile: TILE } = BRAND_COLORS;
-const SPARKLINE = "M0 150 C60 146 90 132 140 128 S220 110 270 100 S350 90 390 70 S470 40 560 22";
-
-/** `#rrggbb` with an opacity, as `#rrggbbaa`. */
-function withOpacity(color: string, opacity: number): string {
-  return `${color}${Math.round(opacity * 255)
-    .toString(16)
-    .padStart(2, "0")}`;
-}
-
-export default async function OpenGraphImage() {
-  const fontsDirectory = join(process.cwd(), "node_modules/geist/dist/fonts/geist-sans");
-  const [semiBold, regular] = await Promise.all([
-    readFile(join(fontsDirectory, "Geist-SemiBold.ttf")),
-    readFile(join(fontsDirectory, "Geist-Regular.ttf")),
-  ]);
-
-  return new ImageResponse(
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        padding: 72,
-        background: `radial-gradient(60% 70% at 85% 100%, ${withOpacity(GLOW, 0.28)}, ${SCREEN} 70%)`,
-        color: INK,
-        fontFamily: "Geist",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 34 }}>
-        <svg width="52" height="52" viewBox="0 0 64 64">
-          <rect width="64" height="64" rx="16" fill={TILE} stroke="#2a2d33" strokeWidth="2" />
-          <path
-            d={LOGO_PULSE_PATH}
-            fill="none"
-            stroke={GLOW}
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        {siteConfig.name}
-      </div>
-
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            fontSize: 84,
-            fontWeight: 600,
-            letterSpacing: -3,
-            lineHeight: 1.05,
-          }}
-        >
-          <span>Your MRR,</span>
-          <span style={{ display: "flex", gap: 22 }}>
-            <span style={{ color: GLOW }}>live</span>
-            <span>on the wall.</span>
-          </span>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <span style={{ fontSize: 88, fontWeight: 600, letterSpacing: -3 }}>$14,880</span>
-          <span style={{ fontSize: 28, color: GLOW, fontWeight: 400 }}>+19% in 30 days</span>
-          <svg width="360" height="100" viewBox="0 0 560 160" style={{ marginTop: 16 }}>
-            <path d={SPARKLINE} fill="none" stroke={GLOW} strokeWidth="7" strokeLinecap="round" />
-          </svg>
-        </div>
-      </div>
-    </div>,
-    {
-      ...size,
-      fonts: [
-        { name: "Geist", data: semiBold, weight: 600, style: "normal" },
-        { name: "Geist", data: regular, weight: 400, style: "normal" },
-      ],
-    },
-  );
+/** The preview of the product's pages (sign-up, invitations), in English like them. */
+export default function OpenGraphImage() {
+  return socialImage(text, "en-US");
 }

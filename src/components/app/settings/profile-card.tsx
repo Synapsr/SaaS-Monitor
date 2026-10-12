@@ -4,7 +4,7 @@ import { LogOutIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useId, useState } from "react";
 import { toast } from "sonner";
-import { updateProfileAction } from "@/app/app/settings/actions";
+import { updateProfileAction } from "@/app/(product)/app/settings/actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";

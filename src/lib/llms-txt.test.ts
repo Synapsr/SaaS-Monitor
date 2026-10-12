@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { siteConfig } from "@/lib/site";
-import { llmsTxt } from "./llms-txt";
+import { llmsFullTxt, llmsTxt } from "./llms-txt";
 
 describe("llmsTxt", () => {
   const text = llmsTxt("https://saas-monitor.com");
@@ -11,12 +11,28 @@ describe("llmsTxt", () => {
     expect(summary).toMatch(/^> /);
   });
 
-  it("links the demo, the docs and the code with absolute URLs", () => {
+  it("links the demo, the docs, the code and every language with absolute URLs", () => {
     expect(text).toContain("(https://saas-monitor.com/d/demo)");
     expect(text).toContain(`(${siteConfig.stripeDocsUrl})`);
     expect(text).toContain(`(${siteConfig.wallDisplayDocsUrl})`);
     expect(text).toContain(`(${siteConfig.selfHostingUrl})`);
     expect(text).toContain(`(${siteConfig.repositoryUrl})`);
+    expect(text).toContain("(https://saas-monitor.com/fr)");
+    expect(text).toContain("(https://saas-monitor.com/llms-full.txt)");
     expect(text).not.toMatch(/\]\(\//);
+  });
+
+  it("names the company that publishes it", () => {
+    expect(text).toContain("Lumy.Media SAS");
+  });
+});
+
+describe("llmsFullTxt", () => {
+  it("follows the summary with each doc", () => {
+    const text = llmsFullTxt("https://saas-monitor.com", [
+      { title: "docs/stripe.md", markdown: "# Connect Stripe\n\nPaste the key.\n" },
+    ]);
+    expect(text.startsWith(`# ${siteConfig.name}`)).toBe(true);
+    expect(text).toContain("<!-- docs/stripe.md -->\n\n# Connect Stripe\n\nPaste the key.\n");
   });
 });

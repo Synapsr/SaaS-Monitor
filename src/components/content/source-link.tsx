@@ -16,7 +16,7 @@ export function SourceLink({
       href={href}
       rel="nofollow noopener"
       className={cn(
-        "inline-flex items-center gap-0.5 text-(--ink-3) underline decoration-white/20 underline-offset-2 transition-colors hover:text-(--ink) hover:decoration-current",
+        "inline-flex items-center gap-0.5 text-(--ink-3) underline decoration-(--ink-3)/40 underline-offset-2 transition-colors hover:text-(--ink) hover:decoration-current",
         className,
       )}
     >

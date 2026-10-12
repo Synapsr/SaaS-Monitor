@@ -30,7 +30,12 @@ Node 24 (`.nvmrc`), pnpm 10.
 ## Architecture
 
 - `src/app` — routes only, kept thin: components live in `src/components`, logic in `src/server`.
-  Notable routes:
+  Two root layouts: `app/[lang]` is the public site (home page, `/stripe-notification-sound`,
+  comparisons, changelog, legal pages), `app/(product)` the rest, in English. The site serves
+  English without a prefix and the other languages under theirs (`/fr`): `src/proxy.ts` rewrites
+  `/` to `/en` and redirects `/en/…` back (`src/lib/site/routing.ts`), never by
+  `Accept-Language`. Unknown addresses get the site's 404 (`[lang]/not-found.tsx`,
+  `global-not-found.tsx`). Notable routes:
   - `/app/*`: the authenticated dashboard; `/sign-in`, `/sign-up`, and `/invite/[id]` for
     invitation links.
   - `/d/[token]`: a public wall display, polling `/api/screens/[token]/state`. `/d/demo` is a
@@ -93,6 +98,12 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
   and locale from `useDisplayLocale()`, and every language of `src/lib/display/i18n` defines every
   string (the type of `en.ts` enforces it). Numbers and dates go through the locale too. The
   dashboard is in English.
+- **The public site is translated** into the screens' languages: its pages take their words from
+  `src/lib/site/i18n` (server-side; client components get strings as props), and every language
+  defines every string (`SiteText`, the type of `en.ts`). Links inside texts are written
+  `[words](key)` (`siteLinks()`). Legal pages, the changelog and comparisons stay in English, out
+  of `hreflang`. Canonical links always point to saas-monitor.com; self-hosted instances answer
+  site pages with `X-Robots-Tag: noindex`. The dashboard stays in English.
 - **Voices** (`src/lib/voice`) say moments in the screen's language, if Gradium speaks it. Their
   recorded phrases (`RECORDED_PHRASES`) ship as clips in `public/voices`: after changing one, run
   `pnpm tsx scripts/generate-voices.ts` with `GRADIUM_API_KEY` set. A screen's own phrases are
@@ -121,8 +132,9 @@ Syncs are triggered on demand when a display polls or the dashboard is open (no 
 - Imports use the `@/` alias; a module may import its siblings as `./name`, never a parent folder
   (`../`). Lucide icons are imported by their `…Icon` names. ESLint enforces both.
 - Styling is Tailwind classes; animations and tokens are defined in the stylesheets
-  (`globals.css`, `wall-palette.css`, `d/display.css`), no CSS modules.
+  (`globals.css` for the product, `site.css` for the public site, `wall-palette.css`,
+  `d/display.css`), no CSS modules.
 - Small modules with explicit names; comments explain _why_, not _what_.
-- UI: clean and calm. English copy, sentence case.
+- UI: clean and calm. English copy, sentence case (on the public site, in each of its languages).
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`…). No AI attribution or
   `Co-Authored-By` trailers.

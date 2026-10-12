@@ -10,11 +10,12 @@ import {
 } from "@/components/legal/legal-prose";
 import { LEGAL_EMAIL, postalAddress, publisher } from "@/lib/legal";
 import { siteConfig } from "@/lib/site";
+import { canonicalUrl } from "@/lib/site/paths";
 
 export const metadata: Metadata = {
   title: "Terms of service",
   description: `The terms of the hosted ${siteConfig.name} service at saas-monitor.com, free during its public beta.`,
-  alternates: { canonical: "/terms" },
+  alternates: { canonical: canonicalUrl("en", "/terms") },
 };
 
 const licenseUrl = `${siteConfig.repositoryUrl}/blob/main/LICENSE`;

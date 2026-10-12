@@ -1,7 +1,7 @@
 /*
- * The wall display's palette, shared by the landing page, which stages its live demo. The accent
- * (`--glow…`) is emerald, the brand color, until a screen sets its own (`src/lib/display/accents.ts`,
- * whose backgrounds match these). What stylesheets cannot reach (the logo, the social image, the
+ * The wall display's palette, shared by the public site (`site.css`), which stages its live demo.
+ * The accent (`--glow…`) is emerald, the brand color, until a screen sets its own
+ * (`src/lib/display/accents.ts`, whose backgrounds match these). What stylesheets cannot reach (the logo, the social image, the
  * browser theme) uses `BRAND_COLORS` (src/lib/brand.ts).
  */
 .display,
