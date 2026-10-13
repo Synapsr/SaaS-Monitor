@@ -29,6 +29,13 @@ final class ScreenMonitor {
     }
   }
 
+  #if DEBUG
+    /// Shows a state without fetching it: for previews and store screenshots.
+    func show(_ state: DisplayState, of screen: SharedScreen) {
+      snapshots[screen.key] = ScreenSnapshot(state: state, fetchedAt: .now, problem: nil)
+    }
+  #endif
+
   func snapshot(of screen: SharedScreen?) -> ScreenSnapshot? {
     screen.flatMap { snapshots[$0.key] }
   }

@@ -17,6 +17,14 @@ final class ScreenLibrary {
     selectedKey = UserDefaults.standard.string(forKey: Self.selectedKeyDefault)
   }
 
+  #if DEBUG
+    /// Screens in memory only, never saved: for previews and store screenshots.
+    init(previewing screens: [SharedScreen]) {
+      self.screens = screens
+      selectedKey = screens.first?.key
+    }
+  #endif
+
   var selected: SharedScreen? {
     screens.first { $0.key == selectedKey } ?? screens.first
   }

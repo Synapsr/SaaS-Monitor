@@ -92,6 +92,7 @@ struct MomentBanner: View {
 private struct Shimmer: View {
   let color: Color
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.isStillRender) private var isStillRender
   @State private var crossed = false
 
   var body: some View {
@@ -104,7 +105,7 @@ private struct Shimmer: View {
     }
     .allowsHitTesting(false)
     .blendMode(.plusLighter)
-    .opacity(reduceMotion ? 0 : 1)
+    .opacity(reduceMotion || isStillRender ? 0 : 1)
     .onAppear {
       withAnimation(.easeInOut(duration: 1.1).delay(0.25)) { crossed = true }
     }

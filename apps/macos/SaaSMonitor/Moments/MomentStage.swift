@@ -74,6 +74,13 @@ final class MomentStage {
     if playing == nil, !queue.isEmpty { playing = Task { await play() } }
   }
 
+  #if DEBUG
+    /// Puts a moment on stage and keeps it there: for store screenshots.
+    func hold(_ moment: StagedMoment?) {
+      current = moment
+    }
+  #endif
+
   /// Moves on to the next moment, if any.
   func skip() {
     remaining = 0

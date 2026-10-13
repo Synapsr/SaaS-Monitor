@@ -4,7 +4,8 @@ A SaaS Monitor screen around the MacBook's notch, as the Dynamic Island does on 
 selected screen's curve and number beside the notch, its moments dropping from it with their sound
 and voice, the screen itself while the pointer rests on the notch. Screens without a notch get a
 virtual one in the middle of the menu bar. A menu bar app without a Dock icon (SwiftUI and AppKit,
-macOS 15+, sandboxed), bundle id `com.saasmonitor.mac`.
+macOS 15+, sandboxed), bundle id `com.saasmonitor.app`: a platform of the iPhone app's App Store
+listing.
 
 Read `../mobile/AGENTS.md` first: the Mac app talks to instances with the same server API (v1),
 opens screens from the same links (and the demo screen), and compiles the Swift that the widgets

@@ -29,7 +29,8 @@ targets:
       base:
         PRODUCT_NAME: SaaS Monitor
         PRODUCT_MODULE_NAME: SaaSMonitor
-        PRODUCT_BUNDLE_IDENTIFIER: com.saasmonitor.mac
+        # The iPhone app's: the Mac app is a platform of its App Store listing.
+        PRODUCT_BUNDLE_IDENTIFIER: com.saasmonitor.app
         INFOPLIST_FILE: SaaSMonitor/Info.plist
         CODE_SIGN_ENTITLEMENTS: SaaSMonitor/SaaSMonitor.entitlements
         ENABLE_HARDENED_RUNTIME: YES
@@ -46,6 +47,8 @@ targets:
         # A menu bar app: no Dock icon, no menu of its own.
         LSUIElement: true
         NSHumanReadableCopyright: Open source under the MIT license.
+        # HTTPS only, which needs no export documentation.
+        ITSAppUsesNonExemptEncryption: false
         # Self-hosted instances may answer over plain HTTP on a local network.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -63,7 +66,7 @@ targets:
       - target: SaaSMonitor
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.saasmonitor.mac.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.saasmonitor.app.mac-tests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/SaaS Monitor.app/Contents/MacOS/SaaS Monitor
         BUNDLE_LOADER: $(TEST_HOST)

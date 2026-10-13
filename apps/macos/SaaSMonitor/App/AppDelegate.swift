@@ -19,6 +19,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Revenue stays off the disk, but for the last state of each screen (`StateCache`).
     URLCache.shared = URLCache(memoryCapacity: 4 * 1024 * 1024, diskCapacity: 0)
     #if DEBUG
+      if UserDefaults.standard.bool(forKey: "RenderStoreShots") {
+        StoreShots.render()
+        NSApp.terminate(nil)
+        return
+      }
       // `-OpenAtLogin NO` takes a development build out of the login items.
       if UserDefaults.standard.object(forKey: "OpenAtLogin") != nil {
         preferences.opensAtLogin = UserDefaults.standard.bool(forKey: "OpenAtLogin")

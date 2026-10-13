@@ -8,6 +8,7 @@ struct Confetti: View {
   let origin: CGPoint
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.isStillRender) private var isStillRender
   @State private var start = Date.now
 
   private static let count = 72
@@ -16,8 +17,18 @@ struct Confetti: View {
   private static let drag: Double = 2.4
   private static let gravity: Double = 70
 
+  /// Of a still picture: the burst spread out, before it falls.
+  private static let stillTime: TimeInterval = 0.7
+
   var body: some View {
-    if !reduceMotion {
+    if isStillRender {
+      Canvas { canvas, _ in
+        for index in 0..<Self.count {
+          draw(piece: index, at: Self.stillTime, in: &canvas)
+        }
+      }
+      .allowsHitTesting(false)
+    } else if !reduceMotion {
       TimelineView(.animation) { context in
         let elapsed = context.date.timeIntervalSince(start)
         Canvas { canvas, _ in

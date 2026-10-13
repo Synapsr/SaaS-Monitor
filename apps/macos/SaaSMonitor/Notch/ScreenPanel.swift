@@ -132,6 +132,7 @@ private struct BarButton: View {
 /// events.
 private struct ScreenFiguresView: View {
   let figures: ScreenFigures
+  @Environment(\.isStillRender) private var isStillRender
 
   var body: some View {
     let style = figures.style.onDark
@@ -162,7 +163,7 @@ private struct ScreenFiguresView: View {
 
       Sparkline(
         values: figures.series, color: style.glow, dotColor: style.glowInk, lineWidth: 2, fillOpacity: 0.26,
-        drawsIn: true, endInset: 6
+        drawsIn: !isStillRender, endInset: 6
       )
       .frame(height: 34)
       .padding(.horizontal, -4)
