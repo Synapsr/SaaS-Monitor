@@ -34,6 +34,8 @@ const eslintConfig = defineConfig([
     // Claude Code settings and agent worktrees (other checkouts of the repository), like in
     // tsconfig.json, .prettierignore and .dockerignore.
     ".claude/**",
+    // The apps, each with its own tooling (apps/*/AGENTS.md).
+    "apps/**",
   ]),
 ]);
 

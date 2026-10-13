@@ -1,6 +1,8 @@
 .git
 .github
 .claude
+# The apps: the image serves the web app.
+apps
 .vscode
 **/node_modules
 **/.next

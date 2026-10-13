@@ -4,3 +4,5 @@ pnpm-lock.yaml
 drizzle/meta
 coverage
 .claude
+# The apps, each with its own tooling.
+apps
