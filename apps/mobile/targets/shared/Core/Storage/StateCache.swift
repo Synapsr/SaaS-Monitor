@@ -59,7 +59,8 @@ private extension DisplayState {
       metrics: metrics,
       series: series,
       feed: Array(feed.prefix(length)),
-      testEvent: testEvent
+      testEvent: testEvent,
+      personalizedVoice: personalizedVoice
     )
   }
 }

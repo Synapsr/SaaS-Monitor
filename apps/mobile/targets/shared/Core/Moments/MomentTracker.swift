@@ -1,8 +1,8 @@
 import Foundation
 
-/// What the watch remembers between two states of a screen to find what just happened
+/// What an app remembers between two states of a screen to find what just happened
 /// (`trackMoments` in `src/lib/display/moments.ts`). The first state only sets the baseline: the
-/// watch never replays what happened before it was opened.
+/// app never replays what happened before it was opened.
 struct MomentTracker {
   private var previous: DisplayState?
   /// Feed items already known; `nil` until the first state.

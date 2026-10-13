@@ -1,12 +1,13 @@
 import Foundation
 
-/// Something worth a card on the wrist (`Moment` in `src/lib/display/moments.ts`).
+/// Something worth a card, on the wrist or beside the notch (`Moment` in
+/// `src/lib/display/moments.ts`).
 enum Moment: Sendable {
   case payment(FeedItem)
   case movement(FeedItem)
   /// A Stripe customer created, who has not paid (yet).
   case customer(FeedItem)
-  /// Many things of an account at once, e.g. after the watch was away: celebrated once.
+  /// Many things of an account at once, e.g. after the app was away: celebrated once.
   case summary(Summary)
   /// In minor units of `metric`, the screen's metric when it was crossed: "$1M ARR".
   case milestone(amount: Int, metric: ScreenSettings.Metric, isGoal: Bool)
@@ -16,6 +17,8 @@ enum Moment: Sendable {
   struct Summary: Sendable {
     let id: String
     let accountId: String
+    /// The events of the items it sums up, each once: it plays when one of them does.
+    let events: [ScreenEvent]
     let payments: Int
     /// Subscription changes: new, upgraded, downgraded, canceled…
     let changes: Int

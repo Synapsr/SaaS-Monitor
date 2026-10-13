@@ -77,6 +77,9 @@ enum MomentPlanner {
     let summary = Moment.Summary(
       id: "summary:\(last.id)",
       accountId: last.accountId,
+      events: items.map(ScreenEvent.init).reduce(into: []) { events, event in
+        if !events.contains(event) { events.append(event) }
+      },
       payments: payments.count,
       changes: movements.count,
       customers: customers.count,

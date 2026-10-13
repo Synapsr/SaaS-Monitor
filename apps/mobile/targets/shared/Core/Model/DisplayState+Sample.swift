@@ -59,7 +59,8 @@ extension DisplayState {
         item("3", .customer, 0, minutesAgo: 95, customer: nil, country: "DE", plan: nil),
         item("4", .churn, -29_00, minutesAgo: 260, customer: "Wade Warren", country: "GB", plan: "Starter"),
       ],
-      testEvent: nil
+      testEvent: nil,
+      personalizedVoice: false
     )
   }
 }
