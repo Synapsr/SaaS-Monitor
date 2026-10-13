@@ -1,6 +1,6 @@
-# The Mac app, generated with XcodeGen by `npm run mac` (`generate.sh`): the Xcode project is not
-# committed, like `ios/`. It compiles the Swift that the widgets and the watch share
-# (`../targets/shared/Core`), with a Mac stand-in for their App Group.
+# The Mac app, generated with XcodeGen by `generate.sh`: the Xcode project is not committed, like
+# the mobile app's `ios/`. It compiles the Swift that the widgets and the watch share
+# (`../mobile/targets/shared/Core`), with a Mac stand-in for their App Group.
 name: SaaSMonitor
 options:
   bundleIdPrefix: com.saasmonitor
@@ -22,7 +22,7 @@ targets:
     platform: macOS
     sources:
       - path: SaaSMonitor
-      - path: ../targets/shared/Core
+      - path: ../mobile/targets/shared/Core
         excludes:
           - Storage/AppGroup.swift
     settings:

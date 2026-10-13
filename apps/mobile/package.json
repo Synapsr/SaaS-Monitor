@@ -66,8 +66,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
-    "sync-contract": "node scripts/sync-contract.mjs",
-    "mac": "sh macos/generate.sh"
+    "sync-contract": "node scripts/sync-contract.mjs"
   },
   "private": true,
   "license": "MIT",

@@ -8,10 +8,10 @@
  *   node scripts/sync-contract.mjs [path/to/SaaS-Monitor]     write src/contract/
  *   node scripts/sync-contract.mjs --check [path]             fail when src/contract/ is stale
  *
- * The web repository defaults to `../SaaS-Monitor` (or `$SAAS_MONITOR_WEB`). Modules are followed
- * from `ENTRIES` through their imports; `@/lib/…` becomes `@/contract/…`. Anything else the web
- * imports must be a package the app has too (`PACKAGES`), or have a stand-in (`STAND_INS`): the
- * script fails rather than copy server or browser code.
+ * The web app defaults to the root of this repository, `../..` (or `$SAAS_MONITOR_WEB`). Modules
+ * are followed from `ENTRIES` through their imports; `@/lib/…` becomes `@/contract/…`. Anything
+ * else the web imports must be a package the app has too (`PACKAGES`), or have a stand-in
+ * (`STAND_INS`): the script fails rather than copy server or browser code.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -88,7 +88,7 @@ function header(origin) {
 function parseArguments(argv) {
   const check = argv.includes("--check");
   const [path] = argv.filter((argument) => !argument.startsWith("--"));
-  const webRoot = resolve(path ?? process.env.SAAS_MONITOR_WEB ?? join(APP_ROOT, "..", "SaaS-Monitor"));
+  const webRoot = resolve(path ?? process.env.SAAS_MONITOR_WEB ?? join(APP_ROOT, "..", ".."));
   if (!existsSync(join(webRoot, "src/lib/display/types.ts"))) {
     throw new Error(`No SaaS Monitor web app at ${webRoot}: pass its path.`);
   }
