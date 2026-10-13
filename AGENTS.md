@@ -61,6 +61,11 @@ Node 24 (`.nvmrc`), pnpm 10.
 - `src/db` — Drizzle schema (`schema/app.ts`, generated `schema/auth.ts`, column types in
   `schema/columns.ts`) and client.
 - `src/test` — test helpers and fixtures (database, Stripe fakes, display states).
+- `apps/` — the native apps, each with its own tooling and `AGENTS.md`: `apps/mobile` (Expo:
+  iPhone, iPad, Android, widgets, Apple Watch and Wear OS) and `apps/macos` (the Mac app around
+  the notch). They talk to instances through the screen API (`/api/screens/[token]/…`) and copy
+  the display contract (`src/lib/display`…) with `apps/mobile/scripts/sync-contract.mjs`: a change
+  to `DisplayState` or `momentAudio` is a change for them too. The web's tooling ignores `apps/`.
 
 Data flow: Stripe → sync engine (backfill once, then incremental from the Events API) → local
 tables (`subscriptions`, `mrr_movements`, `payments`, `customers`) → metrics → `DisplayState` →

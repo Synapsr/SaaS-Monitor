@@ -92,6 +92,18 @@ cross $10K MRR.
 - **On your own server**: free for good, see [Self-hosting](#self-hosting). The demo is at
   `/d/demo` there too.
 
+## Apps
+
+The SaaS Monitor app puts your screens on your phone, your watch and your Mac, with a notification
+for every sale. Its code lives here too:
+
+- [`apps/mobile`](apps/mobile): iPhone, iPad, Android, Apple Watch and Wear OS, with home and lock
+  screen widgets (Expo and React Native, Swift and Kotlin where it's native).
+- [`apps/macos`](apps/macos): SaaS Monitor for Mac, your screen around the notch, its sales
+  dropping from it as they happen (SwiftUI).
+
+They open a screen from its link or its QR code, on saas-monitor.com or on your own server.
+
 ## How it compares
 
 SaaS Monitor doesn't replace your analytics: it puts the numbers you already track where you
@@ -172,7 +184,8 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build   # 
 
 Built with Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Drizzle ORM, MySQL, Better Auth
 and the Stripe SDK. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) for the
-architecture and conventions.
+architecture and conventions. The apps have their own setup, in
+[`apps/mobile`](apps/mobile/AGENTS.md) and [`apps/macos`](apps/macos/AGENTS.md).
 
 ## License
 

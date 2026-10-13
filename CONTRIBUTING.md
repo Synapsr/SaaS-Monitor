@@ -18,6 +18,10 @@ Open <http://localhost:3000/d/demo> to see a wall screen with simulated data, no
 needed. To work with real data, create a Stripe sandbox and connect it with a restricted key
 from the dashboard.
 
+The apps in `apps/` have their own tooling: [`apps/mobile`](apps/mobile/AGENTS.md) (npm and
+Expo) and [`apps/macos`](apps/macos/AGENTS.md) (Xcode and XcodeGen). Their `AGENTS.md` says how
+to run and check them.
+
 ## Checks
 
 ```bash

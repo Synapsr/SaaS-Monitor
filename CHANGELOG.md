@@ -6,6 +6,9 @@ Notable changes to SaaS Monitor, newest first. Versions follow [semantic version
 
 ### Added
 
+- The apps join the repository, in `apps/`: the SaaS Monitor app for iPhone, iPad, Android and
+  both watches (`apps/mobile`), and SaaS Monitor for Mac, a screen around the notch
+  (`apps/macos`).
 - The site speaks the languages of screens: the home page and the Stripe notification sound page
   in French, German, Spanish, Italian, Portuguese and Dutch (`/fr`, `/de`…), English staying at
   its address. The home page is redesigned, presents the SaaS Monitor app, and its TV shows the
