@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The large widget, 4×2, growing to show the latest activity. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/sm_widget_overview_description"
+  android:initialLayout="@layout/glance_default_loading_layout"
+  android:previewLayout="@layout/sm_widget_overview_preview"
+  android:minWidth="250dp"
+  android:minHeight="110dp"
+  android:minResizeWidth="250dp"
+  android:minResizeHeight="110dp"
+  android:targetCellWidth="4"
+  android:targetCellHeight="2"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="0"
+  android:widgetCategory="home_screen"
+  android:configure="com.saasmonitor.screenbridge.widget.ConfigureWidgetActivity"
+  android:widgetFeatures="reconfigurable|configuration_optional" />

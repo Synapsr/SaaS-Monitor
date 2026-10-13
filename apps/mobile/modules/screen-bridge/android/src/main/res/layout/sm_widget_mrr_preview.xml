@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the widget picker shows before Android 15, which renders the real widget instead. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/sm_preview_background"
+  android:orientation="vertical"
+  android:padding="14dp">
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/sm_app_name"
+    android:textColor="#A8ADB5"
+    android:textSize="12sp" />
+  <View
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:layout_weight="1" />
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="MRR"
+    android:textColor="#80858E"
+    android:textSize="12sp" />
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif-medium"
+    android:text="$12,480"
+    android:textColor="#F4F5F7"
+    android:textSize="30sp" />
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:background="@drawable/sm_preview_pill"
+    android:fontFamily="sans-serif-medium"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="3dp"
+    android:text="+9.9%"
+    android:textColor="#6EE7B7"
+    android:textSize="12sp" />
+</LinearLayout>

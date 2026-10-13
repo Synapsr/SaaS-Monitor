@@ -1,0 +1,78 @@
+# The Mac app, generated with XcodeGen by `npm run mac` (`generate.sh`): the Xcode project is not
+# committed, like `ios/`. It compiles the Swift that the widgets and the watch share
+# (`../targets/shared/Core`), with a Mac stand-in for their App Group.
+name: SaaSMonitor
+options:
+  bundleIdPrefix: com.saasmonitor
+  deploymentTarget:
+    macOS: "15.0"
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: ${APP_VERSION}
+    CURRENT_PROJECT_VERSION: ${BUILD_NUMBER}
+    DEVELOPMENT_TEAM: 3RZSUHDN87
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+targets:
+  SaaSMonitor:
+    type: application
+    platform: macOS
+    sources:
+      - path: SaaSMonitor
+      - path: ../targets/shared/Core
+        excludes:
+          - Storage/AppGroup.swift
+    settings:
+      base:
+        PRODUCT_NAME: SaaS Monitor
+        PRODUCT_MODULE_NAME: SaaSMonitor
+        PRODUCT_BUNDLE_IDENTIFIER: com.saasmonitor.mac
+        INFOPLIST_FILE: SaaSMonitor/Info.plist
+        CODE_SIGN_ENTITLEMENTS: SaaSMonitor/SaaSMonitor.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+    info:
+      path: SaaSMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: SaaS Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.business
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        # A menu bar app: no Dock icon, no menu of its own.
+        LSUIElement: true
+        NSHumanReadableCopyright: Open source under the MIT license.
+        # Self-hosted instances may answer over plain HTTP on a local network.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    entitlements:
+      path: SaaSMonitor/SaaSMonitor.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+  SaaSMonitorTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: SaaSMonitorTests
+    dependencies:
+      - target: SaaSMonitor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.saasmonitor.mac.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/SaaS Monitor.app/Contents/MacOS/SaaS Monitor
+        BUNDLE_LOADER: $(TEST_HOST)
+schemes:
+  SaaSMonitor:
+    build:
+      targets:
+        SaaSMonitor: all
+        SaaSMonitorTests: [test]
+    test:
+      targets:
+        - SaaSMonitorTests

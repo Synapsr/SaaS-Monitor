@@ -1,0 +1,59 @@
+// Glance widgets are Compose: the module needs the Compose compiler, like Expo's own Compose modules.
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath("org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:${kotlinVersion}")
+  }
+}
+
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+group = 'com.saasmonitor.screenbridge'
+version = '0.1.0'
+
+android {
+  namespace "com.saasmonitor.screenbridge"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  buildFeatures {
+    compose true
+  }
+  sourceSets {
+    // Models, fetching and formatting shared with the Wear OS app (`wear/`).
+    main.java.srcDirs += 'src/shared/java'
+    main.res.srcDirs += 'src/shared/res'
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  def glanceVersion = "1.2.0"
+
+  // `api`: the app's manifest registers the widget receivers (`plugins/withAndroidWidgets.ts`), and
+  // its release lint must see that they are BroadcastReceivers, through Glance's classes.
+  api "androidx.glance:glance-appwidget:$glanceVersion"
+  implementation "androidx.glance:glance-preview:$glanceVersion"
+  implementation "androidx.work:work-runtime-ktx:2.11.2"
+  implementation "com.google.android.gms:play-services-wearable:19.0.0"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2"
+
+  // The widget configuration screen.
+  implementation platform("androidx.compose:compose-bom:2025.10.01")
+  implementation "androidx.activity:activity-compose:1.11.0"
+  implementation "androidx.compose.material3:material3"
+  implementation "androidx.compose.ui:ui-tooling-preview"
+
+  debugImplementation "androidx.glance:glance-appwidget-preview:$glanceVersion"
+  debugImplementation "androidx.compose.ui:ui-tooling"
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">SaaS Monitor</string>
+  <string name="tile_label">MRR</string>
+  <string name="tile_description">A screen’s MRR, its growth and its goal</string>
+  <string name="complication_label">MRR</string>
+  <string name="no_screens">No screens yet</string>
+  <string name="no_screens_details">Add a screen in SaaS Monitor on your phone: it shows up here.</string>
+  <string name="no_screens_tile">Add a screen on your phone</string>
+  <string name="on_tile">On the tile</string>
+  <string name="show_on_tile">Show on tile</string>
+  <string name="loading">Loading…</string>
+</resources>
