@@ -344,6 +344,7 @@ export const nl: SiteText = {
       alternatives: "Alternatieven",
       changelog: "Wijzigingen",
       docs: "Docs",
+      support: "Support",
       githubDocs: "Docs op GitHub",
       github: "GitHub",
       selfHosting: "Zelf hosten",

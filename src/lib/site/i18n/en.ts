@@ -345,6 +345,7 @@ export const en = {
       alternatives: "Alternatives",
       changelog: "Changelog",
       docs: "Docs",
+      support: "Support",
       githubDocs: "Docs on GitHub",
       github: "GitHub",
       selfHosting: "Self-hosting",

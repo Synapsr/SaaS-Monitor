@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/alternatives",
     ...ALTERNATIVES.map(({ slug }) => `/alternatives/${slug}` as const),
     "/changelog",
+    "/support",
     "/privacy",
     "/terms",
     "/legal",

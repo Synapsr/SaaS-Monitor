@@ -343,6 +343,7 @@ export const fr: SiteText = {
       alternatives: "Alternatives",
       changelog: "Nouveautés",
       docs: "Documentation",
+      support: "Assistance",
       githubDocs: "Docs sur GitHub",
       github: "GitHub",
       selfHosting: "Auto-hébergement",

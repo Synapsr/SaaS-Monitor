@@ -343,6 +343,7 @@ export const it: SiteText = {
       alternatives: "Alternative",
       changelog: "Changelog",
       docs: "Documentazione",
+      support: "Assistenza",
       githubDocs: "Documentazione su GitHub",
       github: "GitHub",
       selfHosting: "Self-hosting",

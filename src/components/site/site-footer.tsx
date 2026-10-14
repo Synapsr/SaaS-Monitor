@@ -47,6 +47,7 @@ export function SiteFooter({
       links: [
         { label: text.links.demo, href: demo },
         { label: text.links.docs, href: links.docs },
+        { label: text.links.support, href: "/support", english: !english },
         { label: text.links.sounds, href: sounds },
         { label: text.links.alternatives, href: "/alternatives", english: !english },
         { label: text.links.changelog, href: "/changelog", english: !english },

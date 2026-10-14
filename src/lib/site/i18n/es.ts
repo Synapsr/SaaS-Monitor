@@ -341,6 +341,7 @@ export const es: SiteText = {
       alternatives: "Alternativas",
       changelog: "Novedades",
       docs: "Documentación",
+      support: "Soporte",
       githubDocs: "Documentación en GitHub",
       github: "GitHub",
       selfHosting: "Autoalojamiento",
