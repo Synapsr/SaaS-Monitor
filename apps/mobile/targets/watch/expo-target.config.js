@@ -7,7 +7,9 @@ module.exports = (config) => ({
   // Apple's convention: the watch app's identifier extends the iPhone app's.
   bundleIdentifier: ".watchkitapp",
   deploymentTarget: "11.0",
-  icon: "../../assets/icon.png",
+  // Its own icon: the phone's near-black one vanishes into the black of a watch face, so the
+  // round mask doesn't show (App Review, guideline 4).
+  icon: "../../assets/watch-icon.png",
   colors: { $accent: "#34D399" },
   entitlements: {
     "com.apple.security.application-groups":

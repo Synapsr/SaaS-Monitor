@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "ios": { "buildNumber": 3 },
+  "ios": { "buildNumber": 4 },
   "android": { "versionCode": 3 },
   "macos": { "buildNumber": 1 }
 }
