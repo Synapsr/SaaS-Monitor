@@ -47,7 +47,7 @@ export interface StoreApp {
 
 /** The SaaS Monitor app (iPhone, iPad, Apple Watch; Android, Wear OS), in its two stores. */
 export const apps: { appStore: StoreApp; googlePlay: StoreApp } = {
-  appStore: { url: "https://apps.apple.com/app/id6820038376", live: false },
+  appStore: { url: "https://apps.apple.com/app/id6820038376", live: true },
   googlePlay: {
     url: "https://play.google.com/store/apps/details?id=com.saasmonitor.app",
     live: false,
