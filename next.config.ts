@@ -10,18 +10,23 @@ const buildId = process.env.BUILD_ID || Date.now().toString(36);
  * Nothing is loaded from other sites except social sign-in avatars, and, on the site and the
  * dashboard, Gleap's help widget (`GLEAP_API_KEY`): its API, live messages, frames and media. One
  * image serves every instance, built before its settings are known, so both allow Gleap whether or
- * not it is set; screens never load it. Inline scripts and styles stay allowed for Next.js
- * hydration; the policy is off in development, where hot reloading needs `eval`.
+ * not it is set; screens never load it. The public site of the hosted instance also loads Umami
+ * from `ANALYTICS_ORIGIN` (`siteAnalytics` in `src/lib/site.ts`), which receives its visits;
+ * screens never do. Inline scripts and styles stay allowed for Next.js hydration; the policy is
+ * off in development, where hot reloading needs `eval`.
  */
+const ANALYTICS_ORIGIN = "https://hey.lumy.bzh";
+
 function contentSecurityPolicy(frameAncestors: string, { support = false } = {}) {
   const gleap = support ? " https://*.gleap.io" : "";
+  const analytics = support ? ` ${ANALYTICS_ORIGIN}` : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${gleap}`,
+    `script-src 'self' 'unsafe-inline'${gleap}${analytics}`,
     `style-src 'self' 'unsafe-inline'${gleap}`,
     `img-src 'self' data: blob: https://avatars.githubusercontent.com https://*.googleusercontent.com${gleap}`,
     `font-src 'self' data:${gleap}`,
-    `connect-src 'self'${support ? " https://*.gleap.io wss://*.gleap.io" : ""}`,
+    `connect-src 'self'${support ? ` https://*.gleap.io wss://*.gleap.io${analytics}` : ""}`,
     ...(support ? [`media-src 'self'${gleap}`] : []),
     // Confetti is drawn by a worker created from a blob.
     "worker-src 'self' blob:",

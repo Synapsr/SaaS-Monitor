@@ -1,8 +1,9 @@
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { appUrl } from "@/env";
 import { BRAND_COLORS } from "@/lib/brand";
-import { siteConfig } from "@/lib/site";
+import { isHostedInstance, siteAnalytics, siteConfig } from "@/lib/site";
 import {
   DEFAULT_LANGUAGE,
   isSiteLanguage,
@@ -47,7 +48,17 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
 
   return (
     <html lang={LANGUAGE_TAGS[language]} className={cn(GeistSans.variable, "antialiased")}>
-      <body className="landing min-h-svh">{children}</body>
+      <body className="landing min-h-svh">
+        {children}
+        {isHostedInstance(appUrl()) && (
+          <Script
+            src={siteAnalytics.scriptUrl}
+            data-website-id={siteAnalytics.websiteId}
+            data-domains={new URL(siteConfig.hostedUrl).host}
+            strategy="afterInteractive"
+          />
+        )}
+      </body>
     </html>
   );
 }

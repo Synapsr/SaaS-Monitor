@@ -68,6 +68,8 @@ function Badge({
     <a
       href={app.url}
       aria-label={text[store].live}
+      data-umami-event="store"
+      data-umami-event-store={store}
       className={cn(
         className,
         "transition-[background-color,box-shadow,scale] duration-150 hover:bg-(--surface-hover) hover:shadow-(--edge-hover) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--glow) active:scale-[0.96]",

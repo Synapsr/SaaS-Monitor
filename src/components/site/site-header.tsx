@@ -127,6 +127,7 @@ export function SiteHeader({
           <Link
             href="/sign-up"
             prefetch={false}
+            data-umami-event="header-sign-up"
             className={buttonClass({
               size: "sm",
               className: "ml-1 hidden min-[380px]:inline-flex",

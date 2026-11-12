@@ -54,6 +54,17 @@ export const apps: { appStore: StoreApp; googlePlay: StoreApp } = {
   },
 };
 
+/**
+ * Visits to the public site of the hosted instance, counted without cookies by the Umami that
+ * Lumy runs (on OVH, in France). Self-hosted instances never load it (`isHostedInstance`), and
+ * neither do screens or the dashboard. The website id is public: it is in every page's HTML.
+ */
+export const siteAnalytics = {
+  origin: "https://hey.lumy.bzh",
+  scriptUrl: "https://hey.lumy.bzh/lumy.js",
+  websiteId: "18efbf9e-a534-414a-8707-2fc2da41e36c",
+} as const;
+
 /** Whether an instance at `appUrl` is the project's own, rather than a self-hosted one. */
 export function isHostedInstance(appUrl: string): boolean {
   return new URL(appUrl).host === new URL(hostedUrl).host;

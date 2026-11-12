@@ -31,6 +31,7 @@ export function Pricing({
             <Link
               href="/sign-up"
               prefetch={false}
+              data-umami-event="pricing-sign-up"
               className={buttonClass({ size: "lg", className: "w-full" })}
             >
               {text.hosted.cta}

@@ -23,12 +23,18 @@ export function Closing({ text, stars }: { text: SiteText["closing"]; stars: str
           {text.title}
         </h2>
         <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-3 min-[440px]:w-auto min-[440px]:flex-row">
-          <Link href="/sign-up" prefetch={false} className={buttonClass({ size: "lg" })}>
+          <Link
+            href="/sign-up"
+            prefetch={false}
+            className={buttonClass({ size: "lg" })}
+            data-umami-event="closing-sign-up"
+          >
             {text.primary}
             <ArrowRightIcon aria-hidden />
           </Link>
           <a
             href={siteConfig.repositoryUrl}
+            data-umami-event="closing-github"
             className={buttonClass({ variant: "secondary", size: "lg" })}
           >
             <GitHubIcon />

@@ -44,7 +44,7 @@ export default function PrivacyPage() {
   return (
     <LegalDocument
       page="privacy"
-      updated="2026-10-12"
+      updated="2026-11-12"
       lead={
         <>
           What <HostedDomain /> and the {siteConfig.name} app collect, why, who handles it and how
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
             "Your Stripe key is stored encrypted. The restricted key we recommend only reads your data, apart from managing the webhook endpoint the service adds.",
             "Customer names and email addresses stay off your screens, and their notifications, unless you turn them on.",
             "The app has no account and no tracking. Your screens stay on your device, and it only talks to their instance and, for notifications, to Apple’s, Google’s or Expo’s push services.",
-            "No ads, no tracking, no analytics, and we never sell your data.",
+            "No ads and no tracking cookies, and we never sell your data. We count visits to this site with Umami, which our studio runs itself, without cookies.",
             "If you write to us from our help widget, on this site or in the dashboard, Gleap handles your messages and email address for us, and in the dashboard your name.",
             "Disconnect a Stripe account, and everything imported from it is deleted right away.",
           ]}
@@ -176,10 +176,17 @@ export default function PrivacyPage() {
 
               <Subheading>Visits to this site</Subheading>
               <p>
-                We don’t measure them: the site runs no analytics. The screens load no third-party
-                script, and neither do this site’s pages until you click their help button, which
-                loads Gleap’s widget so that you can write to us. The dashboard loads that widget
-                from the start.
+                We count them with Umami, an open-source analytics tool that Lumy, the studio behind
+                this service, runs on its own server in France, at OVH. It sets no cookie and keeps
+                no IP address: it records the page, the site you came from, your browser, operating
+                system, type of device, screen size and language, your approximate location
+                (country, region and city, worked out from your IP address, which it doesn’t store)
+                and the buttons you click to sign up, try the demo or get the app. It can’t tell who
+                you are. It only runs on the pages of this site: never on your screens, in the
+                dashboard, in the app, or on self-hosted instances. Apart from it, the screens and
+                this site’s pages load no script from elsewhere until you click a page’s help
+                button, which loads Gleap’s widget so that you can write to us. The dashboard loads
+                that widget from the start.
               </p>
             </>
           ),

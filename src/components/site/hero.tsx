@@ -59,13 +59,19 @@ export function Hero({
         </p>
 
         <div className="animate-rise mt-9 flex flex-col items-stretch justify-center gap-3 [animation-delay:240ms] min-[440px]:flex-row min-[440px]:items-center">
-          <Link href="/sign-up" prefetch={false} className={buttonClass({ size: "lg" })}>
+          <Link
+            href="/sign-up"
+            prefetch={false}
+            className={buttonClass({ size: "lg" })}
+            data-umami-event="hero-sign-up"
+          >
             {hero.primary}
             <ArrowRightIcon aria-hidden />
           </Link>
           <Link
             href={demo}
             prefetch={false}
+            data-umami-event="hero-demo"
             className={buttonClass({ variant: "secondary", size: "lg" })}
           >
             <PlayIcon aria-hidden className="fill-current" />
