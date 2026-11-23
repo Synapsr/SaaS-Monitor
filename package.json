@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@number-flow/react": "0.6.2",
-    "better-auth": "1.7.6",
+    "better-auth": "1.7.7",
     "canvas-confetti": "1.9.4",
     "class-variance-authority": "0.7.1",
     "cmdk": "1.1.1",
