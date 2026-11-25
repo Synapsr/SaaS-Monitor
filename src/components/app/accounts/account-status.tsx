@@ -1,6 +1,7 @@
 import { CircleAlertIcon, ClockIcon, ZapIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import { providerLabel, type AccountProvider } from "@/lib/account-providers";
 import { formatApproximateDuration, formatCount, formatRelativeTime } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,28 @@ import type { StripeAccountSummary } from "@/server/stripe/accounts";
 
 // Relative times are computed where these render: keep them in server components so the HTML
 // never disagrees with the browser's clock during hydration.
+
+export function ProviderBadge({
+  provider,
+  className,
+}: {
+  provider: AccountProvider;
+  className?: string;
+}) {
+  return (
+    <Badge
+      variant="secondary"
+      className={cn(
+        provider === "revenuecat"
+          ? "bg-rose-500/12 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300"
+          : "bg-indigo-500/12 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300",
+        className,
+      )}
+    >
+      {providerLabel(provider)}
+    </Badge>
+  );
+}
 
 export function ModeBadge({ livemode, className }: { livemode: boolean; className?: string }) {
   return livemode ? (
@@ -33,8 +56,8 @@ export function SyncStatus({ account }: { account: StripeAccountSummary }) {
       <span className="inline-flex items-center gap-1.5 text-muted-foreground">
         <Spinner aria-hidden="true" role="presentation" className="size-3.5" />
         <span>
-          Importing history
-          {progress && (
+          {account.provider === "revenuecat" ? "Importing metrics" : "Importing history"}
+          {account.provider === "stripe" && progress && (
             <span className="tabular-nums">
               {" "}
               · {formatCount(progress.subscriptions)} subscriptions,{" "}
@@ -62,7 +85,13 @@ export function SyncStatus({ account }: { account: StripeAccountSummary }) {
   );
 }
 
-export function UpdatesStatus({ updates }: { updates: StripeAccountSummary["updates"] }) {
+export function UpdatesStatus({
+  provider = "stripe",
+  updates,
+}: {
+  provider?: AccountProvider;
+  updates: StripeAccountSummary["updates"];
+}) {
   if (updates.mode === "webhook") {
     return (
       <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
@@ -74,7 +103,7 @@ export function UpdatesStatus({ updates }: { updates: StripeAccountSummary["upda
   return (
     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
       <ClockIcon className="size-3.5" />
-      Checks Stripe every {formatApproximateDuration(updates.intervalSeconds)}
+      Checks {providerLabel(provider)} every {formatApproximateDuration(updates.intervalSeconds)}
     </span>
   );
 }

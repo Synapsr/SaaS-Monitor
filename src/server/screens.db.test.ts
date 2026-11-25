@@ -130,7 +130,7 @@ describe("screens", () => {
 
     expect(result.ok).toBe(false);
     expect((await getScreen(owner.workspaceId, screenId))?.accounts).toEqual([
-      { id: ownAccount, name: "Acme", livemode: true },
+      { id: ownAccount, provider: "stripe", name: "Acme", livemode: true },
     ]);
   });
 

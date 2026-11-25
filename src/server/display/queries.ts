@@ -23,6 +23,8 @@ import {
   customers,
   mrrMovements,
   payments,
+  revenuecatDailyMetrics,
+  revenuecatMetrics,
   screenAccounts,
   screens,
   stripeAccounts,
@@ -30,7 +32,7 @@ import {
 } from "@/db/schema";
 import { dayToUtcDate } from "@/lib/display/calendar";
 import type { FeedEvent } from "@/lib/display/events";
-import type { ChurnReason, FeedItemKind } from "@/lib/display/types";
+import type { ChurnReason, FeedItemKind, MrrMovementKind } from "@/lib/display/types";
 import { DAY_MS } from "@/lib/durations";
 
 /*
@@ -83,31 +85,129 @@ function countsByAccount(rows: readonly { accountId: string; count: number }[]) 
   return new Map(rows.map((row) => [row.accountId, row.count]));
 }
 
+/** Splits account ids by provider so Stripe and RevenueCat metrics never double-count. */
+async function partitionByProvider(
+  accountIds: readonly string[],
+): Promise<{ stripeIds: string[]; revenuecatIds: string[] }> {
+  if (!accountIds.length) return { stripeIds: [], revenuecatIds: [] };
+  const rows = await db()
+    .select({ id: stripeAccounts.id, provider: stripeAccounts.provider })
+    .from(stripeAccounts)
+    .where(inArray(stripeAccounts.id, [...accountIds]));
+  const stripeIds: string[] = [];
+  const revenuecatIds: string[] = [];
+  for (const row of rows) {
+    if (row.provider === "revenuecat") revenuecatIds.push(row.id);
+    else stripeIds.push(row.id);
+  }
+  return { stripeIds, revenuecatIds };
+}
+
 /** Current MRR and trials per account and currency. */
-export function subscriptionTotals(accountIds: string[]) {
-  return db()
-    .select({
-      accountId: subscriptions.accountId,
-      currency: subscriptions.currency,
-      mrr: sum(subscriptions.mrr).mapWith(Number),
-      trialing: count(sql`case when ${subscriptions.status} = 'trialing' then 1 end`),
-    })
-    .from(subscriptions)
-    .where(inArray(subscriptions.accountId, accountIds))
-    .groupBy(subscriptions.accountId, subscriptions.currency);
+export async function subscriptionTotals(accountIds: string[]) {
+  const { stripeIds, revenuecatIds } = await partitionByProvider(accountIds);
+  const [stripeRows, rcSnapshots] = await Promise.all([
+    stripeIds.length
+      ? db()
+          .select({
+            accountId: subscriptions.accountId,
+            currency: subscriptions.currency,
+            mrr: sum(subscriptions.mrr).mapWith(Number),
+            trialing: count(sql`case when ${subscriptions.status} = 'trialing' then 1 end`),
+          })
+          .from(subscriptions)
+          .where(inArray(subscriptions.accountId, stripeIds))
+          .groupBy(subscriptions.accountId, subscriptions.currency)
+      : Promise.resolve([]),
+    revenuecatIds.length
+      ? db()
+          .select({
+            accountId: revenuecatMetrics.accountId,
+            currency: revenuecatMetrics.currency,
+            mrr: revenuecatMetrics.mrr,
+            trialing: revenuecatMetrics.activeTrials,
+            overviewUpdatedAt: revenuecatMetrics.overviewUpdatedAt,
+          })
+          .from(revenuecatMetrics)
+          .where(inArray(revenuecatMetrics.accountId, revenuecatIds))
+      : Promise.resolve([]),
+  ]);
+
+  if (!rcSnapshots.length) return stripeRows;
+
+  // Include live webhook movements recorded after RevenueCat last computed its overview snapshot.
+  const rcRows = [...stripeRows];
+  const liveDeltas = await Promise.all(
+    rcSnapshots.map((snapshot) =>
+      db()
+        .select({
+          accountId: mrrMovements.accountId,
+          currency: mrrMovements.currency,
+          amount: sum(mrrMovements.amount).mapWith(Number),
+        })
+        .from(mrrMovements)
+        .where(
+          and(
+            eq(mrrMovements.accountId, snapshot.accountId),
+            eq(mrrMovements.origin, "live"),
+            gt(mrrMovements.occurredAt, snapshot.overviewUpdatedAt),
+          ),
+        )
+        .groupBy(mrrMovements.accountId, mrrMovements.currency),
+    ),
+  );
+
+  for (let i = 0; i < rcSnapshots.length; i += 1) {
+    const snapshot = rcSnapshots[i];
+    const deltas = liveDeltas[i];
+    let sameCurrencyDelta = 0;
+    for (const delta of deltas) {
+      if (delta.currency === snapshot.currency) {
+        sameCurrencyDelta += delta.amount;
+      } else if (delta.amount !== 0) {
+        rcRows.push({
+          accountId: snapshot.accountId,
+          currency: delta.currency,
+          mrr: delta.amount,
+          trialing: 0,
+        });
+      }
+    }
+    rcRows.push({
+      accountId: snapshot.accountId,
+      currency: snapshot.currency,
+      mrr: Math.max(0, snapshot.mrr + sameCurrencyDelta),
+      trialing: snapshot.trialing,
+    });
+  }
+  return rcRows;
 }
 
 /** Customers with at least one paying subscription, per account. */
 export async function payingCustomerCounts(accountIds: string[]): Promise<Map<string, number>> {
-  const rows = await db()
-    .select({
-      accountId: subscriptions.accountId,
-      count: countDistinct(subscriptions.stripeCustomerId),
-    })
-    .from(subscriptions)
-    .where(and(inArray(subscriptions.accountId, accountIds), gt(subscriptions.mrr, 0)))
-    .groupBy(subscriptions.accountId);
-  return countsByAccount(rows);
+  const { stripeIds, revenuecatIds } = await partitionByProvider(accountIds);
+  const [stripeRows, rcRows] = await Promise.all([
+    stripeIds.length
+      ? db()
+          .select({
+            accountId: subscriptions.accountId,
+            count: countDistinct(subscriptions.stripeCustomerId),
+          })
+          .from(subscriptions)
+          .where(and(inArray(subscriptions.accountId, stripeIds), gt(subscriptions.mrr, 0)))
+          .groupBy(subscriptions.accountId)
+      : Promise.resolve([]),
+    revenuecatIds.length
+      ? db()
+          .select({
+            accountId: revenuecatMetrics.accountId,
+            count: revenuecatMetrics.activeSubscriptions,
+          })
+          .from(revenuecatMetrics)
+          .where(inArray(revenuecatMetrics.accountId, revenuecatIds))
+      : Promise.resolve([]),
+  ]);
+  return countsByAccount([...stripeRows, ...rcRows]);
 }
 
 /** The calendar day of an instant (stored in UTC) in the screen's time zone. */
@@ -124,80 +224,256 @@ function dayText(day: SQL.Aliased<string>) {
  * Net MRR change per account, currency, kind and local day, from `from` on, or since the first
  * movement when `from` is `null`: all time, whose chart starts with it.
  */
-export function movementsByDay(accountIds: string[], timeZone: string, from: string | null) {
-  const local = db()
-    .$with("local_movements")
-    .as(
-      db()
-        .select({
-          accountId: mrrMovements.accountId,
-          currency: mrrMovements.currency,
-          kind: mrrMovements.kind,
-          amount: mrrMovements.amount,
-          day: localDay(mrrMovements.occurredAt, timeZone).as("day"),
-        })
-        .from(mrrMovements)
-        .where(
-          and(
-            inArray(mrrMovements.accountId, accountIds),
-            from === null ? undefined : gte(mrrMovements.occurredAt, instantBefore(from)),
-          ),
+export async function movementsByDay(accountIds: string[], timeZone: string, from: string | null) {
+  const { stripeIds, revenuecatIds } = await partitionByProvider(accountIds);
+
+  const stripePromise = stripeIds.length
+    ? (() => {
+        const local = db()
+          .$with("local_movements")
+          .as(
+            db()
+              .select({
+                accountId: mrrMovements.accountId,
+                currency: mrrMovements.currency,
+                kind: mrrMovements.kind,
+                amount: mrrMovements.amount,
+                day: localDay(mrrMovements.occurredAt, timeZone).as("day"),
+              })
+              .from(mrrMovements)
+              .where(
+                and(
+                  inArray(mrrMovements.accountId, stripeIds),
+                  from === null ? undefined : gte(mrrMovements.occurredAt, instantBefore(from)),
+                ),
+              ),
+          );
+        return db()
+          .with(local)
+          .select({
+            accountId: local.accountId,
+            currency: local.currency,
+            kind: local.kind,
+            day: dayText(local.day),
+            amount: sql<number>`sum(${local.amount})`.mapWith(Number),
+          })
+          .from(local)
+          .where(from === null ? undefined : gte(local.day, from))
+          .groupBy(local.accountId, local.currency, local.kind, local.day);
+      })()
+    : Promise.resolve([]);
+
+  if (!revenuecatIds.length) return stripePromise;
+
+  const [stripeRows, rcDaily, rcSnapshots] = await Promise.all([
+    stripePromise,
+    db()
+      .select({
+        accountId: revenuecatDailyMetrics.accountId,
+        day: revenuecatDailyMetrics.day,
+        currency: revenuecatDailyMetrics.currency,
+        mrrNew: revenuecatDailyMetrics.mrrNew,
+        mrrExpansion: revenuecatDailyMetrics.mrrExpansion,
+        mrrReactivation: revenuecatDailyMetrics.mrrReactivation,
+        mrrContraction: revenuecatDailyMetrics.mrrContraction,
+        mrrChurn: revenuecatDailyMetrics.mrrChurn,
+      })
+      .from(revenuecatDailyMetrics)
+      .where(
+        and(
+          inArray(revenuecatDailyMetrics.accountId, revenuecatIds),
+          from === null ? undefined : gte(revenuecatDailyMetrics.day, from),
         ),
-    );
-  return db()
-    .with(local)
-    .select({
-      accountId: local.accountId,
-      currency: local.currency,
-      kind: local.kind,
-      day: dayText(local.day),
-      amount: sql<number>`sum(${local.amount})`.mapWith(Number),
-    })
-    .from(local)
-    .where(from === null ? undefined : gte(local.day, from))
-    .groupBy(local.accountId, local.currency, local.kind, local.day);
+      ),
+    db()
+      .select({
+        accountId: revenuecatMetrics.accountId,
+        overviewUpdatedAt: revenuecatMetrics.overviewUpdatedAt,
+      })
+      .from(revenuecatMetrics)
+      .where(inArray(revenuecatMetrics.accountId, revenuecatIds)),
+  ]);
+
+  const rcRows: {
+    accountId: string;
+    currency: string;
+    kind: MrrMovementKind;
+    day: string;
+    amount: number;
+  }[] = [];
+
+  for (const row of rcDaily) {
+    const entries: [MrrMovementKind, number][] = [
+      ["new", row.mrrNew],
+      ["expansion", row.mrrExpansion],
+      ["reactivation", row.mrrReactivation],
+      ["contraction", row.mrrContraction],
+      ["churn", row.mrrChurn],
+    ];
+    for (const [kind, amount] of entries) {
+      if (amount !== 0) {
+        rcRows.push({
+          accountId: row.accountId,
+          currency: row.currency,
+          kind,
+          day: row.day,
+          amount,
+        });
+      }
+    }
+  }
+
+  // Add live webhook movements that arrived after each RevenueCat snapshot.
+  const liveRows = await Promise.all(
+    rcSnapshots.map((snapshot) => {
+      const local = db()
+        .$with("rc_live_movements")
+        .as(
+          db()
+            .select({
+              accountId: mrrMovements.accountId,
+              currency: mrrMovements.currency,
+              kind: mrrMovements.kind,
+              amount: mrrMovements.amount,
+              day: localDay(mrrMovements.occurredAt, timeZone).as("day"),
+            })
+            .from(mrrMovements)
+            .where(
+              and(
+                eq(mrrMovements.accountId, snapshot.accountId),
+                eq(mrrMovements.origin, "live"),
+                gt(mrrMovements.occurredAt, snapshot.overviewUpdatedAt),
+              ),
+            ),
+        );
+      return db()
+        .with(local)
+        .select({
+          accountId: local.accountId,
+          currency: local.currency,
+          kind: local.kind,
+          day: dayText(local.day),
+          amount: sql<number>`sum(${local.amount})`.mapWith(Number),
+        })
+        .from(local)
+        .where(from === null ? undefined : gte(local.day, from))
+        .groupBy(local.accountId, local.currency, local.kind, local.day);
+    }),
+  );
+
+  return [...stripeRows, ...rcRows, ...liveRows.flat()];
 }
 
 /**
  * Net revenue (payments minus refunds, and the fees of those made for Stripe Connect accounts)
  * per account, currency and local day, from `from` on.
  */
-export function revenueByDay(accountIds: string[], timeZone: string, from: string) {
-  const local = db()
-    .$with("local_payments")
-    .as(
-      db()
-        .select({
-          accountId: payments.accountId,
-          currency: payments.currency,
-          // A payment made for a Stripe Connect account is theirs: the account earns its fee,
-          // unless the payment was refunded in full.
-          net: sql<number>`case
-            when ${payments.connectedAccountId} is null then ${payments.amount} - ${payments.amountRefunded}
-            when ${payments.amountRefunded} < ${payments.amount} then coalesce(${payments.applicationFee}, 0)
-            else 0
-          end`.as("net"),
-          day: localDay(payments.occurredAt, timeZone).as("day"),
-        })
-        .from(payments)
-        .where(
-          and(
-            inArray(payments.accountId, accountIds),
-            gte(payments.occurredAt, instantBefore(from)),
-          ),
+export async function revenueByDay(accountIds: string[], timeZone: string, from: string) {
+  const { stripeIds, revenuecatIds } = await partitionByProvider(accountIds);
+
+  const stripePromise = stripeIds.length
+    ? (() => {
+        const local = db()
+          .$with("local_payments")
+          .as(
+            db()
+              .select({
+                accountId: payments.accountId,
+                currency: payments.currency,
+                // A payment made for a Stripe Connect account is theirs: the account earns its fee,
+                // unless the payment was refunded in full.
+                net: sql<number>`case
+                  when ${payments.connectedAccountId} is null then ${payments.amount} - ${payments.amountRefunded}
+                  when ${payments.amountRefunded} < ${payments.amount} then coalesce(${payments.applicationFee}, 0)
+                  else 0
+                end`.as("net"),
+                day: localDay(payments.occurredAt, timeZone).as("day"),
+              })
+              .from(payments)
+              .where(
+                and(
+                  inArray(payments.accountId, stripeIds),
+                  gte(payments.occurredAt, instantBefore(from)),
+                ),
+              ),
+          );
+        return db()
+          .with(local)
+          .select({
+            accountId: local.accountId,
+            currency: local.currency,
+            day: dayText(local.day),
+            amount: sql<number>`sum(${local.net})`.mapWith(Number),
+          })
+          .from(local)
+          .where(gte(local.day, from))
+          .groupBy(local.accountId, local.currency, local.day);
+      })()
+    : Promise.resolve([]);
+
+  if (!revenuecatIds.length) return stripePromise;
+
+  const [stripeRows, rcDaily, rcSnapshots] = await Promise.all([
+    stripePromise,
+    db()
+      .select({
+        accountId: revenuecatDailyMetrics.accountId,
+        currency: revenuecatDailyMetrics.currency,
+        day: revenuecatDailyMetrics.day,
+        amount: revenuecatDailyMetrics.revenue,
+      })
+      .from(revenuecatDailyMetrics)
+      .where(
+        and(
+          inArray(revenuecatDailyMetrics.accountId, revenuecatIds),
+          gte(revenuecatDailyMetrics.day, from),
         ),
-    );
-  return db()
-    .with(local)
-    .select({
-      accountId: local.accountId,
-      currency: local.currency,
-      day: dayText(local.day),
-      amount: sql<number>`sum(${local.net})`.mapWith(Number),
-    })
-    .from(local)
-    .where(gte(local.day, from))
-    .groupBy(local.accountId, local.currency, local.day);
+      ),
+    db()
+      .select({
+        accountId: revenuecatMetrics.accountId,
+        overviewUpdatedAt: revenuecatMetrics.overviewUpdatedAt,
+      })
+      .from(revenuecatMetrics)
+      .where(inArray(revenuecatMetrics.accountId, revenuecatIds)),
+  ]);
+
+  const liveRows = await Promise.all(
+    rcSnapshots.map((snapshot) => {
+      const local = db()
+        .$with("rc_live_payments")
+        .as(
+          db()
+            .select({
+              accountId: payments.accountId,
+              currency: payments.currency,
+              net: sql<number>`${payments.amount} - ${payments.amountRefunded}`.as("net"),
+              day: localDay(payments.occurredAt, timeZone).as("day"),
+            })
+            .from(payments)
+            .where(
+              and(
+                eq(payments.accountId, snapshot.accountId),
+                eq(payments.origin, "live"),
+                gt(payments.occurredAt, snapshot.overviewUpdatedAt),
+              ),
+            ),
+        );
+      return db()
+        .with(local)
+        .select({
+          accountId: local.accountId,
+          currency: local.currency,
+          day: dayText(local.day),
+          amount: sql<number>`sum(${local.net})`.mapWith(Number),
+        })
+        .from(local)
+        .where(gte(local.day, from))
+        .groupBy(local.accountId, local.currency, local.day);
+    }),
+  );
+
+  return [...stripeRows, ...rcDaily.filter((row) => row.amount !== 0), ...liveRows.flat()];
 }
 
 /**
@@ -209,53 +485,76 @@ export async function newCustomerCounts(
   timeZone: string,
   monthStart: string,
 ): Promise<Map<string, number>> {
-  const { accountId, stripeCustomerId, amount, kind, occurredAt } = mrrMovements;
-  const thisMonth = gte(localDay(occurredAt, timeZone), monthStart);
+  const { stripeIds, revenuecatIds } = await partitionByProvider(accountIds);
+  const stripePromise = stripeIds.length
+    ? (() => {
+        const { accountId, stripeCustomerId, amount, kind, occurredAt } = mrrMovements;
+        const thisMonth = gte(localDay(occurredAt, timeZone), monthStart);
 
-  // Customers with movements this month, under new names since they are joined with the ledger.
-  const touched = db()
-    .$with("touched_customers")
-    .as(
-      db()
-        .selectDistinct({
-          accountId: sql<string>`${accountId}`.as("touched_account_id"),
-          customerId: sql<string>`${stripeCustomerId}`.as("touched_customer_id"),
+        // Customers with movements this month, under new names since they are joined with the ledger.
+        const touched = db()
+          .$with("touched_customers")
+          .as(
+            db()
+              .selectDistinct({
+                accountId: sql<string>`${accountId}`.as("touched_account_id"),
+                customerId: sql<string>`${stripeCustomerId}`.as("touched_customer_id"),
+              })
+              .from(mrrMovements)
+              .where(
+                and(
+                  inArray(accountId, stripeIds),
+                  gte(occurredAt, instantBefore(monthStart)),
+                  thisMonth,
+                ),
+              ),
+          );
+        // Their MRR when the month began, and whether they started a subscription since.
+        const months = db()
+          .$with("customer_months")
+          .as(
+            db()
+              .select({
+                accountId,
+                mrrBefore: sql<number>`sum(if(${thisMonth}, 0, ${amount}))`.as("mrr_before"),
+                // Conditions are 0 or 1 in MySQL: the largest says whether any of them holds.
+                started: sql<boolean>`max(${kind} = 'new' and ${thisMonth})`.as("started"),
+              })
+              .from(mrrMovements)
+              .innerJoin(
+                touched,
+                and(eq(accountId, touched.accountId), eq(stripeCustomerId, touched.customerId)),
+              )
+              .groupBy(accountId, stripeCustomerId),
+          );
+
+        return db()
+          .with(touched, months)
+          .select({ accountId: months.accountId, count: count() })
+          .from(months)
+          .where(sql`${months.started} and ${months.mrrBefore} = 0`)
+          .groupBy(months.accountId);
+      })()
+    : Promise.resolve([]);
+
+  const rcPromise = revenuecatIds.length
+    ? db()
+        .select({
+          accountId: revenuecatDailyMetrics.accountId,
+          count: sum(revenuecatDailyMetrics.newPayingCustomers).mapWith(Number),
         })
-        .from(mrrMovements)
+        .from(revenuecatDailyMetrics)
         .where(
           and(
-            inArray(accountId, accountIds),
-            gte(occurredAt, instantBefore(monthStart)),
-            thisMonth,
+            inArray(revenuecatDailyMetrics.accountId, revenuecatIds),
+            gte(revenuecatDailyMetrics.day, monthStart),
           ),
-        ),
-    );
-  // Their MRR when the month began, and whether they started a subscription since.
-  const months = db()
-    .$with("customer_months")
-    .as(
-      db()
-        .select({
-          accountId,
-          mrrBefore: sql<number>`sum(if(${thisMonth}, 0, ${amount}))`.as("mrr_before"),
-          // Conditions are 0 or 1 in MySQL: the largest says whether any of them holds.
-          started: sql<boolean>`max(${kind} = 'new' and ${thisMonth})`.as("started"),
-        })
-        .from(mrrMovements)
-        .innerJoin(
-          touched,
-          and(eq(accountId, touched.accountId), eq(stripeCustomerId, touched.customerId)),
         )
-        .groupBy(accountId, stripeCustomerId),
-    );
+        .groupBy(revenuecatDailyMetrics.accountId)
+    : Promise.resolve([]);
 
-  const rows = await db()
-    .with(touched, months)
-    .select({ accountId: months.accountId, count: count() })
-    .from(months)
-    .where(sql`${months.started} and ${months.mrrBefore} = 0`)
-    .groupBy(months.accountId);
-  return countsByAccount(rows);
+  const [stripeRows, rcRows] = await Promise.all([stripePromise, rcPromise]);
+  return countsByAccount([...stripeRows, ...rcRows]);
 }
 
 /**
@@ -267,18 +566,38 @@ export async function customersCreatedSince(
   timeZone: string,
   day: string,
 ): Promise<Map<string, number>> {
-  const rows = await db()
-    .select({ accountId: customers.accountId, count: count() })
-    .from(customers)
-    .where(
-      and(
-        inArray(customers.accountId, accountIds),
-        gte(customers.occurredAt, instantBefore(day)),
-        gte(localDay(customers.occurredAt, timeZone), day),
-      ),
-    )
-    .groupBy(customers.accountId);
-  return countsByAccount(rows);
+  const { stripeIds, revenuecatIds } = await partitionByProvider(accountIds);
+  const [stripeRows, rcRows] = await Promise.all([
+    stripeIds.length
+      ? db()
+          .select({ accountId: customers.accountId, count: count() })
+          .from(customers)
+          .where(
+            and(
+              inArray(customers.accountId, stripeIds),
+              gte(customers.occurredAt, instantBefore(day)),
+              gte(localDay(customers.occurredAt, timeZone), day),
+            ),
+          )
+          .groupBy(customers.accountId)
+      : Promise.resolve([]),
+    revenuecatIds.length
+      ? db()
+          .select({
+            accountId: revenuecatDailyMetrics.accountId,
+            count: sum(revenuecatDailyMetrics.newCustomers).mapWith(Number),
+          })
+          .from(revenuecatDailyMetrics)
+          .where(
+            and(
+              inArray(revenuecatDailyMetrics.accountId, revenuecatIds),
+              gte(revenuecatDailyMetrics.day, day),
+            ),
+          )
+          .groupBy(revenuecatDailyMetrics.accountId)
+      : Promise.resolve([]),
+  ]);
+  return countsByAccount([...stripeRows, ...rcRows]);
 }
 
 /** A movement, payment or new customer of the feed, before conversion to the screen's currency. */

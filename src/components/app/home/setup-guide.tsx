@@ -1,6 +1,6 @@
 import { ArrowRightIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
-import { ModeBadge, SyncStatus } from "@/components/app/accounts/account-status";
+import { ModeBadge, ProviderBadge, SyncStatus } from "@/components/app/accounts/account-status";
 import { NewScreenButton } from "@/components/app/screens/new-screen-button";
 import { ScreenPreview } from "@/components/app/screens/screen-preview";
 import { TvSetupSteps } from "@/components/app/screens/tv-setup";
@@ -41,11 +41,12 @@ export function SetupGuide({
       </header>
 
       <ol className="flex flex-col">
-        <SetupStep number={1} title="Connect Stripe" state={account ? "done" : "current"}>
+        <SetupStep number={1} title="Connect a revenue source" state={account ? "done" : "current"}>
           {account ? (
             <div className="flex flex-col gap-1 text-sm">
-              <p className="flex items-center gap-2">
+              <p className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{account.name}</span>
+                <ProviderBadge provider={account.provider} />
                 <ModeBadge livemode={account.livemode} />
               </p>
               <p>
@@ -55,15 +56,23 @@ export function SetupGuide({
           ) : (
             <StepCard>
               <p className="text-sm text-pretty text-muted-foreground">
-                Create a read-only key in Stripe and paste it here. We import your subscriptions and
-                payments, then keep them in sync.
+                Connect Stripe or RevenueCat with a read-only API key. We import your MRR,
+                subscriptions and revenue, then keep them in sync.
               </p>
-              <Button asChild size="lg" className="self-start">
-                <Link href="/app/accounts/new">
-                  Connect Stripe
-                  <ArrowRightIcon data-icon="inline-end" />
-                </Link>
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild size="lg">
+                  <Link href="/app/accounts/new">
+                    Connect Stripe
+                    <ArrowRightIcon data-icon="inline-end" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/app/accounts/new?provider=revenuecat">
+                    Connect RevenueCat
+                    <ArrowRightIcon data-icon="inline-end" />
+                  </Link>
+                </Button>
+              </div>
             </StepCard>
           )}
         </SetupStep>
@@ -100,7 +109,7 @@ export function SetupGuide({
             </StepCard>
           ) : (
             <p className="text-sm text-muted-foreground">
-              We set it up for you as soon as Stripe is connected.
+              We set it up for you as soon as an account is connected.
             </p>
           )}
         </SetupStep>

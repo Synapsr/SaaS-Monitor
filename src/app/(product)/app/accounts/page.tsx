@@ -13,12 +13,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { revenueCatWebhookSetupInstructions } from "@/server/revenuecat/webhooks";
 import { requireWorkspace } from "@/server/session";
 import { listStripeAccountSummaries } from "@/server/stripe/accounts";
 import { webhookSetupInstructions } from "@/server/stripe/webhooks";
 import { scheduleSync } from "@/server/sync";
 
-export const metadata: Metadata = { title: "Stripe accounts" };
+export const metadata: Metadata = { title: "Accounts" };
 
 export default async function AccountsPage() {
   const { workspace } = await requireWorkspace();
@@ -39,8 +40,8 @@ export default async function AccountsPage() {
     <>
       {importing && <AutoRefresh />}
       <PageHeader
-        title="Stripe accounts"
-        description="Where your screens get their numbers. Keys are read-only and encrypted."
+        title="Accounts"
+        description="Stripe and RevenueCat sources behind your screens. Keys are read-only and encrypted."
         actions={accounts.length > 0 && connectButton}
       />
       {accounts.length > 0 ? (
@@ -50,7 +51,11 @@ export default async function AccountsPage() {
               key={account.id}
               account={account}
               webhookInstructions={
-                account.updates.mode === "polling" ? webhookSetupInstructions(account.id) : null
+                account.updates.mode === "polling"
+                  ? account.provider === "revenuecat"
+                    ? revenueCatWebhookSetupInstructions(account.id)
+                    : webhookSetupInstructions(account.id)
+                  : null
               }
             />
           ))}
@@ -61,9 +66,10 @@ export default async function AccountsPage() {
             <EmptyMedia variant="icon">
               <CreditCardIcon />
             </EmptyMedia>
-            <EmptyTitle>No Stripe account yet</EmptyTitle>
+            <EmptyTitle>No account connected yet</EmptyTitle>
             <EmptyDescription>
-              Connect one with a read-only key: your screens show its MRR, revenue and every sale.
+              Connect Stripe or RevenueCat with a read-only key: your screens show MRR, revenue and
+              every sale.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>{connectButton}</EmptyContent>

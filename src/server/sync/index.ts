@@ -33,6 +33,7 @@ export async function syncDueAccounts(
   const accounts = await db()
     .select({
       id: stripeAccounts.id,
+      provider: stripeAccounts.provider,
       status: stripeAccounts.status,
       lastSyncedAt: stripeAccounts.lastSyncedAt,
       syncRequestedAt: stripeAccounts.syncRequestedAt,

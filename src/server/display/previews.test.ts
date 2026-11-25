@@ -13,7 +13,7 @@ vi.mock("./recent-state", () => ({
   })),
 }));
 
-const account = { id: "a1", name: "Acme", livemode: true };
+const account = { id: "a1", provider: "stripe" as const, name: "Acme", livemode: true };
 
 describe("display states of the dashboard's previews", () => {
   it("load the screens that show accounts, side by side", async () => {

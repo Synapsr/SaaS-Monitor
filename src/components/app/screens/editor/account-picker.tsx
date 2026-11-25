@@ -3,7 +3,7 @@
 import { CircleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useId } from "react";
-import { ModeBadge } from "@/components/app/accounts/account-status";
+import { ModeBadge, ProviderBadge } from "@/components/app/accounts/account-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { AccountOption } from "@/server/screens";
 
@@ -28,7 +28,7 @@ export function AccountPicker({
   if (accounts.length === 0) {
     return (
       <p id={ANCHOR} className="scroll-mt-32 text-sm text-muted-foreground">
-        No Stripe account yet.{" "}
+        No account yet.{" "}
         <Link
           href="/app/accounts/new"
           className="font-medium text-foreground underline underline-offset-4"
@@ -60,7 +60,7 @@ export function AccountPicker({
       className="flex scroll-mt-32 flex-col gap-2"
     >
       <p id={`${id}-label`} className="text-sm font-medium">
-        Stripe accounts
+        Accounts
       </p>
       <ul className="flex flex-col divide-y rounded-lg ring-1 ring-border">
         {accounts.map((account) => (
@@ -71,6 +71,7 @@ export function AccountPicker({
                 onCheckedChange={(checked) => toggle(account.id, checked === true)}
               />
               <span className="min-w-0 flex-1 truncate">{account.name}</span>
+              <ProviderBadge provider={account.provider} />
               <ModeBadge livemode={account.livemode} />
             </label>
           </li>

@@ -4,6 +4,7 @@ import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, type Transaction } from "@/db";
 import { screenAccounts, screens, stripeAccounts } from "@/db/schema";
+import type { AccountProvider } from "@/lib/account-providers";
 import type { ActionResult } from "@/lib/action-result";
 import { NAME_MAX_LENGTH, nameSchema } from "@/lib/names";
 import {
@@ -22,6 +23,7 @@ import { hashScreenPassword } from "@/server/screen-access";
 
 export interface LinkedAccount {
   id: string;
+  provider: AccountProvider;
   name: string;
   livemode: boolean;
 }
@@ -94,7 +96,7 @@ async function findScreens(where: SQL | undefined): Promise<Screen[]> {
     orderBy: [asc(screens.createdAt)],
     with: {
       screenAccounts: {
-        with: { account: { columns: { id: true, name: true, livemode: true } } },
+        with: { account: { columns: { id: true, provider: true, name: true, livemode: true } } },
       },
     },
   });
@@ -126,6 +128,7 @@ export async function listAccountOptions(workspaceId: string): Promise<AccountOp
   return db()
     .select({
       id: stripeAccounts.id,
+      provider: stripeAccounts.provider,
       name: stripeAccounts.name,
       livemode: stripeAccounts.livemode,
       currency: stripeAccounts.defaultCurrency,

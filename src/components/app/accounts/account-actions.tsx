@@ -28,6 +28,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionResult } from "@/lib/action-result";
+import { providerLabel, type AccountProvider } from "@/lib/account-providers";
 import { NAME_MAX_LENGTH } from "@/lib/names";
 import { siteConfig } from "@/lib/site";
 
@@ -37,11 +38,12 @@ export function AccountActions({
   account,
   canReimport,
 }: {
-  account: { id: string; name: string };
+  account: { id: string; name: string; provider: AccountProvider };
   canReimport: boolean;
 }) {
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const close = (open: boolean) => open || setDialog(null);
+  const providerName = providerLabel(account.provider);
 
   return (
     <>
@@ -78,14 +80,17 @@ export function AccountActions({
         description={
           <>
             <p>
-              Everything imported from this account is deleted, then imported again from Stripe.
-              Screens show “Importing” until it’s done. Nothing changes in Stripe.
+              Everything imported from this account is deleted, then imported again from{" "}
+              {providerName}. Screens show “Importing” until it’s done. Nothing changes in{" "}
+              {providerName}.
             </p>
-            <p>
-              Stripe keeps no history of subscription changes: the upgrades and downgrades recorded
-              since you connected the account are lost, and past MRR is rebuilt from current
-              amounts.
-            </p>
+            {account.provider === "stripe" && (
+              <p>
+                Stripe keeps no history of subscription changes: the upgrades and downgrades
+                recorded since you connected the account are lost, and past MRR is rebuilt from
+                current amounts.
+              </p>
+            )}
           </>
         }
         confirmLabel="Re-import"
@@ -103,8 +108,8 @@ export function AccountActions({
               disappears from your screens.
             </p>
             <p>
-              Nothing changes in Stripe: you can connect it again later. If you won’t, delete the
-              restricted key in Stripe too.
+              Nothing changes in {providerName}: you can connect it again later. If you won’t,
+              delete the API key in {providerName} too.
             </p>
           </>
         }

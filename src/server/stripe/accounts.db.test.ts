@@ -203,6 +203,7 @@ describe("Stripe accounts", () => {
       expect(summaries).toEqual([
         {
           id: importing.id,
+          provider: "stripe",
           name: "New",
           livemode: false,
           keyHint: "rk_test_…4f2a",
