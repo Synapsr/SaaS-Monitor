@@ -1,6 +1,8 @@
 import "server-only";
 import { decryptSecret } from "@/server/crypto";
 import { notifyPhones, type PushOptions } from "@/server/push/notify";
+import type { RevenueCatGatewayFactory } from "@/server/revenuecat/gateway";
+import { syncRevenueCatAccount } from "@/server/revenuecat/sync";
 import {
   describeAccessError,
   redactSecrets,
@@ -27,6 +29,8 @@ import { workingStatus } from "./state";
 export interface SyncOptions {
   /** Creates the Stripe gateway from the account's key; tests pass a fake. */
   createGateway?: GatewayFactory;
+  /** Creates the RevenueCat gateway from the account's key; tests pass a fake. */
+  createRevenueCatGateway?: RevenueCatGatewayFactory;
   /** Current time, for tests. */
   now?: () => Date;
   /** How long a scan may take new pages before saving its cursor. */
@@ -66,6 +70,13 @@ export async function syncAccount(
   const now = options.now?.() ?? new Date();
   const lease = await acquireSyncLease(accountId, now);
   if (!lease) return null;
+
+  if (lease.account.provider === "revenuecat") {
+    return syncRevenueCatAccount(lease, {
+      createGateway: options.createRevenueCatGateway,
+      now: options.now,
+    });
+  }
 
   const startedAt = performance.now();
   const { account } = lease;

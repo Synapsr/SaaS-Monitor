@@ -32,6 +32,7 @@ export async function recentPaymentCounts(
 
 type SyncColumns = Pick<
   StripeAccountRow,
+  | "provider"
   | "status"
   | "lastSyncedAt"
   | "syncRequestedAt"
@@ -43,6 +44,7 @@ type SyncColumns = Pick<
 
 export function toSyncState(account: SyncColumns, paymentsLast30Days: number): SyncState {
   return {
+    provider: account.provider,
     status: account.status,
     lastSyncedAt: account.lastSyncedAt,
     syncRequestedAt: account.syncRequestedAt,

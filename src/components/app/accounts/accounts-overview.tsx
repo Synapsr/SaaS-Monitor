@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { StripeAccountSummary } from "@/server/stripe/accounts";
-import { ModeBadge, MrrValue, SyncStatus, UpdatesStatus } from "./account-status";
+import { ModeBadge, MrrValue, ProviderBadge, SyncStatus, UpdatesStatus } from "./account-status";
 
-/** Compact list of the workspace's Stripe accounts for the home page. */
+/** Compact list of the workspace's connected accounts for the home page. */
 export function AccountsOverview({ accounts }: { accounts: StripeAccountSummary[] }) {
   return (
     <ul className="divide-y rounded-xl bg-card ring-1 ring-foreground/10">
@@ -12,13 +12,14 @@ export function AccountsOverview({ accounts }: { accounts: StripeAccountSummary[
           className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1 px-4 py-3.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_8rem]"
         >
           <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <Link
                 href="/app/accounts"
                 className="truncate rounded-sm font-medium outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 {account.name}
               </Link>
+              <ProviderBadge provider={account.provider} />
               <ModeBadge livemode={account.livemode} />
             </div>
             <p className="text-sm">
@@ -26,7 +27,7 @@ export function AccountsOverview({ accounts }: { accounts: StripeAccountSummary[
             </p>
           </div>
           <p className="col-start-1 row-start-2 text-sm sm:col-start-2 sm:row-start-1">
-            <UpdatesStatus updates={account.updates} />
+            <UpdatesStatus provider={account.provider} updates={account.updates} />
           </p>
           {account.mrr && (
             <div className="col-start-2 row-span-2 row-start-1 text-right sm:col-start-3 sm:row-span-1">

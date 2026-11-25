@@ -3,12 +3,28 @@ import { and, asc, eq, inArray, sum } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { isDuplicateEntry } from "@/db/errors";
-import { customers, mrrMovements, payments, stripeAccounts, subscriptions } from "@/db/schema";
+import {
+  customers,
+  mrrMovements,
+  payments,
+  revenuecatDailyMetrics,
+  revenuecatMetrics,
+  stripeAccounts,
+  subscriptions,
+} from "@/db/schema";
+import type { AccountProvider } from "@/lib/account-providers";
 import type { ActionResult } from "@/lib/action-result";
 import { nameSchema } from "@/lib/names";
 import type { StripePermissionId } from "@/lib/stripe-permissions";
 import { decryptSecret, encryptSecret } from "@/server/crypto";
 import { createCurrencyConverter } from "@/server/fx";
+import {
+  describeRevenueCatAccessError,
+  REVENUECAT_UNREADABLE_KEY_ERROR,
+  RevenueCatAccessError,
+} from "@/server/revenuecat/errors";
+import { createRevenueCatGateway } from "@/server/revenuecat/gateway";
+import { newRevenueCatBackfill } from "@/server/revenuecat/sync";
 import { toUnixTime } from "@/server/sync/context";
 import { scheduleSync } from "@/server/sync";
 import { updatesMode } from "@/server/sync/policy";
@@ -46,18 +62,19 @@ export const connectAccountSchema = z.object({
   secretKey: secretKeySchema,
 });
 
-/** What the dashboard shows about a connected Stripe account. */
+/** What the dashboard shows about a connected account (Stripe or RevenueCat). */
 export interface StripeAccountSummary {
   id: string;
+  provider: AccountProvider;
   name: string;
   livemode: boolean;
-  /** Masked key, e.g. `rk_live_…4f2a`. */
+  /** Masked key, e.g. `rk_live_…4f2a` or `sk_…4f2a`. */
   keyHint: string;
   status: "importing" | "ready" | "error";
   /** User-facing explanation when `status` is `error`. */
   lastError: string | null;
   lastSyncedAt: Date | null;
-  /** How new Stripe activity reaches the app. */
+  /** How new activity reaches the app. */
   updates:
     { mode: "webhook"; lastEventAt: Date | null } | { mode: "polling"; intervalSeconds: number };
   /** Objects imported so far, while `status` is `importing`. */
@@ -221,22 +238,42 @@ export async function listStripeAccountSummaries(
   if (!accounts.length) return [];
 
   const ids = accounts.map((account) => account.id);
-  const [mrrRows, paymentCounts] = await Promise.all([
-    db()
-      .select({
-        accountId: subscriptions.accountId,
-        currency: subscriptions.currency,
-        mrr: sum(subscriptions.mrr).mapWith(Number),
-      })
-      .from(subscriptions)
-      .where(inArray(subscriptions.accountId, ids))
-      .groupBy(subscriptions.accountId, subscriptions.currency),
+  const rcIds = accounts
+    .filter((account) => account.provider === "revenuecat")
+    .map((account) => account.id);
+  const stripeIds = accounts
+    .filter((account) => account.provider === "stripe")
+    .map((account) => account.id);
+  const [mrrRows, rcRows, paymentCounts] = await Promise.all([
+    stripeIds.length
+      ? db()
+          .select({
+            accountId: subscriptions.accountId,
+            currency: subscriptions.currency,
+            mrr: sum(subscriptions.mrr).mapWith(Number),
+          })
+          .from(subscriptions)
+          .where(inArray(subscriptions.accountId, stripeIds))
+          .groupBy(subscriptions.accountId, subscriptions.currency)
+      : Promise.resolve([]),
+    rcIds.length
+      ? db()
+          .select({
+            accountId: revenuecatMetrics.accountId,
+            currency: revenuecatMetrics.currency,
+            mrr: revenuecatMetrics.mrr,
+          })
+          .from(revenuecatMetrics)
+          .where(inArray(revenuecatMetrics.accountId, rcIds))
+      : Promise.resolve([]),
     recentPaymentCounts(ids, now),
   ]);
+  const allMrrRows = [...mrrRows, ...rcRows];
 
   return Promise.all(
     accounts.map(async (account) => ({
       id: account.id,
+      provider: account.provider,
       name: account.name,
       livemode: account.livemode,
       keyHint: account.secretKeyHint,
@@ -251,7 +288,7 @@ export async function listStripeAccountSummaries(
         ? null
         : await accountMrr(
             account.defaultCurrency,
-            mrrRows.filter((row) => row.accountId === account.id),
+            allMrrRows.filter((row) => row.accountId === account.id),
           ),
     })),
   );
@@ -295,6 +332,8 @@ export async function disconnectStripeAccount(
 ): Promise<ActionResult> {
   const [account] = await db()
     .select({
+      provider: stripeAccounts.provider,
+      stripeAccountId: stripeAccounts.stripeAccountId,
       encryptedSecretKey: stripeAccounts.encryptedSecretKey,
       webhookEndpointId: stripeAccounts.webhookEndpointId,
     })
@@ -304,14 +343,22 @@ export async function disconnectStripeAccount(
 
   if (account.webhookEndpointId) {
     try {
-      const gateway = (options.createGateway ?? createStripeGateway)(
-        decryptSecret(account.encryptedSecretKey),
-      );
-      await gateway.deleteWebhookEndpoint(account.webhookEndpointId);
+      const secretKey = decryptSecret(account.encryptedSecretKey);
+      if (account.provider === "revenuecat") {
+        if (account.stripeAccountId) {
+          await createRevenueCatGateway(secretKey).deleteWebhookIntegration(
+            account.stripeAccountId,
+            account.webhookEndpointId,
+          );
+        }
+      } else {
+        const gateway = (options.createGateway ?? createStripeGateway)(secretKey);
+        await gateway.deleteWebhookEndpoint(account.webhookEndpointId);
+      }
     } catch (error) {
-      // A revoked key cannot remove the endpoint; Stripe disables it once deliveries keep failing.
+      // A revoked key cannot remove the endpoint; providers disable it once deliveries keep failing.
       console.warn(
-        `[stripe] Could not delete webhook endpoint of account ${accountId}:`,
+        `[${account.provider}] Could not delete webhook endpoint of account ${accountId}:`,
         error instanceof Error ? error.message : error,
       );
     }
@@ -334,11 +381,18 @@ export async function reimportStripeAccount(
   options: StripeAccessOptions = {},
 ): Promise<ActionResult> {
   const [account] = await db()
-    .select({ encryptedSecretKey: stripeAccounts.encryptedSecretKey })
+    .select({
+      provider: stripeAccounts.provider,
+      stripeAccountId: stripeAccounts.stripeAccountId,
+      encryptedSecretKey: stripeAccounts.encryptedSecretKey,
+    })
     .from(stripeAccounts)
     .where(and(eq(stripeAccounts.workspaceId, workspaceId), eq(stripeAccounts.id, accountId)));
   if (!account) return ACCOUNT_NOT_FOUND;
-  const access = await checkStoredKey(account.encryptedSecretKey, options);
+  const access =
+    account.provider === "revenuecat"
+      ? await checkStoredRevenueCatKey(account.encryptedSecretKey, account.stripeAccountId)
+      : await checkStoredKey(account.encryptedSecretKey, options);
   if (!access.ok) return access;
 
   const now = new Date();
@@ -348,9 +402,9 @@ export async function reimportStripeAccount(
       .set({
         status: "importing",
         lastError: null,
-        backfill: newBackfill(now),
+        backfill: account.provider === "revenuecat" ? newRevenueCatBackfill(now) : newBackfill(now),
         reconcile: null,
-        eventsCursor: toUnixTime(now),
+        eventsCursor: account.provider === "revenuecat" ? null : toUnixTime(now),
         recentEventIds: [],
         lastEventAt: null,
         lastSyncedAt: null,
@@ -365,11 +419,41 @@ export async function reimportStripeAccount(
     await tx.delete(subscriptions).where(eq(subscriptions.accountId, accountId));
     await tx.delete(payments).where(eq(payments.accountId, accountId));
     await tx.delete(customers).where(eq(customers.accountId, accountId));
+    if (account.provider === "revenuecat") {
+      await tx.delete(revenuecatMetrics).where(eq(revenuecatMetrics.accountId, accountId));
+      await tx
+        .delete(revenuecatDailyMetrics)
+        .where(eq(revenuecatDailyMetrics.accountId, accountId));
+    }
     return true;
   });
   if (!reset) return ACCOUNT_NOT_FOUND;
   scheduleSync([accountId]);
   return { ok: true };
+}
+
+async function checkStoredRevenueCatKey(
+  encryptedSecretKey: string,
+  projectId: string | null,
+): Promise<ActionResult> {
+  if (!projectId) {
+    return { ok: false, error: "This RevenueCat account is missing its project id." };
+  }
+  let key: string;
+  try {
+    key = decryptSecret(encryptedSecretKey);
+  } catch {
+    return { ok: false, error: REVENUECAT_UNREADABLE_KEY_ERROR };
+  }
+  try {
+    await createRevenueCatGateway(key).getOverviewMetrics(projectId);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof RevenueCatAccessError) {
+      return { ok: false, error: describeRevenueCatAccessError(error) };
+    }
+    throw error;
+  }
 }
 
 /** Whether the stored key can still read everything an import needs. */

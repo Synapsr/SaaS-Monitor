@@ -61,7 +61,7 @@ export default async function HomePage({ searchParams }: PageProps<"/app">) {
       {refresh}
       <PageHeader
         title={workspace.name}
-        description="Your screens, and the Stripe accounts they show."
+        description="Your screens, and the accounts they show."
         actions={<NewScreenButton />}
       />
       <div className="flex flex-col gap-12">
@@ -95,7 +95,7 @@ export default async function HomePage({ searchParams }: PageProps<"/app">) {
           )}
         </PageSection>
         <PageSection
-          title="Stripe accounts"
+          title="Accounts"
           actions={
             <Button asChild variant="ghost" size="sm">
               <Link href="/app/accounts">Manage</Link>

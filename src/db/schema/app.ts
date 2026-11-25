@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
+import { ACCOUNT_PROVIDERS } from "@/lib/account-providers";
 import type { ScreenEvent } from "@/lib/display/events";
 import type { ChurnReason } from "@/lib/display/types";
 import type { ScreenSettings } from "@/lib/screens/settings";
@@ -91,7 +92,7 @@ export interface ScanProgress extends ScanWindows {
   followUp?: ScanWindows;
 }
 
-/** A Stripe account connected to a workspace with a (preferably restricted, read-only) API key. */
+/** A revenue source connected to a workspace (Stripe account or RevenueCat project). */
 export const stripeAccounts = mysqlTable(
   "stripe_accounts",
   {
@@ -99,10 +100,12 @@ export const stripeAccounts = mysqlTable(
     workspaceId: authId()
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
+    provider: mysqlEnum(ACCOUNT_PROVIDERS).notNull().default("stripe"),
     name: text().notNull(),
     /**
-     * `acct_…` identifier, used to prevent connecting the same account twice. Test mode shares it
-     * with live mode, although their data is separate: both may be connected.
+     * External identifier (`acct_…` for Stripe, `proj…` for RevenueCat), used to prevent
+     * connecting the same account twice. Stripe test mode shares it with live mode, although their
+     * data is separate: both may be connected.
      */
     stripeAccountId: stripeId(),
     livemode: boolean().notNull(),
@@ -148,9 +151,71 @@ export const stripeAccounts = mysqlTable(
     index("stripe_accounts_workspace_id_index").on(table.workspaceId),
     uniqueIndex("stripe_accounts_workspace_id_stripe_account_id_livemode_index").on(
       table.workspaceId,
+      table.provider,
       table.stripeAccountId,
       table.livemode,
     ),
+  ],
+);
+
+/** Cached product metadata for a RevenueCat project, used to enrich webhook feed items. */
+export interface RevenueCatProductEntry {
+  displayName: string;
+  /** ISO 8601 subscription duration (`P1M`, `P1Y`, `P1W`, …) or `null` for non-subscriptions. */
+  duration: string | null;
+}
+
+/**
+ * Latest overview metrics snapshot for a RevenueCat project, refreshed from RevenueCat REST API v2.
+ * Live webhook events that arrive after `overviewUpdatedAt` are added on top until the next sync.
+ */
+export const revenuecatMetrics = mysqlTable("revenuecat_metrics", {
+  accountId: uuid()
+    .primaryKey()
+    .references(() => stripeAccounts.id, { onDelete: "cascade" }),
+  currency: currency().notNull(),
+  /** Current MRR in minor units of `currency`. */
+  mrr: money().notNull(),
+  /** Active paying subscriptions (used for active customers & ARPU). */
+  activeSubscriptions: int().notNull().default(0),
+  /** Active free trials. */
+  activeTrials: int().notNull().default(0),
+  /** When RevenueCat last computed the overview snapshot; live webhooks after this add on top. */
+  overviewUpdatedAt: instant().notNull(),
+  /** Product catalog keyed by `store_identifier` (or product id), for webhook plan names. */
+  products: json().$type<Record<string, RevenueCatProductEntry>>().notNull().default({}),
+  ...timestamps,
+});
+
+/**
+ * Daily time-series metrics for a RevenueCat project, synced from RevenueCat Charts API v2
+ * (`mrr_movement`, `revenue`, `actives_new`, `customers_new`).
+ */
+export const revenuecatDailyMetrics = mysqlTable(
+  "revenuecat_daily_metrics",
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => stripeAccounts.id, { onDelete: "cascade" }),
+    /** Calendar day (`YYYY-MM-DD`, UTC as bucketed by RevenueCat). */
+    day: identifier({ length: 10 }).notNull(),
+    currency: currency().notNull(),
+    /** Daily gross revenue in minor units of `currency`. */
+    revenue: money().notNull().default(0),
+    /** Daily MRR movements in minor units (`contraction` and `churn` are <= 0). */
+    mrrNew: money().notNull().default(0),
+    mrrExpansion: money().notNull().default(0),
+    mrrReactivation: money().notNull().default(0),
+    mrrContraction: money().notNull().default(0),
+    mrrChurn: money().notNull().default(0),
+    /** New paying subscriptions on this day (`actives_new` chart). */
+    newPayingCustomers: int().notNull().default(0),
+    /** New customers first seen on this day (`customers_new` chart). */
+    newCustomers: int().notNull().default(0),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId, table.day] }),
+    index("revenuecat_daily_metrics_account_id_day_index").on(table.accountId, table.day),
   ],
 );
 

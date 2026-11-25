@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/app", label: "Home" },
   { href: "/app/screens", label: "Screens" },
-  { href: "/app/accounts", label: "Stripe accounts" },
+  { href: "/app/accounts", label: "Accounts" },
   { href: "/app/settings", label: "Settings" },
 ] as const;
 

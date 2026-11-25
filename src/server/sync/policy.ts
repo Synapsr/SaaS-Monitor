@@ -1,9 +1,12 @@
 import "server-only";
+import type { AccountProvider } from "@/lib/account-providers";
 import { DAY_SECONDS, MINUTE_MS, MINUTE_SECONDS } from "@/lib/durations";
 
 /** With a healthy webhook, polling is only a safety net. Also the slowest polling pace. */
 export const SAFETY_NET_INTERVAL_SECONDS = 30 * MINUTE_SECONDS;
 const FASTEST_POLL_INTERVAL_SECONDS = MINUTE_SECONDS;
+/** RevenueCat Charts & Metrics allows 25 req/min; checking every 10 min stays well under that. */
+const REVENUECAT_POLL_INTERVAL_SECONDS = 10 * MINUTE_SECONDS;
 const RECONCILE_INTERVAL_SECONDS = DAY_SECONDS;
 /** Webhooks may arrive shortly after a sync has already seen their event. */
 const WEBHOOK_DELIVERY_GRACE_MS = 5 * MINUTE_MS;
@@ -25,6 +28,7 @@ export function pollIntervalSeconds(paymentsLast30Days: number): number {
 }
 
 export interface UpdatesState {
+  provider?: AccountProvider;
   hasWebhookSecret: boolean;
   lastWebhookAt: Date | null;
   /** Creation time of the newest event the sync applied. */
@@ -64,8 +68,11 @@ type CheckedAccount = UpdatesState & Pick<SyncState, "status">;
  * again now and then, like an account whose webhook announces everything.
  */
 function checkIntervalSeconds(account: CheckedAccount): number {
-  return account.status === "error" || isWebhookHealthy(account)
-    ? SAFETY_NET_INTERVAL_SECONDS
+  if (account.status === "error" || isWebhookHealthy(account)) {
+    return SAFETY_NET_INTERVAL_SECONDS;
+  }
+  return account.provider === "revenuecat"
+    ? REVENUECAT_POLL_INTERVAL_SECONDS
     : pollIntervalSeconds(account.paymentsLast30Days);
 }
 
