@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { stripeAccounts } from "@/db/schema";
 import { encryptSecret } from "@/server/crypto";
@@ -12,6 +12,8 @@ import { createScreen } from "@/server/screens";
 import { listStripeAccountSummaries } from "@/server/stripe/accounts";
 import { syncAccount } from "@/server/sync/run";
 import { createUserWithWorkspace, resetDatabase } from "@/test/db";
+
+vi.mock("next/server", () => ({ after: vi.fn() }));
 
 const NOW = new Date("2026-11-25T12:00:00.000Z");
 
